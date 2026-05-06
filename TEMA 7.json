@@ -3,91 +3,211 @@
     "id": 1,
     "tag": "Leyes de Newton",
     "title": "Fuerza y Movimiento",
-    "source": "Ejercicio 1 del dossier[cite: 3, 5].",
+    "source": "Ejercicio 1 del dossier",
     "statement": "¿Cómo distinguirías un huevo duro de uno crudo usando la primera ley de Newton?",
     "givens": ["Inercia rotacional", "Estado de agregación (sólido vs líquido)"],
     "objective": "Comprender la inercia en sistemas no rígidos.",
-    "strategy": "Hacer girar ambos huevos y detenerlos brevemente con el dedo.",
-    "hints": [{"title": "Líquido vs Sólido", "body": "Al detener la cáscara, ¿se detiene también el interior?"}],
-    "formulas": ["$\\sum \\vec{F} = 0 \\Rightarrow \\vec{v} = \\text{const.}$"],
-    "solution": ["El crudo sigue girando al soltarlo por la inercia de su contenido líquido."],
-    "mistakes": ["Pensar que el peso influye en la rotación inmediata."],
-    "quiz": {"question": "¿Qué ley explica que el contenido siga girando?", "options": ["1ª Ley (Inercia)", "2ª Ley (F=ma)", "3ª Ley (Acción-Reacción)"], "correct": 0, "feedback": "El líquido interior tiende a mantener su estado de movimiento."},
-    "dcl": {"type": "orbit", "labels": {"up": "v_rot", "left": "F_centrípeta"}}
+    "checklist": ["Haz girar ambos huevos sobre una superficie.", "Detenlos brevemente con el dedo y suelta.", "Observa cuál sigue girando después de soltarlo."],
+    "strategy": "Hacer girar ambos huevos y detenerlos brevemente con el dedo. El huevo crudo, al tener líquido en su interior, conserva el movimiento por inercia y vuelve a girar al soltarlo.",
+    "hints": [
+      {
+        "title": "Líquido vs Sólido",
+        "body": "Al detener la cáscara, ¿se detiene también el interior? En el huevo duro (sólido rígido) sí; en el crudo, el líquido sigue girando."
+      }
+    ],
+    "formulas": ["$\\sum \\vec{F} = 0 \\Rightarrow \\vec{v} = \\text{constante}$"],
+    "steps": [
+      "Colocamos ambos huevos sobre una superficie lisa y los hacemos girar.",
+      "Una vez girando, los detenemos suavemente con la yema del dedo y soltamos inmediatamente.",
+      "En el huevo duro, todo el sistema (cáscara e interior sólido) se detiene por completo y no vuelve a girar.",
+      "En el huevo crudo, la cáscara se detiene pero el líquido interior continúa girando por inercia.",
+      "Al soltar, el movimiento del líquido se transmite a la cáscara y el huevo crudo reanuda el giro."
+    ],
+    "solution": ["El huevo crudo sigue girando al soltarlo porque su contenido líquido conserva el movimiento por inercia (1ª ley de Newton)."],
+    "mistakes": ["Pensar que el peso del huevo influye en la rotación inmediata.", "Creer que ambos se comportan igual porque la cáscara es similar."],
+    "quiz": {
+      "question": "¿Qué ley explica que el contenido del huevo crudo siga girando?",
+      "options": ["1ª Ley (Inercia)", "2ª Ley (F=ma)", "3ª Ley (Acción-Reacción)"],
+      "correct": 0,
+      "feedback": "La primera ley de Newton establece que un cuerpo en movimiento tiende a mantener su estado de movimiento si no actúan fuerzas externas. El líquido interior conserva su movimiento por inercia."
+    },
+    "dcl": { "type": "orbit", "labels": { "up": "v_rot (inicial)", "left": "F_centrípeta (durante el giro)" } }
   },
   {
     "id": 2,
     "tag": "Leyes de Newton",
     "title": "Fuerza y Resistencia",
-    "source": "Ejercicio 2 del dossier.",
+    "source": "Ejercicio 2 del dossier",
     "statement": "Un boxeador golpea un saco con 3000 N. ¿Podría golpear una pluma con la misma fuerza? ¿Puede un boxeador alzarse del suelo estirando sus propios cabellos?",
     "givens": ["$F = 3000 \\, N$", "$m_{boxeador} = 80 kg$"],
-    "objective": "Entender la 3ª Ley y la necesidad de interacción de masas.",
-    "strategy": "Analizar sistemas de fuerzas internas vs externas.",
-    "hints": [{"title": "Acción-Reacción", "body": "Para ejercer una fuerza, el objeto debe poder devolverla."}],
+    "objective": "Entender la 3ª Ley de Newton y la necesidad de interacción entre masas para generar fuerzas.",
+    "checklist": ["Recuerda que para ejercer una fuerza se necesita una reacción igual y opuesta.", "Analiza si la pluma puede ejercer una reacción de 3000 N.", "Respecto a los cabellos, ¿es una fuerza interna o externa al sistema?"],
+    "strategy": "Aplicar la tercera ley de Newton: la fuerza que se puede ejercer está limitada por la capacidad del otro objeto de devolverla. Las fuerzas internas no pueden cambiar el estado de movimiento del centro de masas de un sistema.",
+    "hints": [
+      {
+        "title": "Acción-Reacción",
+        "body": "Para ejercer una fuerza sobre un objeto, este debe poder devolver una fuerza igual y opuesta. La pluma, al tener muy poca masa, se acelera fácilmente y no puede ejercer una reacción de 3000 N antes de ser desplazada."
+      },
+      {
+        "title": "Fuerzas internas vs externas",
+        "body": "Al tirar de sus propios cabellos, la fuerza queda dentro del sistema 'boxeador'. Para elevar su centro de masas necesita una fuerza externa, como la reacción del suelo."
+      }
+    ],
     "formulas": ["$\\vec{F}_{AB} = -\\vec{F}_{BA}$"],
-    "solution": ["No a la pluma (poca inercia); No a los cabellos (fuerza interna)."],
-    "mistakes": ["Creer que la fuerza depende solo del músculo y no de la interacción."],
-    "quiz": {"question": "¿Por qué no puede con la pluma?", "options": ["No hay suficiente resistencia/reacción", "La pluma es aerodinámica", "Falta puntería"], "correct": 0, "feedback": "La pluma no puede devolver 3000N de reacción antes de acelerarse."},
-    "dcl": {"type": "collision", "labels": {"left": "F_r", "right": "F_a"}}
+    "steps": [
+      "Para golpear la pluma con 3000 N, la pluma debería ejercer una reacción de 3000 N sobre la mano del boxeador (3ª ley).",
+      "La pluma tiene una masa muy pequeña, por lo que con una fuerza mucho menor ya adquiere una gran aceleración y se desplaza, impidiendo que la fuerza alcance los 3000 N.",
+      "Por tanto, no es posible golpear una pluma con 3000 N en condiciones normales.",
+      "Al tirar de sus cabellos hacia arriba, la fuerza que ejerce la mano sobre la cabeza es interna al sistema 'boxeador'.",
+      "Las fuerzas internas no modifican la posición del centro de masas del sistema; para alzarse del suelo necesita una fuerza externa (normal del suelo)."
+    ],
+    "solution": ["No se puede golpear la pluma con 3000 N (falta de reacción suficiente).", "No puede alzarse tirando de sus cabellos (fuerza interna)."],
+    "mistakes": ["Pensar que la fuerza depende solo de la capacidad muscular del boxeador, sin considerar la interacción con el objeto.", "Confundir fuerzas internas y externas en el sistema."],
+    "quiz": {
+      "question": "¿Por qué no puede el boxeador alzarse tirando de sus propios cabellos?",
+      "options": ["Porque no tiene suficiente fuerza", "Porque la fuerza es interna al sistema", "Porque sus cabellos se romperían"],
+      "correct": 1,
+      "feedback": "Las fuerzas internas no pueden cambiar el estado de movimiento del centro de masas del sistema. Para alzarse necesita una fuerza externa, como la que ejerce el suelo."
+    },
+    "dcl": { "type": "collision", "labels": { "left": "F_reacción", "right": "F_acción" } }
   },
   {
     "id": 3,
     "tag": "Leyes de Newton",
     "title": "Imanes y Masas",
-    "source": "Ejercicio 3 del dossier[cite: 5].",
+    "source": "Ejercicio 3 del dossier",
     "statement": "Dos imanes se repelen. Si uno tiene masa mucho menor, ¿cuál experimenta más fuerza? ¿Cuál tendrá más aceleración?",
-    "givens": ["$m_1 < m_2$", "Fuerza magnética recíproca"],
-    "objective": "Diferenciar entre Fuerza (3ª Ley) y Aceleración (2ª Ley).",
-    "strategy": "Aplicar Newton en orden: primero fuerzas, luego dinámica.",
-    "hints": [{"title": "Relación m-a", "body": "A igual fuerza, ¿quién se mueve más?"}],
-    "formulas": ["$F_1 = F_2$", "$a = F / m$"],
-    "solution": ["Fuerza igual para ambos; más aceleración el de menor masa."],
-    "mistakes": ["Pensar que el imán grande empuja más fuerte."],
-    "quiz": {"question": "¿Qué imán sufre más fuerza?", "options": ["El grande", "El pequeño", "Ambos igual"], "correct": 2, "feedback": "Acción y reacción son siempre iguales en módulo."},
-    "dcl": {"type": "collision", "labels": {"left": "F_2", "right": "F_1"}}
+    "givens": ["$m_1 < m_2$", "Fuerza magnética recíproca (3ª ley)"],
+    "objective": "Diferenciar entre fuerza (3ª ley) y aceleración (2ª ley) en un sistema de dos cuerpos interactuantes.",
+    "checklist": ["Recuerda: las fuerzas de acción y reacción son iguales en módulo.", "La aceleración depende de la masa según a = F/m."],
+    "strategy": "Aplicar primero la 3ª ley para establecer que las fuerzas sobre ambos imanes son iguales en módulo. Luego, con la 2ª ley, deducir que la aceleración es inversamente proporcional a la masa.",
+    "hints": [
+      {
+        "title": "Fuerzas iguales",
+        "body": "Por la tercera ley de Newton, la fuerza que ejerce el imán grande sobre el pequeño es igual en módulo a la que ejerce el pequeño sobre el grande."
+      },
+      {
+        "title": "Aceleración diferente",
+        "body": "Como a = F/m, si la fuerza es la misma, el imán con menor masa experimentará mayor aceleración."
+      }
+    ],
+    "formulas": ["$|\\vec{F}_{12}| = |\\vec{F}_{21}|$", "$a = \\dfrac{F}{m}$"],
+    "steps": [
+      "Según la tercera ley de Newton, la fuerza magnética que el imán 1 ejerce sobre el 2 es igual en módulo y de sentido contrario a la que el 2 ejerce sobre el 1.",
+      "Por tanto, ambos imanes experimentan exactamente la misma fuerza.",
+      "Aplicamos la segunda ley de Newton a cada imán: $a_1 = F/m_1$ y $a_2 = F/m_2$.",
+      "Dado que $m_1 < m_2$, la aceleración del imán pequeño ($a_1$) será mayor que la del grande ($a_2$)."
+    ],
+    "solution": ["Ambos experimentan la misma fuerza (módulo).", "El imán de menor masa adquiere mayor aceleración."],
+    "mistakes": ["Pensar que el imán más grande ejerce más fuerza.", "Creer que ambos tendrán la misma aceleración."],
+    "quiz": {
+      "question": "¿Qué imán sufre más fuerza?",
+      "options": ["El grande", "El pequeño", "Ambos experimentan la misma fuerza"],
+      "correct": 2,
+      "feedback": "La tercera ley de Newton establece que las fuerzas de acción y reacción son iguales en módulo y de sentido contrario. Ambos sienten exactamente la misma fuerza."
+    },
+    "dcl": { "type": "collision", "labels": { "left": "F sobre m2", "right": "F sobre m1" } }
   },
   {
     "id": 4,
     "tag": "Leyes de Newton",
     "title": "Hombre en ascensor",
-    "source": "Ejercicio 4 del dossier[cite: 3, 5].",
-    "statement": "Calcula la fuerza sobre el suelo de un ascensor (70 kg) en reposo, subiendo a 1 m/s², a velocidad constante y bajando a 2 m/s².",
+    "source": "Ejercicio 4 del dossier",
+    "statement": "Calcula la fuerza que ejerce sobre el suelo de un ascensor un hombre de 70 kg de masa: a) en reposo, b) cuando asciende con aceleración 1,0 m/s², c) cuando asciende a velocidad constante de 5,0 m/s, d) cuando desciende con aceleración 2,0 m/s².",
     "givens": ["$m = 70 \\, kg$", "$g = 9,8 \\, m/s^2$"],
-    "objective": "Cálculo de pesos aparentes.",
-    "strategy": "La fuerza sobre el suelo es la Normal ($N$). Ecuación: $N - P = m \\cdot a$",
-    "formulas": ["$N = m(g + a)$"],
-    "solution": ["Repos/v=cte: $686 \\, N$; Sube: $756 \\, N$; Baja: $546 \\, N$"],
-    "dcl": {"type": "horizontal", "labels": {"up": "N", "down": "P"}}
+    "objective": "Calcular el peso aparente (fuerza normal) en un sistema no inercial.",
+    "checklist": ["La fuerza sobre el suelo es la normal N.", "Plantea la ecuación de Newton en el eje vertical: N - mg = ma.", "La aceleración a es la del ascensor (positiva hacia arriba)."],
+    "strategy": "Aplicar la segunda ley de Newton en el eje vertical. La fuerza que el hombre ejerce sobre el suelo es igual a la normal N que recibe del suelo (3ª ley). Usar N - mg = ma, considerando el signo de la aceleración según el sentido del movimiento.",
+    "hints": [
+      {
+        "title": "Ecuación clave",
+        "body": "N = m(g + a). Con a positiva hacia arriba y negativa hacia abajo."
+      }
+    ],
+    "formulas": ["$N - mg = ma$", "$N = m(g + a)$"],
+    "steps": [
+      "En reposo (a=0): N = 70 · 9,8 = 686 N (6,9×10² N).",
+      "Ascendiendo con a = +1,0 m/s²: N = 70(9,8 + 1,0) = 70 × 10,8 = 756 N (7,6×10² N).",
+      "Ascendiendo con velocidad constante (a=0): N = 686 N (mismo que en reposo).",
+      "Descendiendo con a = -2,0 m/s²: N = 70(9,8 - 2,0) = 70 × 7,8 = 546 N (5,5×10² N)."
+    ],
+    "solution": ["a) 6,9×10² N", "b) 7,6×10² N", "c) 6,9×10² N", "d) 5,5×10² N"],
+    "mistakes": ["Olvidar que la aceleración puede ser negativa (descenso acelerado).", "Confundir velocidad constante con aceleración."],
+    "quiz": {
+      "question": "¿En qué caso la fuerza sobre el suelo es mayor que el peso?",
+      "options": ["En reposo", "Cuando acelera hacia arriba", "Cuando desciende acelerando"],
+      "correct": 1,
+      "feedback": "Al acelerar hacia arriba, la normal debe vencer el peso y además proporcionar la aceleración extra, por lo que N > mg."
+    },
+    "dcl": { "type": "horizontal", "labels": { "up": "N (fuerza del suelo)", "down": "P = mg" } }
   },
   {
     "id": 5,
     "tag": "Leyes de Newton",
     "title": "Bloque con fuerzas opuestas",
-    "source": "Ejercicio 5 del dossier[cite: 3, 5].",
-    "statement": "Masa 5 kg con $F_1 = 40 \\, N$ (der) y $F_2 = 20 \\, N$ (izq). Halla P, N y aceleración.",
-    "givens": ["$m = 5,0 \\, kg$", "$F_1 = 40 \\, N$", "$F_2 = 20 \\, N$"],
-    "objective": "Resultante de fuerzas en ejes cartesianos.",
-    "formulas": ["$P = m \\cdot g$", "$F_{neta} = F_1 - F_2$", "$a = F_{neta} / m$"],
-    "solution": ["$P=49 \\, N$, $N=49 \\, N$, $a=4,0 \\, m/s^2$"],
-    "dcl": {"type": "horizontal", "labels": {"up": "N", "down": "P", "left": "F2", "right": "F1"}}
+    "source": "Ejercicio 5 del dossier",
+    "statement": "Sobre un cuerpo de masa m = 5,0 kg actúan dos fuerzas horizontales: F1 = 40 N hacia la derecha y F2 = 20 N hacia la izquierda. Calcula: a) El peso del cuerpo. b) La reacción normal. c) La aceleración del cuerpo.",
+    "givens": ["$m = 5,0 \\, kg$", "$F_1 = 40 \\, N$ (derecha)", "$F_2 = 20 \\, N$ (izquierda)"],
+    "objective": "Calcular la fuerza resultante en un sistema con fuerzas horizontales opuestas.",
+    "checklist": ["El peso es P = mg.", "En el eje vertical hay equilibrio: N = P.", "En el eje horizontal, la fuerza neta es F1 - F2."],
+    "strategy": "Resolver independientemente los ejes vertical (equilibrio) y horizontal (fuerza neta no nula). Calcular la aceleración con la segunda ley de Newton.",
+    "formulas": ["P = mg", "N = P", "F_neta = F1 - F2", "a = F_neta / m"],
+    "steps": [
+      "Calculamos el peso: P = 5,0 · 9,8 = 49 N.",
+      "En el eje vertical no hay movimiento, así que la normal iguala al peso: N = 49 N.",
+      "En el eje horizontal, la fuerza neta es la diferencia: F_neta = 40 N - 20 N = 20 N hacia la derecha.",
+      "Aplicamos la segunda ley: a = F_neta / m = 20 / 5,0 = 4,0 m/s² hacia la derecha."
+    ],
+    "solution": ["P = 49 N", "N = 49 N", "a = 4,0 m/s²"],
+    "mistakes": ["Sumar las fuerzas en lugar de restarlas.", "Olvidar que el peso y la normal actúan en el eje vertical."],
+    "quiz": {
+      "question": "Si las dos fuerzas horizontales fueran iguales, ¿cuál sería la aceleración?",
+      "options": ["El doble", "Cero", "La mitad"],
+      "correct": 1,
+      "feedback": "Si F1 = F2, la fuerza neta es cero y la aceleración es nula (equilibrio horizontal)."
+    },
+    "dcl": { "type": "horizontal", "labels": { "up": "N", "down": "P", "left": "F2 = 20 N", "right": "F1 = 40 N" } }
   },
   {
     "id": 6,
     "tag": "Leyes de Newton",
     "title": "Coche y remolque",
-    "source": "Ejercicio 6 del dossier[cite: 3, 5].",
-    "statement": "Coche (800 kg) arrastra remolque (1000 kg) con tracción de 1,2 kN. Halla aceleración, tensión y velocidad a los 20m.",
-    "givens": ["$m_c = 800 \\, kg$", "$m_r = 1000 \\, kg$", "$F = 1200 \\, N$", "$\\Delta x = 20 \\, m$"],
-    "objective": "Dinámica de sistemas vinculados.",
-    "strategy": "Aceleración con masa total; Tensión aislando el remolque.",
-    "formulas": ["$a = F / (m_c + m_r)$", "$T = m_r \\cdot a$", "$v = \\sqrt{2a\\Delta x}$"],
-    "solution": ["$a=0,67 \\, m/s^2$, $T=667 \\, N$, $v=5,2 \\, m/s$"],
+    "source": "Ejercicio 6 del dossier",
+    "statement": "Un automóvil de 800 kg ejerce una fuerza de tracción de 1,2 kN y arrastra un remolque de 1000 kg con un cable. Sin rozamiento, calcula: a) aceleración del conjunto, b) tensión del cable, c) velocidad del conjunto tras recorrer 20 m partiendo del reposo.",
+    "givens": ["$m_c = 800 \\, kg$", "$m_r = 1000 \\, kg$", "F = 1,2 kN = 1200 N", "$\\Delta x = 20 \\, m$"],
+    "objective": "Aplicar la dinámica de sistemas vinculados, calculando aceleración y tensión.",
+    "checklist": ["Masa total para calcular la aceleración del conjunto.", "Aísla el remolque para hallar la tensión (solo recibe la tensión del cable)."],
+    "strategy": "Primero, calcular la aceleración usando la masa total (coche + remolque) y la fuerza de tracción. Luego, aislar el remolque: la única fuerza horizontal que actúa sobre él es la tensión del cable, así que T = m_r · a. Finalmente, usar cinemática para la velocidad.",
+    "hints": [
+      {
+        "title": "Aceleración del conjunto",
+        "body": "La fuerza de tracción acelera a ambos: a = F / (m_c + m_r)."
+      },
+      {
+        "title": "Tensión",
+        "body": "Para el remolque, la única fuerza horizontal es la tensión: T = m_r · a."
+      }
+    ],
+    "formulas": ["$a = \\dfrac{F}{m_c + m_r}$", "$T = m_r \\cdot a$", "$v = \\sqrt{2a\\Delta x}$"],
+    "steps": [
+      "Masa total del sistema: 800 + 1000 = 1800 kg.",
+      "Aceleración: a = 1200 / 1800 = 0,667 m/s².",
+      "Tensión del cable (aislando el remolque): T = 1000 · 0,667 = 667 N.",
+      "Velocidad tras recorrer 20 m desde el reposo: v = √(2 · 0,667 · 20) = √26,68 ≈ 5,16 m/s."
+    ],
+    "solution": ["a = 0,67 m/s²", "T = 6,7×10² N", "v = 5,2 m/s"],
+    "mistakes": ["Usar solo la masa del coche para calcular la aceleración.", "Olvidar que la tensión es la única fuerza horizontal sobre el remolque."],
+    "quiz": {
+      "question": "¿La tensión del cable es igual a la fuerza de tracción del coche?",
+      "options": ["Sí, siempre", "No, es menor", "No, es mayor"],
+      "correct": 1,
+      "feedback": "La tensión solo acelera al remolque, mientras que la fuerza de tracción acelera a ambos. Por eso T = m_r · a < F."
+    },
     "dcl": {
       "type": "horizontalTwoBlocks",
       "labels": {
         "leftBlock": { "up": "N", "down": "P_c", "right": "T" },
-        "rightBlock": { "up": "N", "down": "P_r", "left": "T", "right": "F" }
+        "rightBlock": { "up": "N", "down": "P_r", "left": "T", "right": "F_tracción" }
       }
     }
   },
@@ -95,54 +215,127 @@
     "id": 7,
     "tag": "Cinemática y Dinámica",
     "title": "Martillo y Clavo",
-    "source": "Ejercicio 7 del dossier[cite: 3, 5].",
-    "statement": "Martillo (3 kg) impacta a 5 m/s y se hunde 6 mm. Fuerza de oposición?",
-    "givens": ["$m = 3 \\, kg$", "$v_0 = 5 \\, m/s$", "$\\Delta x = 0,006 \\, m$"],
-    "objective": "Relacionar desaceleración con fuerza.",
-    "formulas": ["$a = (v_f^2 - v_0^2) / 2\\Delta x$", "$F = m \\cdot a$"],
-    "solution": ["$F = 6250 \\, N$"],
-    "dcl": {"type": "horizontal", "labels": {"left": "F_op"}}
+    "source": "Ejercicio 7 del dossier",
+    "statement": "Un martillo de 3,00 kg golpea un clavo con velocidad de 5,00 m/s. El clavo se hunde 6,00 mm en la madera. Suponiendo la fuerza de oposición constante, ¿cuánto vale esa fuerza?",
+    "givens": ["m = 3,00 kg", "v₀ = 5,00 m/s", "Δx = 6,00 mm = 0,006 m"],
+    "objective": "Relacionar la desaceleración (cinemática) con la fuerza neta (dinámica).",
+    "checklist": ["Calcula la aceleración de frenado con los datos cinemáticos.", "Usa la segunda ley para hallar la fuerza."],
+    "strategy": "Primero hallar la aceleración de frenado usando la ecuación cinemática v_f² - v₀² = 2aΔx, con v_f = 0. Luego aplicar F = m·a.",
+    "hints": [
+      {
+        "title": "Aceleración",
+        "body": "La aceleración se obtiene de a = (v_f² - v₀²) / (2Δx). Es negativa porque se opone al movimiento."
+      }
+    ],
+    "formulas": ["$a = \\dfrac{v_f^2 - v_0^2}{2\\Delta x}$", "$F = m \\, a$"],
+    "steps": [
+      "Convertimos el desplazamiento a metros: 6,00 mm = 0,006 m.",
+      "Planteamos la ecuación cinemática con v_f = 0: 0 - (5,00)² = 2 · a · 0,006.",
+      "Despejamos a = -25,00 / 0,012 = -2083,33 m/s².",
+      "La magnitud de la aceleración es aproximadamente 2083 m/s².",
+      "Aplicamos la segunda ley: F = m·|a| = 3,00 · 2083,33 = 6250 N."
+    ],
+    "solution": ["6,25×10³ N"],
+    "mistakes": ["Olvidar pasar los milímetros a metros.", "No elevar al cuadrado la velocidad inicial."],
+    "quiz": {
+      "question": "¿Por qué la aceleración obtenida es negativa?",
+      "options": ["Porque el martillo se mueve hacia abajo", "Porque se opone al movimiento (frenado)", "Porque la gravedad es negativa"],
+      "correct": 1,
+      "feedback": "La aceleración es negativa porque reduce la velocidad del martillo; el clavo ejerce una fuerza que se opone al movimiento."
+    },
+    "dcl": { "type": "horizontal", "labels": { "left": "F_oposición" } }
   },
   {
     "id": 8,
     "tag": "Leyes de Newton",
     "title": "Fuerza oblicua",
-    "source": "Ejercicio 8 del dossier[cite: 5].",
-    "statement": "Masa 6 kg, $a = 8,5 \\, m/s^2$ Halla F si es: a) paralela, b) a 30º.",
-    "givens": ["$m = 6,0 \\, kg$", "$a = 8,5 \\, m/s^2$"],
-    "objective": "Descomposición de fuerzas.",
-    "formulas": ["$F_x = m \\cdot a$", "$F \\cdot \\cos(\\alpha) = m \\cdot a$"],
-    "solution": ["a) $51 \\, N$; b) $59 \\, N$"],
-    "dcl": {"type": "horizontal", "labels": {"up": "N", "down": "P", "right": "F_x"}}
+    "source": "Ejercicio 8 del dossier",
+    "statement": "Un bloque de 6,0 kg está en reposo sobre una superficie horizontal lisa. Al aplicarle una fuerza se le comunica una aceleración de 8,5 m/s². Calcula el valor de la fuerza: a) si es paralela a la superficie, b) si forma un ángulo de 30° con la horizontal.",
+    "givens": ["m = 6,0 kg", "a = 8,5 m/s²"],
+    "objective": "Calcular la fuerza necesaria para producir una cierta aceleración cuando la fuerza no es paralela al desplazamiento.",
+    "checklist": ["En el caso paralelo, F = m·a directamente.", "En el caso oblicuo, solo la componente horizontal contribuye a la aceleración: F·cos 30° = m·a."],
+    "strategy": "Caso a) simple aplicación de la segunda ley. Caso b) descomponer la fuerza en sus componentes y usar la horizontal para generar la aceleración.",
+    "formulas": ["$F = m \\cdot a$", "$F_x = F \\cos \\theta = m a$"],
+    "steps": [
+      "Caso a: F = 6,0 · 8,5 = 51 N.",
+      "Caso b: la componente horizontal de la fuerza es la que acelera el bloque: F·cos 30° = m·a.",
+      "Sustituimos: F·0,866 = 51 N.",
+      "Despejamos: F = 51 / 0,866 ≈ 58,9 N."
+    ],
+    "solution": ["a) 51 N", "b) 59 N"],
+    "mistakes": ["Usar directamente F = m·a sin tener en cuenta el ángulo en el caso b).", "Confundir seno y coseno."],
+    "quiz": {
+      "question": "Si la fuerza forma 30° con la horizontal, ¿qué componente realiza el trabajo?",
+      "options": ["La componente vertical", "La componente horizontal", "Ambas por igual"],
+      "correct": 1,
+      "feedback": "Solo la componente horizontal produce aceleración en la dirección del movimiento horizontal."
+    },
+    "dcl": { "type": "horizontal", "labels": { "up": "N", "down": "P", "right": "F_x = F cos 30°" } }
   },
   {
     "id": 9,
     "tag": "Sistemas enlazados",
     "title": "Máquina de Atwood",
-    "source": "Ejercicio 9 del dossier[cite: 3, 5].",
-    "statement": "Cuerpos de 400 y 500 g cuelgan de una polea. Calcula aceleración y tensión.",
-    "givens": ["$m_1 = 0,400 \\, kg$", "$m_2 = 0,500 \\, kg$", "$g = 9,8 \\, m/s^2$"],
-    "objective": "Dinámica de poleas.",
-    "strategy": "Sistema de ecuaciones: $P_2 - T = m_2 a$ y $T - P_1 = m_1 a$",
-    "formulas": ["$a = \\frac{m_2 - m_1}{m_1 + m_2}g$", "$T = m_1(g + a)$"],
-    "solution": ["$a = 1,09 \\, m/s^2$, $T = 4,36 \\, N$"],
-    "dcl": {"type": "pulley", "labels": {"up": "T", "down": "P1", "down_right": "P2"}}
+    "source": "Ejercicio 9 del dossier",
+    "statement": "Dos cuerpos de 400 g y 500 g cuelgan de los extremos de una cuerda que pasa por una polea sin masa ni rozamiento. Calcula la aceleración del sistema y la tensión de la cuerda.",
+    "givens": ["m₁ = 0,400 kg", "m₂ = 0,500 kg", "g = 9,8 m/s²"],
+    "objective": "Aplicar la dinámica de traslación a sistemas con poleas.",
+    "checklist": ["Plantea la segunda ley para cada masa por separado.", "La tensión es la misma en ambos lados (cuerda ideal).", "Suma las ecuaciones para eliminar T y hallar a."],
+    "strategy": "Se dibujan las fuerzas: P2 hacia abajo, T hacia arriba en ambos. Se escribe P2 - T = m₂·a y T - P1 = m₁·a. Sumando se obtiene P2 - P1 = (m₁+m₂)a y se despeja a. Luego se sustituye para T.",
+    "hints": [
+      {
+        "title": "Sistema de ecuaciones",
+        "body": "Para m₂ (baja): m₂·g - T = m₂·a. Para m₁ (sube): T - m₁·g = m₁·a."
+      }
+    ],
+    "formulas": ["$a = \\dfrac{m_2 - m_1}{m_1 + m_2}\\,g$", "$T = m_1(g + a)$"],
+    "steps": [
+      "Calculamos los pesos: P1 = 0,4·9,8 = 3,92 N; P2 = 0,5·9,8 = 4,90 N.",
+      "Ecuación para la masa de 0,5 kg (cae): 4,90 - T = 0,5a.",
+      "Ecuación para la masa de 0,4 kg (sube): T - 3,92 = 0,4a.",
+      "Sumamos ambas ecuaciones: (4,90 - T) + (T - 3,92) = (0,5 + 0,4)a → 0,98 = 0,9a → a = 1,089 m/s².",
+      "Tensión: de la segunda ecuación, T = 3,92 + 0,4·1,089 = 3,92 + 0,4356 = 4,3556 N."
+    ],
+    "solution": ["a = 1,09 m/s²", "T = 4,36 N"],
+    "mistakes": ["Restar las masas en lugar de los pesos.", "Olvidar que la tensión es la misma en toda la cuerda."],
+    "quiz": {
+      "question": "Si ambas masas fueran iguales, ¿cuál sería la aceleración?",
+      "options": ["Cero", "g", "g/2"],
+      "correct": 0,
+      "feedback": "Con masas iguales, los pesos se equilibran y la fuerza neta es cero (a = 0)."
+    },
+    "dcl": { "type": "pulley", "labels": { "up": "T", "down": "P1 = 3,92 N", "down_right": "P2 = 4,90 N" } }
   },
   {
     "id": 10,
     "tag": "Sistemas enlazados",
     "title": "Bloques en contacto",
-    "source": "Ejercicio 10 del dossier[cite: 3, 5].",
-    "statement": "$m_1 = 2 kg$ y $m_2 = 3 kg$ empujados por $F=20 N$ Aceleración y fuerza de contacto?",
-    "givens": ["$m_1 = 2,0 \\, kg$", "$m_2 = 3,0 \\, kg$", "$F = 20 \\, N$"],
-    "objective": "Interacción entre sólidos.",
-    "formulas": ["$a = F / (m_1 + m_2)$", "$F_{12} = m_2 \\cdot a$"],
-    "solution": ["$a = 4,0 \\, m/s^2$, $F_{contacto} = 12 \\, N$"],
+    "source": "Ejercicio 10 del dossier",
+    "statement": "Dos bloques de masas m₁ = 2,0 kg y m₂ = 3,0 kg están en contacto sobre una superficie horizontal sin rozamiento. Se empuja con F = 20 N sobre m₁. Calcula la aceleración del conjunto y la fuerza de contacto entre los bloques.",
+    "givens": ["m₁ = 2,0 kg", "m₂ = 3,0 kg", "F = 20 N"],
+    "objective": "Calcular la aceleración de un sistema de bloques y la fuerza interna de contacto.",
+    "checklist": ["Aceleración común: a = F / (m₁ + m₂).", "Para hallar la fuerza de contacto, aísla uno de los bloques."],
+    "strategy": "La aceleración es la misma para ambos, así que se obtiene con la masa total. Luego, la fuerza de contacto es la que acelera al bloque de detrás (m₂), así que F_contacto = m₂·a.",
+    "formulas": ["$a = \\dfrac{F}{m_1 + m_2}$", "$F_{12} = m_2 \\cdot a$"],
+    "steps": [
+      "Masa total: 2,0 + 3,0 = 5,0 kg.",
+      "Aceleración del conjunto: a = 20 / 5,0 = 4,0 m/s².",
+      "Para m₂, la única fuerza horizontal es la fuerza de contacto que ejerce m₁ sobre él: F_contacto = 3,0 · 4,0 = 12 N.",
+      "Por la 3ª ley, m₂ ejerce sobre m₁ una fuerza igual y opuesta (-12 N)."
+    ],
+    "solution": ["a = 4,0 m/s²", "F_contacto = 12 N"],
+    "mistakes": ["Aplicar F = m₁·a para la fuerza de contacto.", "Creer que la fuerza de contacto es igual a la fuerza aplicada F."],
+    "quiz": {
+      "question": "¿Qué ocurre si los bloques se separan ligeramente y la fuerza F se aplica sobre el primero?",
+      "options": ["El segundo no se movería", "El segundo empezaría a moverse cuando el primero lo contacte", "La aceleración sería mayor"],
+      "correct": 1,
+      "feedback": "Si se separan, el primer bloque acelera hasta contactar con el segundo y entonces transmite la fuerza de contacto."
+    },
     "dcl": {
       "type": "horizontalTwoBlocks",
       "labels": {
         "leftBlock": { "up": "N", "down": "P1", "right": "F_contacto" },
-        "rightBlock": { "up": "N", "down": "P2", "left": "F_contacto", "right": "F" }
+        "rightBlock": { "up": "N", "down": "P2", "left": "F_contacto", "right": "F = 20 N" }
       }
     }
   },
@@ -150,170 +343,310 @@
     "id": 11,
     "tag": "Plano Inclinado",
     "title": "Descenso libre sin rozamiento",
-    "source": "Ejercicio 11 del dossier.",
-    "statement": "Cuerpo de 3,0 kg en plano inclinado 30° sin rozamiento. Calcula aceleración.",
+    "source": "Ejercicio 11 del dossier",
+    "statement": "Un cuerpo de 3,0 kg está sobre un plano inclinado 30° sin rozamiento. ¿Con qué aceleración desciende?",
     "givens": ["m = 3,0 kg", "α = 30°", "μ = 0"],
-    "objective": "Descomposición del peso.",
-    "checklist": ["Px = P·sen(α)"],
-    "strategy": "Solo Px genera movimiento.",
-    "hints": [{"title": "Componente X", "body": "Px = 3 · 9.8 · sen(30)"}],
-    "formulas": ["$a = g \\cdot \\sin(30^\\circ)$"],
-    "solution": ["a = 4,9 m/s²"],
-    "mistakes": ["Usar el coseno."],
-    "quiz": {"question": "¿Influye la masa?", "options": ["Sí", "No"], "correct": 1, "feedback": "Se cancela en m·g·senα = m·a."},
-    "dcl": {"type": "inclined", "angle": "30°", "labels": {"perp_up": "N", "perp_down": "P⊥", "parallel_down": "P∥", "down": "P"}}
+    "objective": "Calcular la aceleración de descenso en un plano inclinado sin rozamiento.",
+    "checklist": ["La única fuerza que produce aceleración es la componente paralela del peso: Px = mg sen α.", "La normal no influye en el movimiento."],
+    "strategy": "Descomponer el peso en sus componentes paralela y perpendicular al plano. La componente paralela (Px) es la fuerza neta que acelera el cuerpo. Aplicar a = F/m = g sen α.",
+    "hints": [
+      {
+        "title": "Componentes del peso",
+        "body": "P_paralela = mg sen(30°); P_perpendicular = mg cos(30°)."
+      }
+    ],
+    "formulas": ["$P_x = mg\\sin\\alpha$", "$a = g\\sin\\alpha$"],
+    "steps": [
+      "Calculamos la componente del peso paralela al plano: Px = 3,0 · 9,8 · sen(30°).",
+      "sen(30°) = 0,5, por tanto Px = 3,0 · 9,8 · 0,5 = 14,7 N.",
+      "Aplicamos la segunda ley: a = Px / m = 14,7 / 3,0 = 4,9 m/s².",
+      "También directamente a = g·sen α = 9,8 × 0,5 = 4,9 m/s²."
+    ],
+    "solution": ["4,9 m/s²"],
+    "mistakes": ["Usar el coseno en lugar del seno.", "Creer que la masa influye en el resultado (se cancela)."],
+    "quiz": {
+      "question": "¿Depende la aceleración de la masa del cuerpo?",
+      "options": ["Sí, a mayor masa, mayor aceleración", "No, la masa se cancela", "Solo influye si hay rozamiento"],
+      "correct": 1,
+      "feedback": "En ausencia de rozamiento, a = g sen α. La masa se cancela porque Px es proporcional a ella."
+    },
+    "dcl": { "type": "inclined", "angle": "30°", "labels": { "perp_up": "N", "perp_down": "P⊥", "parallel_down": "P∥", "down": "P" } }
   },
   {
     "id": 12,
     "tag": "Rozamiento",
-    "title": "Fuerza de fregament amb resultante nula",
-    "source": "Ejercicio 12 del dossier[cite: 5].",
-    "statement": "¿Puede haber fuerza de rozamiento sobre un objeto cuando la suma de todas las demás fuerzas es nula? Pon un ejemplo.",
-    "givens": ["Concepto de equilibrio", "Rozamiento estático vs cinético"],
-    "objective": "Comprender que el rozamiento puede existir en equilibrio estático o dinámico.",
-    "strategy": "Analiza un bloque en reposo sobre una superficie horizontal al que se le aplica una fuerza pequeña. La fuerza de rozamiento estático iguala a la aplicada, resultante nula.",
-    "hints": [{"title": "Equilibrio", "body": "Si un bloque está en reposo y aplicas una fuerza pequeña, la fuerza de rozamiento estático iguala esa fuerza en módulo y opuesta en sentido, resultante cero."}],
-    "formulas": ["$\\sum F_x = 0 \\Rightarrow F_{aplicada} - Fr = 0$"],
-    "solution": ["Sí, cuando un objeto está en reposo y se le aplica una fuerza menor que el rozamiento estático máximo, el rozamiento iguala a la fuerza aplicada."],
-    "mistakes": ["Creer que el rozamiento solo aparece cuando hay movimiento.", "Pensar que si la resultante es nula no puede haber rozamiento."],
-    "quiz": {"question": "¿Puede existir rozamiento sin aceleración?", "options": ["Sí, en equilibrio", "No, siempre causa aceleración"], "correct": 0, "feedback": "El rozamiento estático puede equilibrar a otras fuerzas y mantener el objeto en reposo."},
-    "dcl": {"type": "horizontal", "labels": {"up": "N", "down": "P", "right": "F_apl", "left": "Fr"}}
+    "title": "Fuerza de rozamiento con resultante nula",
+    "source": "Ejercicio 12 del dossier",
+    "statement": "¿Puede haber fuerza de rozamiento sobre un objeto en el que la suma de todas las demás fuerzas sea nula? Pon un ejemplo.",
+    "givens": ["Concepto de equilibrio", "Rozamiento estático"],
+    "objective": "Comprender que la fuerza de rozamiento estático puede existir en situaciones de equilibrio, ajustándose a la fuerza aplicada.",
+    "checklist": ["Piensa en un objeto en reposo sobre una mesa.", "Aplica una fuerza pequeña sin moverlo.", "La fuerza de rozamiento estático iguala a la fuerza aplicada para mantener el equilibrio."],
+    "strategy": "Analizar la situación de equilibrio. El rozamiento estático es una fuerza reactiva: crece hasta igualar la fuerza aplicada, mientras esta no supere el límite máximo (μₑ·N). Si no hay otras fuerzas netas, la fuerza de rozamiento puede equilibrarlas.",
+    "hints": [
+      {
+        "title": "Rozamiento estático",
+        "body": "El rozamiento estático existe cuando el objeto no se mueve. Se adapta a la fuerza aplicada hasta un máximo."
+      }
+    ],
+    "formulas": ["$F_aplicada - F_r = 0$"],
+    "steps": [
+      "Colocamos un bloque sobre una superficie horizontal.",
+      "Aplicamos una fuerza horizontal de 10 N; el bloque no se mueve.",
+      "Esto significa que la fuerza de rozamiento estático vale exactamente 10 N en sentido opuesto, anulando la fuerza aplicada.",
+      "La suma de todas las fuerzas es cero (equilibrio), pero la fuerza de rozamiento existe.",
+      "Si aumentamos la fuerza aplicada hasta 50 N y el bloque sigue quieto, el rozamiento estático habrá aumentado a 50 N."
+    ],
+    "solution": ["Sí, cuando un objeto está en reposo y se le aplica una fuerza menor que el rozamiento máximo, la fuerza de rozamiento estático iguala a la fuerza aplicada y la resultante es nula."],
+    "mistakes": ["Pensar que el rozamiento solo aparece cuando hay movimiento.", "Creer que si la resultante es nula no puede haber rozamiento (confunde fuerza neta con fuerzas individuales)."],
+    "quiz": {
+      "question": "Un bloque está en reposo y le aplicas 5 N de fuerza horizontal, pero no se mueve. ¿Cuánto vale el rozamiento?",
+      "options": ["5 N", "Cero", "Depende del coeficiente"],
+      "correct": 0,
+      "feedback": "El rozamiento estático iguala a la fuerza aplicada mientras no se supere el umbral máximo. Vale exactamente 5 N."
+    },
+    "dcl": { "type": "horizontal", "labels": { "up": "N", "down": "P", "right": "F (5 N)", "left": "F_r (5 N)" } }
   },
   {
     "id": 13,
     "tag": "Rozamiento",
     "title": "Coeficiente de rozamiento (Vel. constante)",
-    "source": "Ejercicio 13 del dossier.",
-    "statement": "Se arrastra un piano de 140 kg a velocidad constante con 650 N. Calcula μ.",
-    "givens": ["m = 140 kg", "F = 650 N", "a = 0"],
-    "objective": "Equilibrar fuerzas horizontales.",
-    "checklist": ["F_neta = 0 -> F = Fr"],
-    "strategy": "Velocidad constante implica aceleración nula. La fuerza aplicada iguala al rozamiento.",
-    "hints": [{"title": "Igualdad", "body": "Fr = μ·N. Como N = P, despeja μ."}],
-    "formulas": ["$F = \\mu \\cdot m \\cdot g$"],
-    "solution": ["μ = 0,473"],
-    "mistakes": ["Poner a > 0."],
-    "quiz": {"question": "¿Fr es mayor o menor que F?", "options": ["Mayor", "Igual", "Menor"], "correct": 1, "feedback": "a=0, fuerzas se cancelan."},
-    "dcl": {"type": "horizontal", "labels": {"up": "N", "down": "P", "right": "F", "left": "Fr"}}
+    "source": "Ejercicio 13 del dossier",
+    "statement": "Para arrastrar con velocidad constante un piano de 140 kg de masa sobre un suelo horizontal se necesita una fuerza de 650 N. Calcula el coeficiente de rozamiento.",
+    "givens": ["m = 140 kg", "F = 650 N", "velocidad constante"],
+    "objective": "Determinar el coeficiente de rozamiento cinético a partir del equilibrio de fuerzas.",
+    "checklist": ["Velocidad constante ⇒ aceleración nula ⇒ la fuerza aplicada iguala al rozamiento.", "La normal es igual al peso.", "Usa F_r = μ · N."],
+    "strategy": "Como la velocidad es constante, la fuerza neta es cero. La fuerza aplicada (650 N) debe ser igual en módulo a la fuerza de rozamiento cinético. Con N = mg, se despeja μ = F / (mg).",
+    "formulas": ["$F = F_r = \\mu N$", "$N = mg$", "$\\mu = \\dfrac{F}{mg}$"],
+    "steps": [
+      "Determinamos la normal: N = 140 · 9,8 = 1372 N.",
+      "Al ser la velocidad constante, se cumple que F = F_r.",
+      "El rozamiento cinético es F_r = μ · N, así que μ = F / N.",
+      "Sustituimos: μ = 650 / 1372 = 0,4737..."
+    ],
+    "solution": ["μ ≈ 0,474"],
+    "mistakes": ["Creer que hay aceleración aunque la velocidad sea constante.", "No distinguir entre masa (kg) y peso (N) al calcular la normal."],
+    "quiz": {
+      "question": "¿Cómo afecta una mayor masa al coeficiente de rozamiento?",
+      "options": ["Aumenta μ", "Disminuye μ", "No afecta (μ es una propiedad de las superficies)"],
+      "correct": 2,
+      "feedback": "El coeficiente de rozamiento depende de los materiales en contacto, no de la masa. La fuerza de rozamiento sí aumenta con la masa."
+    },
+    "dcl": { "type": "horizontal", "labels": { "up": "N", "down": "P", "right": "F = 650 N", "left": "F_r" } }
   },
   {
     "id": 14,
     "tag": "Estática y Rozamiento",
     "title": "¿Deslizará el bloque?",
-    "source": "Ejercicio 14 del dossier.",
-    "statement": "Plano inclinado 40°. Coeficiente de rozamiento estático 0,50. Averigua si el cuerpo deslizará al soltarlo.",
-    "givens": ["α = 40°", "μe = 0,50"],
-    "objective": "Comparar la componente paralela del peso con el umbral de rozamiento estático máximo.",
-    "checklist": ["No necesitas la masa, se cancelará en la inecuación."],
-    "strategy": "Calculamos si la fuerza que tira hacia abajo (Px) es mayor que la máxima resistencia estática (Fr_max). Si Px > Fr_max, desliza.",
-    "hints": [{"title": "Condición matemática", "body": "Desliza si mg·sen(40) > μe·mg·cos(40). Elimina 'mg' de ambos lados."}],
-    "formulas": ["$\\sin(40^\\circ) > \\mu_e \\cdot \\cos(40^\\circ)$"],
-    "solution": ["Sí, deslizará."],
-    "mistakes": ["No saber resolverlo por no tener el dato de la masa."],
-    "quiz": {"question": "¿De qué otra forma se puede comprobar?", "options": ["Calculando tan(40) > μe", "Imposible sin la masa"], "correct": 0, "feedback": "Es el ángulo crítico. Si tan(α) > μe, desliza. tan(40)=0.84, que es mayor que 0.50."},
-    "dcl": {"type": "inclined", "angle": "40°", "labels": {"perp_up": "N", "perp_down": "P⊥", "parallel_down": "P∥", "parallel_up": "Fr"}}
+    "source": "Ejercicio 14 del dossier",
+    "statement": "Un plano inclinado forma un ángulo de 40° sobre la horizontal. Se abandona un cuerpo en la parte alta. Si el coeficiente de rozamiento estático es 0,50, ¿deslizará?",
+    "givens": ["α = 40°", "μₑ = 0,50"],
+    "objective": "Comparar la componente del peso que tira hacia abajo con el rozamiento estático máximo para decidir si hay movimiento.",
+    "checklist": ["Calcula Px = mg sen α.", "Calcula la fuerza de rozamiento estático máxima: Fr_max = μₑ · N = μₑ · mg cos α.", "Compara: si Px > Fr_max, desliza."],
+    "strategy": "Se compara directamente la relación sen α > μₑ cos α → tan α > μₑ. Si se cumple, la componente del peso supera la fricción estática máxima y el bloque desciende.",
+    "hints": [
+      {
+        "title": "Condición de deslizamiento",
+        "body": "Desliza si tan α > μₑ. Calcula tan 40° y compara con 0,50."
+      }
+    ],
+    "formulas": ["$\\sin\\alpha > \\mu_e \\cos\\alpha \\; \\Rightarrow \\; \\tan\\alpha > \\mu_e$"],
+    "steps": [
+      "La condición para que deslice es que la fuerza paralela al plano supere la fricción estática máxima: mg sen α > μₑ mg cos α.",
+      "Cancelamos mg: sen 40° > 0,50 · cos 40°.",
+      "sen 40° ≈ 0,643, cos 40° ≈ 0,766.",
+      "El lado derecho vale 0,50 · 0,766 = 0,383.",
+      "Como 0,643 > 0,383, la componente del peso sí supera el rozamiento estático máximo, por tanto el cuerpo desliza."
+    ],
+    "solution": ["Sí, desliza."],
+    "mistakes": ["Pensar que se necesita la masa para decidirlo (no es necesaria, se cancela).", "Comparar directamente ángulo y coeficiente sin usar la tangente."],
+    "quiz": {
+      "question": "¿Cuál es la condición exacta para que un bloque deslice en un plano inclinado?",
+      "options": ["α > μₑ", "tan α > μₑ", "sen α > μₑ"],
+      "correct": 1,
+      "feedback": "Se necesita que la tangente del ángulo supere el coeficiente de rozamiento estático."
+    },
+    "dcl": { "type": "inclined", "angle": "40°", "labels": { "perp_up": "N", "perp_down": "P⊥", "parallel_down": "P∥", "parallel_up": "F_r máx" } }
   },
   {
     "id": 15,
     "tag": "Rozamiento",
     "title": "Trineo en rampa ascendente",
-    "source": "Ejercicio 15 del dossier.",
-    "statement": "Trineo de 2,0 kg lanzado por rampa 30° hacia arriba. μ = 0,15. Velocidad para recorrer 4m.",
-    "givens": ["m = 2,0 kg", "α = 30°", "μ = 0,15", "Δx = 4 m", "vf = 0"],
-    "objective": "Fricción en movimiento ascendente + cinemática.",
-    "checklist": ["Fr va hacia abajo (se opone).", "Px va hacia abajo."],
-    "strategy": "Ambas fuerzas (Px y Fr) frenan al trineo. Aceleración negativa.",
-    "hints": [{"title": "DCL Cuidado", "body": "Al subir, tanto el peso en X como el rozamiento tiran hacia abajo por la rampa."}],
-    "formulas": ["$-P_x - F_r = m \\cdot a$", "$v_f^2 - v_o^2 = 2a\\Delta x$"],
-    "solution": ["v = 7 m/s"],
-    "mistakes": ["Poner Fr hacia arriba."],
-    "quiz": {"question": "¿Al bajar, Fr cambia?", "options": ["Sí, va hacia arriba", "No"], "correct": 0, "feedback": "Fr siempre se opone al vector velocidad."},
-    "dcl": {"type": "inclined", "angle": "30°", "labels": {"perp_up": "N", "perp_down": "P⊥", "parallel_down": "P∥+Fr", "down": "P"}}
+    "source": "Ejercicio 15 del dossier",
+    "statement": "Un trineo de 2,0 kg debe ser lanzado por una rampa de 30° hacia arriba para que recorra 4,0 m. El coeficiente de rozamiento es 0,15. ¿Con qué velocidad debe lanzarse?",
+    "givens": ["m = 2,0 kg", "α = 30°", "μ = 0,15", "Δx = 4,0 m", "v_f = 0 (se detiene al final)"],
+    "objective": "Calcular la velocidad inicial en un movimiento ascendente con rozamiento.",
+    "checklist": ["Al subir, tanto Px como Fr se oponen al movimiento (F neta hacia abajo).", "Calcula la aceleración de frenado: a = -g(sen α + μ cos α).", "Usa cinemática: v₀² = -2aΔx."],
+    "strategy": "Se plantea la segunda ley en la dirección del plano: -mg sen α - μmg cos α = ma, de donde a = -(sen α + μ cos α)g. Luego se aplica v_f² - v₀² = 2aΔx con v_f = 0.",
+    "formulas": ["$a = -g(\\sin\\alpha + \\mu\\cos\\alpha)$", "$v_0 = \\sqrt{2g(\\sin\\alpha + \\mu\\cos\\alpha)\\Delta x}$"],
+    "steps": [
+      "Calculamos las fuerzas que frenan al trineo: Px = mg sen 30° = 2·9,8·0,5 = 9,8 N.",
+      "Fr = μ mg cos 30° = 0,15·2·9,8·0,866 = 2,55 N.",
+      "Fuerza neta (hacia abajo): 9,8 + 2,55 = 12,35 N.",
+      "Aceleración (negativa): a = -12,35 / 2,0 = -6,175 m/s².",
+      "Cinemática: v₀ = √(-2·a·Δx) = √(2·6,175·4,0) = √49,4 ≈ 7,03 m/s."
+    ],
+    "solution": ["v ≈ 7 m/s"],
+    "mistakes": ["Situar la fuerza de rozamiento hacia arriba (siempre se opone al movimiento).", "Olvidar que la componente del peso también frena al subir."],
+    "quiz": {
+      "question": "Si se lanza con una velocidad mayor que la calculada, ¿qué ocurre?",
+      "options": ["Recorrerá más de 4 m antes de pararse", "Se parará antes", "No afecta porque la fricción cambia"],
+      "correct": 0,
+      "feedback": "Una mayor velocidad inicial implica más energía cinética, por lo que tardará más en disiparse y recorrerá una distancia mayor."
+    },
+    "dcl": { "type": "inclined", "angle": "30°", "labels": { "perp_up": "N", "perp_down": "P⊥", "parallel_down": "P∥+Fr", "down": "P" } }
   },
   {
     "id": 16,
     "tag": "Rozamiento",
     "title": "Rozamiento estático vs cinético",
-    "source": "Ejercicio 16 del dossier.",
-    "statement": "Masa 50 kg horizontal. μc=0,20, μe=0,50. Calcula Fr si se aplican 40 kp (392 N).",
-    "givens": ["m = 50 kg", "μe = 0,50", "μc = 0,20", "F = 392 N"],
-    "objective": "Comprobar superación del umbral estático.",
-    "checklist": ["Comprobar F > Fr_max estático.", "Usar μc si hay movimiento."],
-    "strategy": "Calcular límite estático. Como 392 > 245, se mueve y usamos cinético.",
-    "hints": [{"title": "Umbral", "body": "Fe_max = 0.5 · 490 = 245 N."}],
-    "formulas": ["$F_{e,max} = \\mu_e \\cdot N$"],
-    "solution": ["Fr = 98 N", "a = 5,9 m/s²"],
-    "mistakes": ["Multiplicar directamente por 0.20 sin validar."],
-    "quiz": {"question": "Si aplico 100 N...", "options": ["Se mueve", "No se mueve (Fr=100)"], "correct": 1, "feedback": "Fr iguala a la fuerza aplicada hasta el umbral."},
-    "dcl": {"type": "horizontal", "labels": {"up": "N", "down": "P", "right": "F", "left": "Fr"}}
+    "source": "Ejercicio 16 del dossier",
+    "statement": "Un cuerpo de 50 kg está en reposo sobre una superficie horizontal. Los coeficientes son μ_c = 0,20 y μ_e = 0,50. Calcula: a) la fuerza de rozamiento entre el cuerpo y la superficie (en reposo sin fuerza aplicada), b) la fuerza mínima para iniciar el movimiento, c) si se aplican 40 kp (392 N), ¿cuánto vale la fuerza de rozamiento y la aceleración?",
+    "givens": ["m = 50 kg", "μ_c = 0,20", "μ_e = 0,50", "F_aplicada = 40 kp = 392 N"],
+    "objective": "Distinguir entre rozamiento estático y cinético, y calcular la aceleración resultante.",
+    "checklist": ["Sin fuerza aplicada, Fr = 0.", "La fuerza mínima para mover es Fr_e,max = μ_e·N.", "Si F_aplicada > Fr_e,max, se mueve y entonces usamos μ_c para el rozamiento cinético."],
+    "strategy": "Calcular la normal (N = mg). Para el apartado a) no hay fuerza externa, así que Fr = 0. Para b), Fr_e,max = μ_e·mg. Para c), comparar la fuerza aplicada con Fr_e,max; si es mayor, el bloque se mueve y el rozamiento es cinético: Fr_c = μ_c·mg. La fuerza neta será F - Fr_c, y con ella la aceleración.",
+    "hints": [
+      {
+        "title": "Umbral de movimiento",
+        "body": "Fr_e,max = 0,50 × 490 N = 245 N. Con 392 N (>245) el bloque se mueve."
+      }
+    ],
+    "formulas": ["$F_{e,max} = \\mu_e N$", "$F_c = \\mu_c N$", "$a = \\dfrac{F_{aplicada} - F_c}{m}$"],
+    "steps": [
+      "Normal: N = 50 × 9,8 = 490 N.",
+      "a) En reposo sin fuerza aplicada, no hay tendencia al movimiento, Fr = 0.",
+      "b) Fuerza mínima para iniciar el movimiento: F_e,max = 0,50 × 490 = 245 N.",
+      "c) Con 392 N, superamos 245 N, así que el bloque se mueve. El rozamiento pasa a ser cinético: Fr_c = 0,20 × 490 = 98 N.",
+      "Fuerza neta: F_neta = 392 - 98 = 294 N.",
+      "Aceleración: a = 294 / 50 = 5,88 ≈ 5,9 m/s²."
+    ],
+    "solution": ["a) 0 N", "b) 2,5×10² N", "c) Fr = 98 N, a = 5,9 m/s²"],
+    "mistakes": ["Usar μ_c en reposo.", "Olvidar comprobar si la fuerza aplicada supera el umbral estático antes de decidir que hay movimiento."],
+    "quiz": {
+      "question": "Si se aplican 200 N (menores que 245 N), ¿cuánto vale la fuerza de rozamiento?",
+      "options": ["200 N", "245 N", "98 N"],
+      "correct": 0,
+      "feedback": "Como no se supera el umbral estático, el bloque sigue en reposo y la fuerza de rozamiento estático iguala a la aplicada: 200 N."
+    },
+    "dcl": { "type": "horizontal", "labels": { "up": "N", "down": "P", "right": "F (392 N)", "left": "F_r" } }
   },
   {
     "id": 17,
     "tag": "Sistemas enlazados",
     "title": "Dos cuerpos unidos en plano inclinado",
-    "source": "Ejercicio 17 del dossier.",
-    "statement": "M1=2,0 kg y m2=3,0 kg unidos por cuerda en plano 30°. Bajan juntos. μ1=0,20 y μ2=0,40. Calcula aceleración y tensión.",
-    "givens": ["m1 = 2,0 kg", "m2 = 3,0 kg", "α = 30°", "μ1 = 0,20", "μ2 = 0,40"],
-    "objective": "Aplicar Newton en planos con múltiples coeficientes de fricción.",
-    "checklist": ["Cada masa tiene su propio rozamiento.", "Como bajan unidos, la aceleración es la misma."],
-    "strategy": "Tratar el sistema como un bloque de 5kg para hallar la aceleración neta (restando ambas fricciones al peso paralelo total). Luego aislar M1 para la tensión.",
-    "hints": [{"title": "Fuerza a favor", "body": "Px_total = (2+3)·9.8·sen(30)"}, {"title": "Fricción", "body": "Fr_total = Fr1 + Fr2"}],
-    "formulas": ["$a = \\frac{P_{x,tot} - Fr_1 - Fr_2}{m_1 + m_2}$"],
-    "solution": ["a = 2,2 m/s²", "T = 2,0 N"],
-    "mistakes": ["Sumar las masas y multiplicar por un solo coeficiente de rozamiento promedio."],
-    "quiz": {"question": "¿Por qué hay tensión en la cuerda si ambos bajan?", "options": ["Porque m2 frena más a m1", "Por el aire", "No hay tensión"], "correct": 0, "feedback": "Como μ2 (0.40) es mayor, m2 tiende a bajar más lento, 'tirando' de m1 hacia arriba (tensión)."},
-    "dcl": {"type": "inclined", "angle": "30°", "labels": {"perp_up": "N", "parallel_down": "P∥", "parallel_up": "T+Fr"}}
+    "source": "Ejercicio 17 del dossier",
+    "statement": "Dos cuerpos de masas m₁ = 2,0 kg y m₂ = 3,0 kg, unidos por una cuerda, están sobre un plano inclinado de 30°. Los coeficientes de rozamiento son 0,20 y 0,40 respectivamente. Calcula la aceleración del sistema y la tensión de la cuerda.",
+    "givens": ["m₁ = 2,0 kg", "m₂ = 3,0 kg", "α = 30°", "μ₁ = 0,20", "μ₂ = 0,40"],
+    "objective": "Aplicar la dinámica de sistemas con rozamiento en plano inclinado.",
+    "checklist": ["Ambas masas comparten aceleración.", "La fuerza total a favor del movimiento es Px_total.", "Las fuerzas de rozamiento en cada masa se oponen al movimiento.", "Para la tensión, aísla uno de los bloques."],
+    "strategy": "Calcular Px_total = (m₁+m₂)g sen α. Calcular Fr_total = μ₁ m₁ g cos α + μ₂ m₂ g cos α. La aceleración: a = (Px_total - Fr_total) / (m₁+m₂). Luego, para la tensión, se aísla m₁: Px₁ - T - Fr₁ = m₁ a.",
+    "hints": [
+      {
+        "title": "Fricción total",
+        "body": "Cada masa tiene su propia fricción. Súmalas porque ambas se oponen al movimiento."
+      }
+    ],
+    "formulas": ["$a = \\dfrac{(m_1+m_2)g\\sin\\alpha - (\\mu_1 m_1 + \\mu_2 m_2)g\\cos\\alpha}{m_1+m_2}$"],
+    "steps": [
+      "Componente total del peso a favor: Px = (2+3)·9,8·sen 30° = 5·9,8·0,5 = 24,5 N.",
+      "Fricción en m₁: Fr₁ = 0,20·2·9,8·cos 30° = 0,2·19,6·0,866 = 3,39 N.",
+      "Fricción en m₂: Fr₂ = 0,40·3·9,8·cos 30° = 0,4·29,4·0,866 = 10,18 N.",
+      "Fricción total = 3,39 + 10,18 = 13,57 N.",
+      "Aceleración: a = (24,5 - 13,57) / 5 = 10,93 / 5 = 2,186 ≈ 2,2 m/s².",
+      "Aislamos m₁: m₁g sen α - T - Fr₁ = m₁a → 9,8 - T - 3,39 = 2·2,186 = 4,372 → T = 9,8 - 3,39 - 4,372 = 2,038 ≈ 2,0 N."
+    ],
+    "solution": ["a ≈ 2,2 m/s²", "T ≈ 2,0 N"],
+    "mistakes": ["Usar un único coeficiente de rozamiento para ambas masas.", "Asignar mal el sentido de la tensión (si ambas bajan, la tensión puede ser pequeña o nula)."],
+    "quiz": {
+      "question": "¿Por qué hay tensión en la cuerda si ambos cuerpos bajan por el plano?",
+      "options": ["Porque m₂ tiene más rozamiento y frena a m₁", "Porque la cuerda es elástica", "En realidad no hay tensión"],
+      "correct": 0,
+      "feedback": "El mayor coeficiente de rozamiento en m₂ hace que tienda a bajar más lentamente; m₁ tira de m₂ a través de la cuerda, generando tensión."
+    },
+    "dcl": { "type": "inclined", "angle": "30°", "labels": { "perp_up": "N", "parallel_down": "P∥", "parallel_up": "T + Fr" } }
   },
   {
     "id": 18,
     "tag": "Fuerzas elásticas",
     "title": "Constante de un dinamómetro",
-    "source": "Ejercicio 18 del dossier.",
-    "statement": "Un dinamómetro se alarga 3,00 cm al colgar 100 g. ¿Cuál es la constante elástica?",
-    "givens": ["Δx = 3,00 cm = 0,03 m", "m = 100 g = 0,100 kg"],
-    "objective": "Aplicar la Ley de Hooke en equilibrio estático.",
-    "checklist": ["SI units: cm a metros, g a kilos."],
-    "strategy": "Al colgar en equilibrio, la fuerza elástica iguala al peso. Fe = P.",
-    "hints": [{"title": "Hooke", "body": "F = k·x. Despeja la k."}],
-    "formulas": ["$k = \\frac{m \\cdot g}{\\Delta x}$"],
-    "solution": ["k = 32,7 N/m"],
-    "mistakes": ["Dividir usando gramos o centímetros."],
-    "quiz": {"question": "¿Si cuelgo 200g?", "options": ["Se estira 1.5 cm", "Se estira 6 cm", "Se rompe"], "correct": 1, "feedback": "La deformación es proporcional a la fuerza en régimen elástico."},
-    "dcl": {"type": "horizontal", "labels": {"up": "Fe", "down": "P"}}
+    "source": "Ejercicio 18 del dossier",
+    "statement": "Un dinamómetro se alarga 3,00 cm al colgarle una masa de 100 g. ¿Cuál es su constante elástica?",
+    "givens": ["Δx = 3,00 cm = 0,03 m", "m = 100 g = 0,100 kg", "g = 9,8 m/s²"],
+    "objective": "Aplicar la ley de Hooke en equilibrio.",
+    "checklist": ["Convierte unidades al SI.", "En equilibrio, fuerza elástica = peso.", "Usa k = F / Δx."],
+    "strategy": "La masa colgada ejerce una fuerza igual a su peso. En equilibrio, el muelle ejerce una fuerza igual y opuesta: F_e = mg. Por Hooke, F_e = k·Δx, así que k = mg/Δx.",
+    "formulas": ["$k = \\dfrac{mg}{\\Delta x}$"],
+    "steps": [
+      "Convertimos: Δx = 0,03 m; m = 0,100 kg.",
+      "Calculamos el peso: P = 0,100 · 9,8 = 0,98 N.",
+      "Igualamos peso y fuerza elástica: k·0,03 = 0,98.",
+      "k = 0,98 / 0,03 = 32,67 ≈ 32,7 N/m."
+    ],
+    "solution": ["k ≈ 32,7 N/m"],
+    "mistakes": ["No convertir centímetros a metros o gramos a kilogramos."],
+    "quiz": {
+      "question": "Si se cuelga una masa de 200 g en el mismo muelle, ¿cuánto se alargará?",
+      "options": ["1,5 cm", "6,0 cm", "3,0 cm"],
+      "correct": 1,
+      "feedback": "Como la fuerza se duplica, la deformación también (Hooke): 6,0 cm."
+    },
+    "dcl": { "type": "horizontal", "labels": { "up": "F_elástica", "down": "P = mg" } }
   },
   {
     "id": 19,
     "tag": "Fuerzas elásticas",
     "title": "Masas colgantes en muelle",
-    "source": "Ejercicio 19 del dossier.",
-    "statement": "Un muelle se alarga 1,00 cm con objeto A (1,50 kg). a) ¿k? b) Si un objeto B lo alarga 3,00 cm, ¿cuál es su masa?",
-    "givens": ["Δx_A = 0,01 m", "m_A = 1,50 kg", "Δx_B = 0,03 m"],
-    "objective": "Cálculo de k y uso inverso para hallar masa.",
-    "checklist": ["Paso 1: Usar A para sacar K.", "Paso 2: Usar k para sacar m_B."],
-    "strategy": "La constante k es propiedad del muelle. Una vez hallada en el caso A, es la misma para el caso B.",
-    "hints": [{"title": "Regla de tres oculta", "body": "Como la ley de Hooke es lineal, si se estira el triple (1cm a 3cm), la masa debe ser el triple."}],
-    "formulas": ["$k = \\frac{P_A}{\\Delta x_A}$", "$m_B = \\frac{k \\cdot \\Delta x_B}{g}$"],
-    "solution": ["a) k = 1470 N/m", "b) m = 4,50 kg"],
-    "mistakes": ["Confundir fuerza elástica con masa (olvidar la g)."],
-    "quiz": {"question": "¿Se cumple si lo estiramos 10 metros?", "options": ["Sí, Hooke siempre funciona", "No, saldríamos del límite elástico"], "correct": 1, "feedback": "La ley de Hooke solo es válida pequeñas deformaciones (límite elástico)."},
-    "dcl": {"type": "horizontal", "labels": {"up": "Fe", "down": "P"}}
+    "source": "Ejercicio 19 del dossier",
+    "statement": "Un muelle se alarga 1,00 cm con un objeto A de 1,50 kg. a) ¿Constante elástica? b) Si otro objeto B lo alarga 3,00 cm, ¿cuál es su masa?",
+    "givens": ["Δx_A = 1,00 cm = 0,01 m", "m_A = 1,50 kg", "Δx_B = 3,00 cm = 0,03 m"],
+    "objective": "Determinar k a partir de un estiramiento conocido y luego usarla para hallar una masa desconocida.",
+    "checklist": ["Calcula k con los datos de A.", "Usa esa k para B: mg = k·Δx_B."],
+    "strategy": "Primero, con los datos de A, se obtiene k = (m_A g) / Δx_A. Luego, para B, m_B = (k Δx_B) / g.",
+    "formulas": ["$k = \\dfrac{m_A g}{\\Delta x_A}$", "$m_B = \\dfrac{k \\Delta x_B}{g}$"],
+    "steps": [
+      "Convertimos elongaciones a metros: 0,01 m y 0,03 m.",
+      "Peso de A: P_A = 1,5 · 9,8 = 14,7 N.",
+      "Constante: k = 14,7 / 0,01 = 1470 N/m (1,47×10³ N/m).",
+      "Fuerza elástica con el estiramiento B: F_B = k Δx_B = 1470 · 0,03 = 44,1 N.",
+      "Masa de B: m_B = 44,1 / 9,8 = 4,5 kg."
+    ],
+    "solution": ["a) k = 1,47×10³ N/m", "b) m = 4,50 kg"],
+    "mistakes": ["Olvidar que la fuerza elástica iguala al peso en equilibrio.", "No usar unidades del SI."],
+    "quiz": {
+      "question": "Si el muelle se deforma 3 cm, ¿qué relación hay entre la masa de B y la de A?",
+      "options": ["Es el doble", "Es el triple", "Es la misma"],
+      "correct": 1,
+      "feedback": "La deformación es directamente proporcional a la masa (Δx ∝ m). Al triplicarse Δx, la masa de B es el triple que la de A."
+    },
+    "dcl": { "type": "horizontal", "labels": { "up": "F_e", "down": "mg" } }
   },
   {
     "id": 20,
     "tag": "Fuerzas elásticas",
     "title": "Suspensión de un coche",
-    "source": "Ejercicio 20 del dossier.",
-    "statement": "Coche 1,5 t soportado por 4 muelles iguales. Deformación máxima 10 cm. Marge de seguridad +20%. ¿Constante de cada muelle?",
-    "givens": ["M = 1500 kg", "4 muelles", "x = 0,10 m", "Margen = 20%"],
-    "objective": "Distribución de cargas estáticas en paralelo y factores de seguridad.",
-    "checklist": ["El peso se reparte entre 4.", "Añadir un 20% al valor de K final."],
-    "strategy": "Dividimos el peso total del vehículo entre 4 para saber cuánta fuerza soporta un muelle. Calculamos la constante necesaria y le añadimos un 20%.",
-    "hints": [{"title": "Carga por muelle", "body": "P_muelle = (1500 * 9.8) / 4"}],
-    "formulas": ["$k_{base} = \\frac{P / 4}{x}$", "$k_{segura} = k_{base} \\cdot 1,20$"],
-    "solution": ["k = 4,4 × 10⁴ N/m"],
-    "mistakes": ["Aplicar el peso de 1.5t a un solo muelle.", "Restar el 20% en lugar de sumarlo."],
-    "quiz": {"question": "¿Qué pasaría sin el margen de seguridad si se suben 5 personas?", "options": ["Nada", "La suspensión haría tope (>10cm)"], "correct": 1, "feedback": "El margen del 20% absorbe el peso extra de pasajeros, equipaje o baches dinámicos sin hacer tope."},
-    "dcl": {"type": "horizontal", "labels": {"up": "Fe", "down": "P"}}
+    "source": "Ejercicio 20 del dossier",
+    "statement": "Un coche de 1,5 toneladas tiene 4 muelles iguales. La deformación máxima prevista es de 10 cm y se aplica un margen de seguridad del 20%. ¿Cuál debe ser la constante elástica de cada muelle?",
+    "givens": ["Masa total = 1500 kg", "4 muelles", "Δx_máx = 10 cm = 0,10 m", "Margen de seguridad = 20%"],
+    "objective": "Aplicar la ley de Hooke en un sistema con reparto de carga y factor de seguridad.",
+    "checklist": ["El peso total se reparte entre los 4 muelles.", "La fuerza en cada muelle es P/4.", "Calcula k para que con esa fuerza la deformación sea 0,10 m.", "Incrementa k en un 20% para el margen de seguridad."],
+    "strategy": "Calcular la fuerza que soporta un muelle (mg/4). Luego, k_base = F / Δx. Finalmente, k_final = k_base × 1,20.",
+    "formulas": ["$F_{muelle} = \\dfrac{mg}{4}$", "$k_{base} = \\dfrac{F}{\\Delta x}$", "$k_{seg} = k_{base} \\cdot 1,20$"],
+    "steps": [
+      "Peso total: P = 1500 · 9,8 = 14700 N.",
+      "Fuerza por muelle: F = 14700 / 4 = 3675 N.",
+      "Constante base para que con esa fuerza se deforme 10 cm: k_base = 3675 / 0,10 = 36750 N/m.",
+      "Aplicamos el margen de seguridad del 20%: k_seg = 36750 × 1,20 = 44100 N/m.",
+      "Expresado en notación científica: 4,41×10⁴ N/m."
+    ],
+    "solution": ["k = 4,4×10⁴ N/m"],
+    "mistakes": ["Aplicar todo el peso a un solo muelle.", "Dividir el peso entre 4 pero olvidar multiplicar por g.", "Restar el 20% en lugar de sumarlo."],
+    "quiz": {
+      "question": "¿Qué ocurriría sin el margen de seguridad si el coche se sobrecarga?",
+      "options": ["Los muelles se deformarían más del límite previsto", "No pasaría nada", "El coche se elevaría"],
+      "correct": 0,
+      "feedback": "Sin el margen, cualquier carga adicional (más pasajeros, baches) podría hacer que la suspensión supere el límite de 10 cm y dañarse."
+    },
+    "dcl": { "type": "horizontal", "labels": { "up": "F_e (un muelle)", "down": "F (3675 N)" } }
   },
   {
     "id": 21,
@@ -323,13 +656,23 @@
     "statement": "Bloque 7,0 kg en plano 60° sujeto por muelle que se alarga 16,4 cm. ¿Constante elástica?",
     "givens": ["m = 7,0 kg", "α = 60°", "x = 0,164 m"],
     "objective": "Equilibrar componente de peso con fuerza restauradora de un muelle.",
-    "checklist": ["En equilibrio, Fe iguala a Px."],
+    "checklist": ["En equilibrio, Fe iguala a Px.", "Px = mg·sen(60°)."],
     "strategy": "Al estar quieto, la componente del peso que empuja bloque abajo (Px) está sostenida íntegramente por el muelle (k·x).",
     "hints": [{"title": "Equilibrio", "body": "k·x = m·g·sen(60)"}],
     "formulas": ["$k = \\frac{m \\cdot g \\cdot \\sin(60^\\circ)}{x}$"],
+    "steps": [
+      "Calculamos la fuerza gravitatoria paralela al plano: P∥ = m·g·sen(60) = 7 · 9,8 · 0,866 = 59,4 N.",
+      "Planteamos el equilibrio estático: Fe = P∥  →  k · 0,164 = 59,4.",
+      "Despejamos la constante: k = 59,4 / 0,164 ≈ 362 N/m (3,6 × 10² N/m)."
+    ],
     "solution": ["k = 360 N/m (3,6 × 10² N/m)"],
     "mistakes": ["Usar el peso total en lugar de la componente Px."],
-    "quiz": {"question": "¿La normal afecta al muelle?", "options": ["Sí", "No"], "correct": 1, "feedback": "La Normal es perpendicular al plano, no interviene en el eje paralelo donde actúa el muelle."},
+    "quiz": {
+      "question": "¿La normal afecta al cálculo de k?",
+      "options": ["Sí, porque influye en la fricción", "No, porque es perpendicular al eje del muelle"],
+      "correct": 1,
+      "feedback": "La normal es perpendicular al plano, no interviene en el equilibrio de fuerzas paralelo al plano donde actúa el muelle."
+    },
     "dcl": {"type": "inclined", "angle": "60°", "labels": {"perp_up": "N", "parallel_down": "P∥", "parallel_up": "Fe", "down": "P"}}
   },
   {
@@ -340,13 +683,24 @@
     "statement": "En un balancín, un niño de 20 kg está a 1,20 m del eje. a) ¿Dónde debe sentarse su hermana de 30 kg para equilibrarlo? b) Si se cambian de asiento, ¿qué fuerza debe hacer la madre y dónde para reequilibrar?",
     "givens": ["m1 = 20 kg", "d1 = 1,20 m", "m2 = 30 kg"],
     "objective": "Aplicar el principio de conservación del momento de fuerza (Torque).",
-    "checklist": ["El sumatorio de momentos respecto al eje debe ser cero: M1 = M2."],
+    "checklist": ["La suma de momentos respecto al eje debe ser cero: M1 = M2."],
     "strategy": "Para que no haya rotación, el torque que genera el niño debe ser igual al de la niña. En la segunda parte, la diferencia de torques debe ser compensada por una fuerza externa.",
     "hints": [{"title": "Torque", "body": "Momento = Fuerza × distancia al eje. M = (m·g)·d."}],
     "formulas": ["$M_1 = M_2$", "$(m_1 \\cdot g) \\cdot d_1 = (m_2 \\cdot g) \\cdot d_2$"],
+    "steps": [
+      "Planteamos la igualdad de momentos: (20 · 9,8) · 1,20 = (30 · 9,8) · d2.",
+      "La gravedad se cancela. Despejamos la distancia de la niña: d2 = (20 · 1,20) / 30 = 0,8 m.",
+      "Si intercambian asientos: M_niña = 30·9,8·1,20 = 352,8 Nm. M_niño = 20·9,8·0,8 = 156,8 Nm.",
+      "Desequilibrio = 352,8 - 156,8 = 196 Nm. Para compensar en el lado del niño (0,8m): F = 196 / 0,8 = 245 N hacia abajo (o 163 N hacia arriba en el lado de la niña)."
+    ],
     "solution": ["a) A 0,8 m del eje.", "b) 245 N hacia abajo en el lado del niño (o 163 N hacia arriba en el de la niña)."],
     "mistakes": ["Igualar las masas en lugar de los momentos."],
-    "quiz": {"question": "Si ambos se alejan 0.5m extra del centro, ¿se mantiene el equilibrio?", "options": ["Sí", "No"], "correct": 1, "feedback": "El momento es M = F*d. Al sumar 0.5m a ambos, el incremento de momento es mayor en el niño más pesado (30*0.5 > 20*0.5), rompiendo el equilibrio."},
+    "quiz": {
+      "question": "Si ambos se alejan 0,5 m extra del centro, ¿se mantiene el equilibrio?",
+      "options": ["Sí", "No"],
+      "correct": 1,
+      "feedback": "El momento es M = F·d. Al añadir 0,5 m a cada uno, el incremento de momento es mayor para la niña (30·0,5 > 20·0,5), rompiendo el equilibrio."
+    },
     "dcl": {"type": "horizontal", "labels": {"up": "N_eje", "down": "P1 + P2"}}
   },
   {
@@ -358,12 +712,22 @@
     "givens": ["m = 7,5 kg", "Ángulo 1 = 120°", "Ángulo 2 = 90°"],
     "objective": "Descomponer vectores de tensión en equilibrio estático.",
     "checklist": ["El peso es soportado por la componente vertical (Y) de ambos cables.", "Ángulo con la vertical = Mitad del ángulo total."],
-    "strategy": "Al ser simétrico, las tensiones horizontales se anulan. Las dos componentes verticales de la tensión ($T_y$) suman el peso total.",
+    "strategy": "Al ser simétrico, las tensiones horizontales se anulan. Las dos componentes verticales de la tensión (Ty) suman el peso total.",
     "hints": [{"title": "Trigonometría", "body": "Si el ángulo entre ellos es 120°, el ángulo de cada cable con la vertical es 60°. Usa Ty = T·cos(60)."}],
     "formulas": ["$2 \\cdot T_y = P$", "$2 \\cdot T \\cdot \\cos(\\alpha/2) = m \\cdot g$"],
+    "steps": [
+      "Calculamos el peso: P = 7,5 · 9,8 = 73,5 N.",
+      "Para 120° (60° c/u con vertical): 2 · T · cos(60°) = 73,5 → 2 · T · 0,5 = 73,5 → T = 73,5 N.",
+      "Para 90° (45° c/u con vertical): 2 · T · cos(45°) = 73,5 → 1,414 · T = 73,5 → T = 52 N."
+    ],
     "solution": ["T (120°) = 73 N", "T (90°) = 52 N"],
     "mistakes": ["Usar el seno en lugar del coseno al referenciar el ángulo vertical.", "No multiplicar por 2 cables."],
-    "quiz": {"question": "¿Si el ángulo fuera 180° (cable totalmente horizontal)?", "options": ["T = P", "T = 0", "T = Infinito"], "correct": 2, "feedback": "El cos(90°) es 0. Necesitarías una tensión infinita para evitar que un cable horizontal ceda mínimamente ante un peso."},
+    "quiz": {
+      "question": "¿Si el ángulo fuera 180° (cable totalmente horizontal)?",
+      "options": ["T = P", "T = 0", "T = Infinito"],
+      "correct": 2,
+      "feedback": "El cos(90°) es 0. Necesitarías una tensión infinita para evitar que un cable horizontal ceda mínimamente ante un peso."
+    },
     "dcl": {"type": "horizontal", "labels": {"up": "Ty1 + Ty2", "down": "P = 73.5 N"}}
   },
   {
@@ -378,10 +742,21 @@
     "strategy": "En una curva plana, la única fuerza que puede empujar al coche hacia el centro (fuerza centrípeta) es el rozamiento de los neumáticos contra el asfalto.",
     "hints": [{"title": "Concepto", "body": "La fuerza centrípeta no es una 'fuerza nueva', es el papel que juega el rozamiento en este contexto."}],
     "formulas": ["$F_c = m \\cdot \\frac{v^2}{R}$"],
+    "steps": [
+      "Convertimos la velocidad al SI: v = 90 / 3,6 = 25 m/s.",
+      "Calculamos la fuerza centrípeta requerida: Fc = 1500 · (25² / 60).",
+      "Fc = 1500 · (625 / 60) = 15625 N = 1,56 × 10⁴ N.",
+      "El vector apunta en dirección perpendicular al movimiento, hacia el centro del radio de giro."
+    ],
     "solution": ["F = 1,56 × 10⁴ N", "Dirección: Radial", "Sentido: Hacia el centro de la curva"],
     "mistakes": ["Olvidar la conversión de velocidad, usando 90 en la fórmula."],
-    "quiz": {"question": "¿Qué ocurre si la velocidad aumenta al doble?", "options": ["Fuerza doble", "Fuerza x4", "Fuerza mitad"], "correct": 1, "feedback": "La velocidad está al cuadrado en la fórmula. Al doble de velocidad, requieres 4 veces más fricción para no derrapar."},
-    "dcl": {"type": "horizontal", "labels": {"up": "N", "down": "P", "left": "Fr = Fc"}}
+    "quiz": {
+      "question": "¿Qué ocurre si la velocidad aumenta al doble?",
+      "options": ["Fuerza doble", "Fuerza x4", "Fuerza mitad"],
+      "correct": 1,
+      "feedback": "La velocidad está al cuadrado en la fórmula. Al doble de velocidad, requieres 4 veces más fricción para no derrapar."
+    },
+    "dcl": {"type": "mcu", "labels": {"left": "Fr = Fc", "up": "v"}}
   },
   {
     "id": 25,
@@ -395,10 +770,21 @@
     "strategy": "Al no haber rozamiento, la componente horizontal de la Normal (Nx) proporciona la fuerza centrípeta, y la vertical (Ny) compensa el peso.",
     "hints": [{"title": "Fórmula de peralte ideal", "body": "Al dividir Nx/Ny queda: tan(α) = v² / (R·g)."}],
     "formulas": ["$N \\cdot \\sin(\\alpha) = m \\cdot \\frac{v^2}{R}$", "$N \\cdot \\cos(\\alpha) = m \\cdot g$", "$\\tan(\\alpha) = \\frac{v^2}{R \\cdot g}$"],
+    "steps": [
+      "Extraemos el radio y pasamos la velocidad: R = 20 m, v = 40 / 3,6 = 11,11 m/s.",
+      "Planteamos la ecuación deducida para peraltes sin fricción: tan(α) = v² / (R·g).",
+      "Sustituimos: tan(α) = 11,11² / (20 · 9,8) = 123,45 / 196 = 0,63.",
+      "Calculamos el arcotangente: α = arctan(0,63) ≈ 32°."
+    ],
     "solution": ["Ángulo = 32°"],
     "mistakes": ["Usar la descomposición de plano inclinado (Px = mgsenα) en lugar de la descomposición de la Normal en ejes cartesianos estándar."],
-    "quiz": {"question": "¿Influye la masa del ciclista en el peralte necesario?", "options": ["Sí", "No"], "correct": 1, "feedback": "La masa se cancela al dividir Nx entre Ny. El peralte depende solo de la velocidad y el radio de la curva."},
-    "dcl": {"type": "horizontal", "labels": {"up": "Ny", "down": "P", "left": "Nx (Centrípeta)"}}
+    "quiz": {
+      "question": "¿Influye la masa del ciclista en el peralte necesario?",
+      "options": ["Sí", "No"],
+      "correct": 1,
+      "feedback": "La masa se cancela al dividir Nx entre Ny. El peralte depende solo de la velocidad y el radio de la curva."
+    },
+    "dcl": {"type": "mcu", "labels": {"left": "Nx (Centrípeta)", "up": "v"}}
   },
   {
     "id": 26,
@@ -412,16 +798,27 @@
     "strategy": "Aplicar la segunda Ley de Newton en el eje radial. La tensión tira hacia el centro (+) y el peso hacia fuera (-).",
     "hints": [{"title": "Fuerza Neta", "body": "F_neta = T - P = Fc."}],
     "formulas": ["$T - P = m \\cdot \\frac{v^2}{R}$"],
+    "steps": [
+      "Calculamos el peso del cuerpo: P = 2,0 · 9,8 = 19,6 N.",
+      "Planteamos la ecuación radial en el punto bajo: T - P = m · (v² / R).",
+      "Sustituimos y despejamos: 100 - 19,6 = 2,0 · (v² / 1,0) → 80,4 = 2·v².",
+      "v = √(80,4 / 2) = √40,2 = 6,34 m/s (6,3 m/s con cifras significativas)."
+    ],
     "solution": ["v = 6,3 m/s"],
     "mistakes": ["Igualar Tensión directamente a la Fuerza Centrípeta olvidando el peso."],
-    "quiz": {"question": "¿En el punto más alto, la tensión será mayor o menor?", "options": ["Mayor", "Menor", "Igual"], "correct": 1, "feedback": "En el punto alto, el peso también tira hacia el centro, por lo que 'ayuda' a dar la curva y la cuerda tiene que soportar menos tensión (T + P = Fc)."},
+    "quiz": {
+      "question": "¿En el punto más alto, la tensión será mayor o menor?",
+      "options": ["Mayor", "Menor", "Igual"],
+      "correct": 1,
+      "feedback": "En el punto alto, el peso también tira hacia el centro, por lo que 'ayuda' a dar la curva y la cuerda tiene que soportar menos tensión (T + P = Fc)."
+    },
     "dcl": {"type": "horizontal", "labels": {"up": "T = 100 N", "down": "P = 19.6 N"}}
   },
   {
     "id": 27,
     "tag": "Órbitas",
     "title": "Órbita Terrestre",
-    "source": "Ejercicio 27 del dossier[cite: 2]",
+    "source": "Ejercicio 27 del dossier.",
     "statement": "La Tierra orbita el Sol en 1 año. Calcula la fuerza centrípeta.",
     "givens": ["MT = 5,98e24 kg", "R = 1,496e11 m", "T = 1 año"],
     "objective": "Cálculo de fuerzas en MCU.",
@@ -429,8 +826,21 @@
     "strategy": "Relacionar la velocidad angular con la fuerza gravitatoria.",
     "hints": [{"title": "Conversión de T", "body": "$T = 365,25 \\cdot 24 \\cdot 3600$"}],
     "formulas": ["$F_c = m \\cdot \\omega^2 \\cdot R$", "$\\omega = \\frac{2\\pi}{T}$"],
+    "steps": [
+      "Convertimos el periodo a segundos: $T = 365 \\cdot 24 \\cdot 3600 = 31.536.000$ s.",
+      "Calculamos la velocidad angular: $\\omega = 2\\pi / T = 6,28 / 31.536.000 = 1,99 \\cdot 10^{-7}$ rad/s.",
+      "Aplicamos la fórmula de la fuerza centrípeta: $F_c = M_T \\cdot \\omega^2 \\cdot R$",
+      "Sustituimos: $F_c = 5,98 \\cdot 10^{24} \\cdot (1,99 \\cdot 10^{-7})^2 \\cdot 1,496 \\cdot 10^{11}$",
+      "Resultado final: $F = 3,54 \\cdot 10^{22}$ N."
+    ],
     "solution": ["$F = 3,54 \\cdot 10^{22}$ N"],
     "mistakes": ["Usar días en lugar de segundos."],
+    "quiz": {
+      "question": "¿Qué proporciona realmente la fuerza centrípeta a la Tierra?",
+      "options": ["La gravedad del Sol", "La rotación terrestre", "La inercia"],
+      "correct": 0,
+      "feedback": "Es la fuerza de atracción gravitatoria del Sol la que actúa como fuerza centrípeta."
+    },
     "dcl": {"type": "orbit", "labels": {"left": "Fg", "up": "v"}}
   },
   {
@@ -445,9 +855,19 @@
     "strategy": "Calculamos la cantidad de movimiento antes y después del impacto. La diferencia entre ambas es, por el Teorema del Impulso, el impulso mecánico recibido.",
     "hints": [{"title": "Concepto de Impulso", "body": "I = F·t = Δp. No hace falta calcular la fuerza si ya tienes las velocidades."}],
     "formulas": ["$p = m \\cdot v$", "$I = \\Delta p = p_f - p_o$"],
+    "steps": [
+      "Momento inicial (reposo): p₀ = 1 · 0 = 0.",
+      "Momento final: p_f = 1 · 5 = 5 kg·m/s.",
+      "Cálculo del Impulso: I = p_f - p₀ = 5 - 0 = 5 N·s."
+    ],
     "solution": ["p_inicial = 0", "p_final = 5 kg·m/s", "I = 5 N·s"],
     "mistakes": ["Intentar aplicar F=ma de forma compleja sin necesidad."],
-    "quiz": {"question": "¿Qué fuerza media aplicó el futbolista?", "options": ["5 N", "10 N", "2.5 N"], "correct": 1, "feedback": "Como I = F·t -> 5 = F · 0,5 -> F = 10 N."},
+    "quiz": {
+      "question": "¿Qué fuerza media aplicó el futbolista?",
+      "options": ["5 N", "10 N", "2.5 N"],
+      "correct": 1,
+      "feedback": "Como I = F·t → 5 = F · 0,5 → F = 10 N."
+    },
     "dcl": {"type": "horizontal", "labels": {"up": "N", "down": "P", "right": "F_impacto"}}
   },
   {
@@ -462,9 +882,19 @@
     "strategy": "Hallamos la variación de la cantidad de movimiento (Δp). Sabiendo el tiempo que duró la transferencia de ese momento, despejamos la Fuerza media.",
     "hints": [{"title": "2ª Ley de Newton generalizada", "body": "F = Δp / Δt es la forma original en la que Newton escribió su ley."}],
     "formulas": ["$\\Delta p = m \\cdot \\Delta v$", "$F_{media} = \\frac{\\Delta p}{\\Delta t}$"],
+    "steps": [
+      "Pasamos masa a kg (0,1 kg) y velocidad a m/s (200 / 3,6 = 55,55 m/s).",
+      "Calculamos el cambio de momento: Δp = 0,1 · 55,55 = 5,55 kg·m/s.",
+      "Aplicamos el teorema del impulso para aislar la fuerza: F = Δp / t = 5,55 / 0,15 = 37 N."
+    ],
     "solution": ["F = 37 N"],
     "mistakes": ["Olvidar pasar los 200 km/h a m/s, obteniendo un valor brutalmente alto."],
-    "quiz": {"question": "¿Si el impacto hubiera durado la mitad de tiempo (0.075s)?", "options": ["Misma fuerza", "Fuerza doble", "Fuerza mitad"], "correct": 1, "feedback": "Al ser inversamente proporcional al tiempo (F=Δp/t), un impacto más corto requiere más fuerza para lograr el mismo cambio de velocidad."},
+    "quiz": {
+      "question": "¿Si el impacto hubiera durado la mitad de tiempo (0.075s)?",
+      "options": ["Misma fuerza", "Fuerza doble", "Fuerza mitad"],
+      "correct": 1,
+      "feedback": "Al ser inversamente proporcional al tiempo (F=Δp/t), un impacto más corto requiere más fuerza para lograr el mismo cambio de velocidad."
+    },
     "dcl": {"type": "horizontal", "labels": {"up": "N", "down": "P", "right": "F_media_raqueta"}}
   },
   {
@@ -479,9 +909,19 @@
     "strategy": "Dado que hay cambio de sentido, el cambio de velocidad (y momento) no es una resta simple, sino una suma de magnitudes. La pared debe frenar la bola y luego acelerarla en sentido contrario.",
     "hints": [{"title": "El signo es crítico", "body": "Δv = vf - vi = (-12) - (16) = -28 m/s."}],
     "formulas": ["$\\Delta p = m \\cdot (v_f - v_o)$", "$F = \\frac{\\Delta p}{\\Delta t}$"],
+    "steps": [
+      "Convertimos masa: m = 0,075 kg. Definimos llegada (+) y rebote (-).",
+      "Variación de momento: Δp = 0,075 · (-12 - 16) = 0,075 · (-28) = -2,1 kg·m/s (módulo 2,1).",
+      "Cálculo de la fuerza media: F = -2,1 / 0,030 = -70 N. El signo indica que empuja hacia fuera de la pared."
+    ],
     "solution": ["Δp = 2,1 kg·m/s (módulo)", "F = 70 N"],
     "mistakes": ["Restar los módulos directamente (16 - 12 = 4), ignorando el carácter vectorial del movimiento."],
-    "quiz": {"question": "¿En qué caso la pared hace más fuerza?", "options": ["Rebote perfecto (v=-16)", "Cae pegada (v=0)"], "correct": 0, "feedback": "El rebote perfecto duplica el cambio de momento (Δv = 32), requiriendo el doble de impulso y fuerza de la pared."},
+    "quiz": {
+      "question": "¿En qué caso la pared hace más fuerza?",
+      "options": ["Rebote perfecto (v=-16)", "Cae pegada (v=0)"],
+      "correct": 0,
+      "feedback": "El rebote perfecto duplica el cambio de momento (Δv = 32), requiriendo el doble de impulso y fuerza de la pared."
+    },
     "dcl": {"type": "horizontal", "labels": {"up": "N", "down": "P", "left": "F_pared = 70 N"}}
   },
   {
@@ -490,15 +930,25 @@
     "title": "Retroceso en el espacio",
     "source": "Ejercicio 31 del dossier.",
     "statement": "Astronauta de 100 kg (total) lanza objeto de 0,80 kg a 1,2 m/s. ¿A qué distancia de la cápsula estará en una hora?",
-    "givens": ["m_total = 100 kg (asume m_ast = 100 kg por cálculo)", "m_obj = 0,80 kg", "v_obj = 1,2 m/s", "t = 3600 s"],
+    "givens": ["m_total = 100 kg (asume m_ast = 100 kg)", "m_obj = 0,80 kg", "v_obj = 1,2 m/s", "t = 3600 s"],
     "objective": "Aplicar el principio de Conservación del Momento Lineal en sistemas aislados.",
     "checklist": ["El momento inicial del sistema (Astronauta + Objeto) es cero.", "El tiempo debe estar en segundos."],
     "strategy": "Al no haber fuerzas externas, p_inicial = p_final = 0. Al lanzar la herramienta hacia un lado, el astronauta gana una velocidad de retroceso (MRU) para equilibrar el sistema.",
     "hints": [{"title": "Ecuación", "body": "0 = m_ast · v_ast + m_obj · v_obj"}],
     "formulas": ["$\\sum p_{inicial} = \\sum p_{final}$", "$x = v \\cdot t$"],
+    "steps": [
+      "Conservación del momento: 0 = m_ast · v_ast + m_obj · v_obj.",
+      "Despejamos v_ast: 0 = 100 · v_ast + 0,80 · 1,2 → v_ast = -0,96 / 100 = -0,0096 m/s.",
+      "Cálculo de distancia (MRU sin fricción en el espacio): x = v · t = 0,0096 · 3600 = 34,56 m (aprox 35 m)."
+    ],
     "solution": ["x = 35 m"],
     "mistakes": ["No multiplicar por 3600 para calcular la distancia a la hora.", "Asumir que se frena solo."],
-    "quiz": {"question": "¿Si el astronauta tuviera más masa?", "options": ["Se alejaría más rápido", "Se alejaría más lento"], "correct": 1, "feedback": "Su inercia sería mayor, por lo que la misma acción de lanzar el objeto le imprimiría una velocidad de retroceso menor."},
+    "quiz": {
+      "question": "¿Si el astronauta tuviera más masa?",
+      "options": ["Se alejaría más rápido", "Se alejaría más lento"],
+      "correct": 1,
+      "feedback": "Su inercia sería mayor, por lo que la misma acción de lanzar el objeto le imprimiría una velocidad de retroceso menor."
+    },
     "dcl": {"type": "collision", "labels": {"left": "v_a (retroceso)", "right": "v_obj (lanzamiento)"}}
   },
   {
@@ -513,32 +963,53 @@
     "strategy": "Por Acción y Reacción, ambas sufren una fuerza de 40N en sentidos opuestos. Calculamos la aceleración de cada una por separado (a = F/m) y luego su velocidad final (v = a·t).",
     "hints": [{"title": "Acción/Reacción", "body": "F_madre = 40N, F_hija = -40N."}],
     "formulas": ["$F_{AB} = -F_{BA}$", "$a = \\frac{F}{m}$", "$v = a \\cdot t$"],
+    "steps": [
+      "Dinámica Madre: a = 40 / 60 = 0,667 m/s². v = 0,667 · 0,50 = 0,33 m/s.",
+      "Dinámica Hija (3ª Ley de Newton): Sufre F = -40 N. a = -40 / 45 = -0,889 m/s².",
+      "Cinemática Hija: v = -0,889 · 0,50 = -0,44 m/s."
+    ],
     "solution": ["Madre: a = 0,67 m/s², v = 0,33 m/s", "Hija: a = -0,89 m/s², v = -0,44 m/s"],
-    "mistakes": ["Aplicar los 40N solo a la madre.", "Asumir que tienen la misma aceleraci��n a pesar de tener masas distintas."],
-    "quiz": {"question": "¿Se conserva el momento lineal total del sistema?", "options": ["Sí, la suma sigue siendo cero", "No, porque ambas se mueven"], "correct": 0, "feedback": "Comprobación: p_m = 60*0.33 = 19.8. p_h = 45*(-0.44) = -19.8. La suma es 0. El sistema está aislado."},
+    "mistakes": ["Aplicar los 40N solo a la madre.", "Asumir que tienen la misma aceleración a pesar de tener masas distintas."],
+    "quiz": {
+      "question": "¿Se conserva el momento lineal total del sistema?",
+      "options": ["Sí, la suma sigue siendo cero", "No, porque ambas se mueven"],
+      "correct": 0,
+      "feedback": "Comprobación: p_m = 60·0,33 = 19,8; p_h = 45·(-0,44) = -19,8. La suma es 0."
+    },
     "dcl": {"type": "collision", "labels": {"left": "F_reacción = 40N", "right": "F_empuje = 40N"}}
   },
   {
     "id": 33,
     "tag": "Momento Lineal",
     "title": "Choque de bolas",
-    "source": "Ejercicio 33 del dossier[cite: 2]",
+    "source": "Ejercicio 33 del dossier.",
     "statement": "Bolas de 30 y 75 g chocan frontalmente. Tras el choque, la de 30 g rebota a 12,1 m/s. Halla v2f.",
-    "givens": ["m1 = 0,03 kg", "v1i = 5 m/s", "m2 = 0,075 kg", "v2i = -7 m/s"],
-    "objective": "Conservación de p.",
-    "checklist": ["Signos vectoriales.", "Rebote implica v negativa."],
-    "strategy": "Igualar momento inicial y final.",
+    "givens": ["m1 = 0,03 kg", "v1i = 5 m/s", "m2 = 0,075 kg", "v2i = -7 m/s", "v1f = -12,1 m/s"],
+    "objective": "Conservación del momento lineal en choque frontal.",
+    "checklist": ["Signos vectoriales.", "Rebote implica velocidad negativa."],
+    "strategy": "Igualar momento inicial y final. La bola 1 rebota (velocidad final negativa).",
     "hints": [{"title": "Vectores", "body": "Ojo con los signos de las velocidades."}],
     "formulas": ["$m_1 v_1 + m_2 v_2 = m_1 v_1' + m_2 v_2'$"],
+    "steps": [
+      "Calcular p total inicial: 0,03·5 + 0,075·(-7) = 0,15 - 0,525 = -0,375 kg·m/s.",
+      "Plantear p final: 0,03·(-12,1) + 0,075·v2' = -0,363 + 0,075·v2'.",
+      "Igualar: -0,363 + 0,075·v2' = -0,375 → 0,075·v2' = -0,012 → v2' = -0,16 m/s."
+    ],
     "solution": ["v2f = -0,16 m/s"],
     "mistakes": ["Sumar módulos en lugar de vectores."],
+    "quiz": {
+      "question": "¿Se conserva la energía cinética en este choque?",
+      "options": ["Sí, es elástico", "No, es inelástico", "No se puede saber"],
+      "correct": 0,
+      "feedback": "Sería necesario calcular las energías cinéticas antes y después para verificarlo."
+    },
     "dcl": {"type": "collisionMomentum", "labels": {"beforeLeft": "p1", "beforeRight": "p2", "afterLeft": "p1'", "afterRight": "p2'"}}
   },
   {
     "id": 34,
     "tag": "Momento Lineal",
     "title": "Péndulo balístico (Choque perfectamente inelástico)",
-    "source": "Ejercicio 34 del dossier[cite: 2].",
+    "source": "Ejercicio 34 del dossier.",
     "statement": "Una bala de 17 g se incrusta en un blanco de 1500 g y se mueven juntos a 0,64 m/s. Calcula la velocidad inicial de la bala.",
     "givens": ["mb = 0,017 kg", "m_blanco = 1,500 kg", "vf = 0,64 m/s"],
     "objective": "Resolver colisiones perfectamente inelásticas.",
@@ -546,16 +1017,27 @@
     "strategy": "El momento de la bala antes del impacto es igual al momento del conjunto bloque+bala después del impacto.",
     "hints": [{"title": "Momento conjunto", "body": "p_final = (masa_bala + masa_blanco) × v_final"}],
     "formulas": ["$m_b \\cdot v_b = (m_b + m_{blanco}) \\cdot v_f$"],
+    "steps": [
+      "Masa total tras impacto: M = 1,500 + 0,017 = 1,517 kg.",
+      "Momento final del sistema: p_f = 1,517 · 0,64 = 0,97088 kg·m/s.",
+      "Igualamos al momento inicial (solo la bala se movía): 0,017 · v_b = 0,97088.",
+      "Despejamos la velocidad de la bala: v_b = 0,97088 / 0,017 ≈ 57,11 m/s."
+    ],
     "solution": ["v = 57 m/s"],
     "mistakes": ["No sumar la masa de la bala a la masa final del conjunto."],
-    "quiz": {"question": "¿Se conserva la energía cinética en este choque?", "options": ["Sí", "No"], "correct": 1, "feedback": "Al incrustarse hay deformación y fricción extrema, gran parte de la energía se pierde como calor. Solo se conserva el momento lineal."},
+    "quiz": {
+      "question": "¿Se conserva la energía cinética en este choque?",
+      "options": ["Sí", "No"],
+      "correct": 1,
+      "feedback": "Al incrustarse hay deformación y fricción extrema, gran parte de la energía se pierde como calor."
+    },
     "dcl": {"type": "collisionMomentum", "labels": {"beforeLeft": "p_bala", "afterRight": "p_conjunto"}}
   },
   {
     "id": 35,
     "tag": "Momento Lineal (2D)",
     "title": "Explosión de una roca en 2D",
-    "source": "Ejercicio 35 del dossier[cite: 2].",
+    "source": "Ejercicio 35 del dossier.",
     "statement": "Una roca estalla en 3 trozos. El trozo 1 (1,0 kg) sale a 12 m/s y el 2 (2,0 kg) a 8 m/s, en ángulo recto. El tercero sale a 40 m/s. ¿Masa de la roca?",
     "givens": ["p_inicial = 0", "m1 = 1,0 kg, v1 = 12 m/s (Eje X)", "m2 = 2,0 kg, v2 = 8 m/s (Eje Y)", "v3 = 40 m/s"],
     "objective": "Conservación del momento lineal usando vectores bidimensionales.",
@@ -563,16 +1045,28 @@
     "strategy": "Para que el momento total siga siendo cero, el tercer trozo debe cancelar exactamente el vector resultante de la suma de los otros dos trozos.",
     "hints": [{"title": "Vectores", "body": "Calcula el momento 1 (eje X) y el momento 2 (eje Y). Aplica Pitágoras para hallar el momento resultante que el tercer trozo debe anular."}],
     "formulas": ["$p_1 = m_1v_1$", "$p_2 = m_2v_2$", "$p_3 = \\sqrt{p_1^2 + p_2^2}$"],
+    "steps": [
+      "Momento en eje X (Trozo 1): p1 = 1,0 · 12 = 12 kg·m/s.",
+      "Momento en eje Y (Trozo 2): p2 = 2,0 · 8 = 16 kg·m/s.",
+      "Módulo del momento que deben cancelar: p12 = √(12² + 16²) = √(144 + 256) = √400 = 20 kg·m/s.",
+      "El trozo 3 debe tener p = 20. Como p3 = m3 · v3 → 20 = m3 · 40 → m3 = 0,5 kg.",
+      "Masa total de la roca = 1,0 + 2,0 + 0,5 = 3,5 kg."
+    ],
     "solution": ["m = 3,5 kg"],
     "mistakes": ["Sumar las velocidades directamente en lugar de usar los momentos lineales (m·v)."],
-    "quiz": {"question": "¿Si el ángulo entre el trozo 1 y 2 fuera 180° (opuestos)?", "options": ["Pitágoras", "Resta directa"], "correct": 1, "feedback": "Si estuvieran en el mismo eje pero opuestos, el vector resultante sería la simple resta, no la hipotenusa."},
+    "quiz": {
+      "question": "¿Si el ángulo entre el trozo 1 y 2 fuera 180° (opuestos)?",
+      "options": ["Pitágoras", "Resta directa"],
+      "correct": 1,
+      "feedback": "Si estuvieran en el mismo eje pero opuestos, el vector resultante sería la simple resta, no la hipotenusa."
+    },
     "dcl": {"type": "collision", "labels": {"left": "p2", "right": "p1"}}
   },
   {
     "id": 36,
     "tag": "Gravitación Universal",
     "title": "Atracción entre dos camiones",
-    "source": "Ejercicio 36 del dossier[cite: 2].",
+    "source": "Ejercicio 36 del dossier.",
     "statement": "Fuerza de atracción entre dos camiones de 30 t y 24 t aparcados a 4,0 m. ¿Es mayor que el peso de un filete de 0,12 kg?",
     "givens": ["m1 = 30000 kg", "m2 = 24000 kg", "d = 4,0 m", "m_filete = 0,12 kg", "G = 6,67e-11"],
     "objective": "Entender la magnitud de la fuerza gravitatoria en masas cotidianas.",
@@ -580,16 +1074,27 @@
     "strategy": "Usar la Ley de Gravitación Universal y comparar el resultado en Newtons con P = mg del filete.",
     "hints": [{"title": "Distancia al cuadrado", "body": "No olvides hacer el r² en el denominador de la fórmula de Newton."}],
     "formulas": ["$F = G \\frac{m_1 m_2}{r^2}$", "$P = m \\cdot g$"],
+    "steps": [
+      "Convertimos unidades: m1 = 30.000 kg, m2 = 24.000 kg.",
+      "Aplicamos gravitación: F = 6,67×10⁻¹¹ · (30000 · 24000) / 4,0².",
+      "F = 6,67×10⁻¹¹ · (720.000.000) / 16 = 3,0 × 10⁻³ N.",
+      "Peso del filete = 0,12 · 9,8 = 1,176 N. La gravedad entre camiones es unas 400 veces menor."
+    ],
     "solution": ["F = 3,0 × 10⁻³ N. Es mucho menor que el peso del filete."],
     "mistakes": ["Dejar las masas en toneladas."],
-    "quiz": {"question": "¿Por qué no se atraen los camiones hasta chocar?", "options": ["Fricción de neumáticos", "La gravedad solo aplica a planetas"], "correct": 0, "feedback": "La fuerza es minúscula (0.003 N). La fricción estática de un camión de 30 toneladas es gigantescamente superior a esa fuerza."},
+    "quiz": {
+      "question": "¿Por qué no se atraen los camiones hasta chocar?",
+      "options": ["Fricción de neumáticos", "La gravedad solo aplica a planetas"],
+      "correct": 0,
+      "feedback": "La fuerza es minúscula (0.003 N). La fricción estática de un camión de 30 toneladas es gigantescamente superior a esa fuerza."
+    },
     "dcl": {"type": "horizontal", "labels": {"left": "F_grav", "right": "F_grav"}}
   },
   {
     "id": 37,
     "tag": "Gravitación Universal",
     "title": "Atracción Tierra-Humano",
-    "source": "Ejercicio 37 del dossier[cite: 2].",
+    "source": "Ejercicio 37 del dossier.",
     "statement": "Persona de 60 kg en la Tierra. a) ¿Con qué fuerza te atrae la Tierra? ¿Y tú a ella? b) Aceleración que te comunica. ¿Y a la Tierra?",
     "givens": ["m = 60 kg", "MT = 6,0 × 10²⁴ kg", "RT = 6370 km"],
     "objective": "Demostrar que la Ley de Gravitación obedece a Acción-Reacción.",
@@ -597,16 +1102,26 @@
     "strategy": "Calculamos tu peso. Por la 3ª Ley de Newton, atraes a la Tierra con la misma fuerza. Usamos F=ma para ver la aceleración ridícula de la Tierra.",
     "hints": [{"title": "Atajo matemático", "body": "F = G(Mm/R²) es exactamente igual a F = m·g en la superficie terrestre."}],
     "formulas": ["$F = m \\cdot g$", "$a_T = \\frac{F}{M_T}$"],
+    "steps": [
+      "Cálculo de la fuerza (Peso): F = m·g = 60 · 9,8 = 588 N (5,9×10² N). Esta fuerza es recíproca.",
+      "Tu aceleración: a = F / m = 588 / 60 = 9,8 m/s².",
+      "Aceleración de la Tierra: a_T = F / MT = 588 / (6,0 × 10²⁴) = 9,8 × 10⁻²³ m/s²."
+    ],
     "solution": ["a) F = 5,9 × 10² N mutuamente.", "b) Tú a = 9,8 m/s². Tierra a = 9,8 × 10⁻²³ m/s²."],
     "mistakes": ["Creer que la Tierra tira con más fuerza porque es más grande."],
-    "quiz": {"question": "¿Si saltas, mueves la Tierra?", "options": ["Sí, imperceptiblemente", "No, masa infinita"], "correct": 0, "feedback": "Sí la mueves, pero la aceleración de 10^-23 m/s² es indetectable e irrelevante frente al ruido térmico del núcleo y otros cuerpos celestes."},
+    "quiz": {
+      "question": "¿Si saltas, mueves la Tierra?",
+      "options": ["Sí, imperceptiblemente", "No, masa infinita"],
+      "correct": 0,
+      "feedback": "Sí la mueves, pero la aceleración de 10⁻²³ m/s² es indetectable e irrelevante frente al ruido térmico del núcleo y otros cuerpos celestes."
+    },
     "dcl": {"type": "horizontal", "labels": {"left": "F_humano", "right": "F_Tierra"}}
   },
   {
     "id": 38,
     "tag": "Gravitación Universal",
     "title": "Gravedad en órbita lejana",
-    "source": "Ejercicio 38 del dossier[cite: 2].",
+    "source": "Ejercicio 38 del dossier.",
     "statement": "Fuerza de atracción de astronauta de 120 kg a 20.000 km de la superficie terrestre. Valor de g a esa altura.",
     "givens": ["m = 120 kg", "h = 20.000 km", "MT = 5,98 × 10²⁴ kg", "RT = 6380 km"],
     "objective": "Calcular la aceleración de la gravedad dependiente de la altura.",
@@ -614,16 +1129,27 @@
     "strategy": "Calculamos el nuevo radio (desde el centro). Aplicamos la fórmula de gravedad orbital para sacar 'g', y multiplicamos por la masa para obtener la fuerza.",
     "hints": [{"title": "Radio de órbita", "body": "r = RT + h = 6380 + 20000 = 26380 km. Pásalo a metros."}],
     "formulas": ["$r = R_T + h$", "$g = G \\frac{M_T}{r^2}$", "$F = m \\cdot g$"],
+    "steps": [
+      "Distancia al centro de la Tierra: r = 6380 + 20000 = 26.380 km = 2,638 × 10⁷ m.",
+      "Calculamos la aceleración local: g = 6,67×10⁻¹¹ · 5,98×10²⁴ / (2,638×10⁷)².",
+      "g = 3,988×10¹⁴ / 6,959×10¹⁴ = 0,573 m/s².",
+      "Calculamos la fuerza de atracción: F = m · g = 120 · 0,573 = 68,76 N (aprox 68,8 N)."
+    ],
     "solution": ["F = 68,8 N", "g = 0,573 m/s²"],
     "mistakes": ["Usar solo la altura (20.000 km) en el denominador en lugar de sumar el radio de la Tierra."],
-    "quiz": {"question": "¿En la ISS (400 km de altura), hay gravedad cero?", "options": ["Sí, gravedad 0", "No, están en caída libre constante"], "correct": 1, "feedback": "La gravedad allí es de casi 9 m/s². Flotan porque orbitan a 28.000 km/h, cayendo constantemente hacia la Tierra pero fallando el suelo por la curvatura."},
+    "quiz": {
+      "question": "¿En la ISS (400 km de altura), hay gravedad cero?",
+      "options": ["Sí, gravedad 0", "No, están en caída libre constante"],
+      "correct": 1,
+      "feedback": "La gravedad allí es de casi 9 m/s². Flotan porque orbitan a 28.000 km/h, cayendo constantemente hacia la Tierra pero fallando el suelo por la curvatura."
+    },
     "dcl": {"type": "horizontal", "labels": {"left": "F_gravedad"}}
   },
   {
     "id": 39,
     "tag": "Gravitación Universal",
     "title": "Masa vs Peso (Tierra y Luna)",
-    "source": "Ejercicio 39 del dossier[cite: 2].",
+    "source": "Ejercicio 39 del dossier.",
     "statement": "Masa y peso de un cuerpo de 40,0 kg en la Tierra y en la Luna.",
     "givens": ["m = 40,0 kg", "MT = 5,98e24 kg", "RT = 6380 km", "ML = 7,35e22 kg", "RL = 1740 km"],
     "objective": "Diferenciar masa (propiedad intrínseca) de peso (fuerza dependiente del campo).",
@@ -631,16 +1157,27 @@
     "strategy": "El peso en la Tierra es trivial. Para la Luna, usamos la Ley de Gravitación para calcular su gravedad superficial y luego multiplicamos por la masa.",
     "hints": [{"title": "Gravedad Lunar", "body": "g_luna = G(ML/RL²). ¡Recuerda pasar el radio a metros!"}],
     "formulas": ["$g_L = G \\frac{M_L}{R_L^2}$", "$P = m \\cdot g$"],
+    "steps": [
+      "La masa es invariable: 40,0 kg en ambos astros.",
+      "Peso en la Tierra: P_T = 40,0 · 9,8 = 392 N.",
+      "Gravedad Lunar: g_L = 6,67×10⁻¹¹ · 7,35×10²² / (1,74×10⁶)² = 1,619 m/s².",
+      "Peso en la Luna: P_L = 40,0 · 1,619 = 64,76 N (aprox 64,8 N)."
+    ],
     "solution": ["Masa = 40,0 kg en ambas", "P_Tierra = 392 N", "P_Luna = 64,8 N"],
     "mistakes": ["Dividir la masa entre 6 por costumbre en lugar de calcularlo."],
-    "quiz": {"question": "¿Si lo medimos con una balanza de dos platillos en la Luna?", "options": ["Marca 40kg", "Marca menos"], "correct": 0, "feedback": "La balanza de platillos compara masas. Como la gravedad lunar afecta por igual a ambos lados, marcaría 40kg perfectos."},
+    "quiz": {
+      "question": "¿Si lo medimos con una balanza de dos platillos en la Luna?",
+      "options": ["Marca 40 kg", "Marca menos"],
+      "correct": 0,
+      "feedback": "La balanza de platillos compara masas. Como la gravedad lunar afecta por igual a ambos lados, marcaría 40 kg perfectos."
+    },
     "dcl": {"type": "horizontal", "labels": {"down": "P_luna vs P_tierra"}}
   },
   {
     "id": 40,
     "tag": "Gravitación Universal",
     "title": "Densidad de un exoplaneta",
-    "source": "Ejercicio 40 del dossier[cite: 2].",
+    "source": "Ejercicio 40 del dossier.",
     "statement": "Planeta esférico: Radio = 3000 km, gravedad = 6,00 m/s². Densidad media?",
     "givens": ["R = 3000 km = 3,0 × 10⁶ m", "g = 6,00 m/s²", "G = 6,67e-11"],
     "objective": "Despejar la masa a partir de la gravedad, y aplicar la fórmula de densidad volumétrica.",
@@ -648,16 +1185,26 @@
     "strategy": "Usamos la expresión del campo gravitatorio g = GM/R² para hallar la masa del planeta. Luego calculamos el volumen asumiéndolo esférico, y dividimos masa entre volumen.",
     "hints": [{"title": "Paso 1: Masa", "body": "M = (g · R²) / G"}],
     "formulas": ["$M = \\frac{g \\cdot R^2}{G}$", "$V = \\frac{4}{3}\\pi R^3$", "$\\rho = \\frac{M}{V}$"],
+    "steps": [
+      "Despejamos la masa: M = (6,00 · (3,0×10⁶)²) / 6,67×10⁻¹¹ = 5,4×10¹³ / 6,67×10⁻¹¹ = 8,096 × 10²³ kg.",
+      "Calculamos el volumen esférico: V = (4/3) · π · (3,0×10⁶)³ = 1,131 × 10²⁰ m³.",
+      "Calculamos la densidad: ρ = M / V = 8,096×10²³ / 1,131×10²⁰ = 7158 kg/m³ (7,16 × 10³ kg/m³)."
+    ],
     "solution": ["ρ = 7,16 × 10³ kg/m³"],
     "mistakes": ["Usar el radio en km para el volumen.", "Confundir área de esfera (4πR²) con volumen."],
-    "quiz": {"question": "¿De qué estará hecho este planeta?", "options": ["Gases (ej. Júpiter)", "Roca y metales"], "correct": 1, "feedback": "Su densidad (7160 kg/m³) es superior a la de la Tierra (5500 kg/m³), lo que indica un altísimo contenido en hierro o metales pesados."},
+    "quiz": {
+      "question": "¿De qué estará hecho este planeta?",
+      "options": ["Gases (ej. Júpiter)", "Roca y metales"],
+      "correct": 1,
+      "feedback": "Su densidad (7160 kg/m³) es superior a la de la Tierra (5500 kg/m³), lo que indica un altísimo contenido en hierro o metales pesados."
+    },
     "dcl": {"type": "horizontal", "labels": {"down": "g = 6.0 m/s²"}}
   },
   {
     "id": 41,
     "tag": "Órbitas",
     "title": "Velocidad y periodo de satélite terrestre",
-    "source": "Ejercicio 41 del dossier[cite: 2].",
+    "source": "Ejercicio 41 del dossier.",
     "statement": "Satélite en órbita a 500 km. Calcula a) velocidad, b) periodo de revolución.",
     "givens": ["h = 500 km", "RT = 6400 km", "MT = 6,0 × 10²⁴ kg"],
     "objective": "Aplicar las ecuaciones de orbitales igualando F_grav a F_centrípeta.",
@@ -665,16 +1212,27 @@
     "strategy": "Para que la órbita sea estable, la atracción gravitatoria actúa como fuerza centrípeta (GMm/r² = mv²/r). Despejando 'v', obtenemos la velocidad. Luego, mediante cinemática (MCU), T = 2πr/v.",
     "hints": [{"title": "Fórmula V orbital", "body": "v = √(GM / r)"}],
     "formulas": ["$r = R_T + h$", "$v = \\sqrt{\\frac{G \\cdot M_T}{r}}$", "$T = \\frac{2\\pi r}{v}$"],
+    "steps": [
+      "Radio orbital: r = 6400 + 500 = 6900 km = 6,9 × 10⁶ m.",
+      "Cálculo velocidad: v = √( (6,67×10⁻¹¹ · 6,0×10²⁴) / (6,9×10⁶) ).",
+      "v = √( 4,002×10¹⁴ / 6,9×10⁶ ) = √58.000.000 = 7615 m/s (7,6 × 10³ m/s).",
+      "Cálculo del Periodo: T = 2π·r / v = 2π · (6,9×10⁶) / 7615 = 5692 s (5,7 × 10³ s)."
+    ],
     "solution": ["v = 7,6 × 10³ m/s", "T = 5,7 × 10³ s"],
     "mistakes": ["No sumar el radio de la Tierra a la altura."],
-    "quiz": {"question": "¿Si el satélite fuera 10 veces más masivo?", "options": ["Iría más lento", "La velocidad no cambiaría", "Caería"], "correct": 1, "feedback": "La masa del satélite 'm' se cancela en la ecuación (GMm/r² = mv²/r). La velocidad orbital depende solo del planeta y la altura."},
+    "quiz": {
+      "question": "¿Si el satélite fuera 10 veces más masivo?",
+      "options": ["Iría más lento", "La velocidad no cambiaría", "Caería"],
+      "correct": 1,
+      "feedback": "La masa del satélite 'm' se cancela en la ecuación (GMm/r² = mv²/r). La velocidad orbital depende solo del planeta y la altura."
+    },
     "dcl": {"type": "orbit", "labels": {"left": "F_c (Gravedad)", "up": "v_orbital"}}
   },
   {
     "id": 42,
     "tag": "Gravitación Universal",
     "title": "Masa de Marte y órbita de Fobos",
-    "source": "Ejercicio 42 del dossier[cite: 2].",
+    "source": "Ejercicio 42 del dossier.",
     "statement": "El satélite Deimos tarda 29,5 h en orbitar Marte a un radio de 2,30 × 10⁴ km. Calcula la masa de Marte y el radio orbital de su otro satélite, Fobos (periodo 7,5 h).",
     "givens": ["T_D = 29,5 h", "R_D = 2,30 × 10⁷ m", "T_F = 7,5 h", "G = 6,67e-11 N·m²/kg²"],
     "objective": "Deducir masa planetaria y aplicar la Tercera Ley de Kepler.",
@@ -682,16 +1240,27 @@
     "strategy": "A partir de la igualdad entre Fuerza Gravitatoria y Centrípeta, despejamos la masa del planeta central. Para Fobos, usamos la Tercera Ley de Kepler (T²/R³ = cte) relacionándolo con Deimos.",
     "hints": [{"title": "Tercera Ley de Kepler", "body": "T_F² / R_F³ = T_D² / R_D³. Despeja R_F."}],
     "formulas": ["$M = \\frac{4\\pi^2 R^3}{G T^2}$", "$\\frac{T_1^2}{R_1^3} = \\frac{T_2^2}{R_2^3}$"],
+    "steps": [
+      "Convertimos Deimos: T_D = 29,5 · 3600 = 106.200 s. R_D = 2,30 × 10⁷ m.",
+      "Masa de Marte: M = (4π² · (2,30×10⁷)³) / (6,67×10⁻¹¹ · 106200²) = 6,38 × 10²³ kg.",
+      "Aplicamos Kepler para Fobos: R_F = R_D · ∛(T_F / T_D)².",
+      "R_F = 2,30×10⁷ · ∛(7,5 / 29,5)² = 9,38 × 10⁶ m."
+    ],
     "solution": ["M_Marte = 6,38 × 10²³ kg", "R_Fobos = 9,38 × 10⁶ m"],
     "mistakes": ["Olvidar elevar el radio al cubo o el periodo al cuadrado en Kepler.", "No trabajar en el Sistema Internacional."],
-    "quiz": {"question": "¿Depende el periodo de la órbita de la masa del satélite?", "options": ["Sí", "No"], "correct": 1, "feedback": "La masa del satélite se cancela en las ecuaciones. Solo depende de la masa del planeta central y el radio."},
+    "quiz": {
+      "question": "¿Depende el periodo de la órbita de la masa del satélite?",
+      "options": ["Sí", "No"],
+      "correct": 1,
+      "feedback": "La masa del satélite se cancela en las ecuaciones. Solo depende de la masa del planeta central y el radio."
+    },
     "dcl": {"type": "orbit", "labels": {"left": "F_c (Gravedad)", "up": "v_orbital"}}
   },
   {
     "id": 43,
     "tag": "Órbitas",
     "title": "Variaciones en parámetros orbitales",
-    "source": "Ejercicio 43 del dossier[cite: 2].",
+    "source": "Ejercicio 43 del dossier.",
     "statement": "¿A qué distancia de la Tierra debe orbitar un satélite para que su periodo se duplique? ¿Y para que su velocidad orbital sea el doble? (Radio inicial = R).",
     "givens": ["Radio inicial = R", "Caso 1: T_nuevo = 2T", "Caso 2: v_nuevo = 2v"],
     "objective": "Comprender la proporcionalidad en las ecuaciones orbitales de Newton y Kepler.",
@@ -699,16 +1268,26 @@
     "strategy": "Planteamos las ecuaciones en función de R y analizamos los factores de escala. Si T se multiplica por 2, R se multiplica por 2^(2/3).",
     "hints": [{"title": "Velocidad orbital", "body": "v = √(GM/R). La velocidad es inversamente proporcional a la raíz del radio."}],
     "formulas": ["$R_{nuevo} = R \\cdot \\sqrt[3]{(T_{nuevo}/T)^2}$", "$v \\propto \\frac{1}{\\sqrt{R}}$"],
+    "steps": [
+      "Caso 1 (Doble periodo): Según Kepler R³ ∝ T². R_nuevo = R · ∛(2T/T)² = R · ∛4 = 1,587 R.",
+      "Caso 2 (Doble velocidad): Sabemos que v ∝ 1/√R. Por tanto, R ∝ 1/v².",
+      "R_nuevo = R · (v / 2v)² = R · (1/2)² = 0,25 R."
+    ],
     "solution": ["Radio para doble periodo = 1,587 R", "Radio para doble velocidad = 0,25 R"],
     "mistakes": ["Asumir relaciones lineales (ej. doble radio = doble periodo)."],
-    "quiz": {"question": "¿Para ir más rápido en órbita, debes subir o bajar?", "options": ["Subir (aumentar R)", "Bajar (disminuir R)"], "correct": 1, "feedback": "Como v = √(GM/R), un radio menor implica una velocidad orbital mayor."},
+    "quiz": {
+      "question": "¿Para ir más rápido en órbita, debes subir o bajar?",
+      "options": ["Subir (aumentar R)", "Bajar (disminuir R)"],
+      "correct": 1,
+      "feedback": "Como v = √(GM/R), un radio menor implica una velocidad orbital mayor."
+    },
     "dcl": {"type": "orbit", "labels": {"left": "F_c (Gravedad)", "up": "v_orbital"}}
   },
   {
     "id": 44,
     "tag": "Gravitación Universal",
     "title": "Masa del satélite vs masa de la Tierra",
-    "source": "Ejercicio 44 del dossier[cite: 2].",
+    "source": "Ejercicio 44 del dossier.",
     "statement": "Supongamos que sabes el periodo y el radio de la órbita de un satélite que gira alrededor de la Tierra. Con esta información y con la ayuda de las leyes de Newton, ¿puedes calcular la masa del satélite? ¿Podrías calcular la masa de la Tierra?",
     "givens": ["T y R orbitales conocidos", "Leyes de Newton y gravitación universal"],
     "objective": "Comprender que la masa del satélite se cancela en la ecuación orbital y que la masa del planeta central sí es determinable.",
@@ -716,16 +1295,27 @@
     "strategy": "De la ecuación GMm/r² = m·v²/r, la masa m del satélite se cancela. Podemos despejar la masa M de la Tierra en función de r y T.",
     "hints": [{"title": "Cancelación", "body": "La m del satélite aparece en ambos lados de la ecuación y se elimina."}],
     "formulas": ["$G \\frac{M m}{r^2} = m \\frac{v^2}{r}$", "$M = \\frac{4\\pi^2 r^3}{G T^2}$"],
+    "steps": [
+      "Planteamos la igualdad: G·M·m / r² = m·v² / r.",
+      "Cancelamos m (la masa del satélite).",
+      "Sustituimos v = 2πr/T.",
+      "Despejamos M: M = 4π² r³ / (G T²)."
+    ],
     "solution": ["No se puede hallar la masa del satélite (se cancela).", "Sí se puede hallar la masa de la Tierra con M = 4π²r³/(GT²)."],
     "mistakes": ["Pensar que se necesita la masa del satélite para calcular la órbita."],
-    "quiz": {"question": "¿Por qué se cancela la masa del satélite?", "options": ["Porque es muy pequeña", "Porque aparece multiplicando en ambos miembros de la igualdad"], "correct": 1, "feedback": "La inercia del satélite (m) y la fuerza gravitatoria (que también contiene m) son directamente proporcionales, por eso se anula."},
+    "quiz": {
+      "question": "¿Por qué se cancela la masa del satélite?",
+      "options": ["Porque es muy pequeña", "Porque aparece multiplicando en ambos miembros de la igualdad"],
+      "correct": 1,
+      "feedback": "La inercia del satélite (m) y la fuerza gravitatoria (que también contiene m) son directamente proporcionales, por eso se anula."
+    },
     "dcl": {"type": "orbit", "labels": {"left": "F_grav", "up": "v"}}
   },
   {
     "id": 45,
     "tag": "Aplicación Dinámica",
     "title": "Tensión máxima en grúa",
-    "source": "Ejercicio 45 del dossier[cite: 2].",
+    "source": "Ejercicio 45 del dossier.",
     "statement": "Una grúa eleva un peso de 20 kN con un cable cuya resistencia a la ruptura es 30 kN. ¿Cuál es la máxima aceleración con la que puede subir el peso?",
     "givens": ["Peso = 20 kN = 20.000 N", "T_max = 30 kN = 30.000 N", "g = 9,8 m/s²"],
     "objective": "Calcular la aceleración límite antes de fallo estructural por exceso de tensión.",
@@ -733,16 +1323,26 @@
     "strategy": "Aislamos la masa elevando. La fuerza que tira hacia arriba es la tensión máxima del cable; hacia abajo, el peso. La diferencia entre ambas es la fuerza neta que acelera la masa.",
     "hints": [{"title": "Masa de la carga", "body": "Masa = Peso / Gravedad = 20000 / 9.8."}],
     "formulas": ["$m = \\frac{P}{g}$", "$T_{max} - P = m \\cdot a_{max}$"],
+    "steps": [
+      "Calculamos la masa de la carga: m = 20.000 / 9,8 = 2040,8 kg.",
+      "Planteamos la 2ª Ley de Newton al límite de ruptura: T_max - P = m · a_max.",
+      "Despejamos la aceleración: a_max = (30.000 - 20.000) / 2040,8 = 4,90 m/s²."
+    ],
     "solution": ["a = 4,90 m/s²"],
     "mistakes": ["Usar 20 y 30 directamente sin convertirlos a Newtons, o confundir el peso de 20kN con masa."],
-    "quiz": {"question": "¿Qué ocurre si la grúa desciende acelerando a 5 m/s²?", "options": ["Se rompe el cable", "La tensión disminuye, no se rompe"], "correct": 1, "feedback": "Al descender (a < 0 respecto al movimiento de elevación), T = m(g - a). La tensión requerida es mucho menor que el peso estático."},
+    "quiz": {
+      "question": "¿Qué ocurre si la grúa desciende acelerando a 5 m/s²?",
+      "options": ["Se rompe el cable", "La tensión disminuye, no se rompe"],
+      "correct": 1,
+      "feedback": "Al descender (a < 0 respecto al movimiento de elevación), T = m(g - a). La tensión requerida es mucho menor que el peso estático."
+    },
     "dcl": {"type": "horizontal", "labels": {"up": "T_max = 30 kN", "down": "P = 20 kN"}}
   },
   {
     "id": 46,
     "tag": "Estática",
     "title": "Arrastre de barca con cuerdas",
-    "source": "Ejercicio 46 del dossier[cite: 2].",
+    "source": "Ejercicio 46 del dossier.",
     "statement": "Una barca es arrastrada por dos cuerdas (250 N y 320 N). La primera forma 60° con el canal. ¿Qué ángulo debe formar la segunda para que la barca se mueva paralela al canal? ¿Qué fuerza total la arrastra?",
     "givens": ["F1 = 250 N", "F2 = 320 N", "α1 = 60°"],
     "objective": "Descomposición vectorial en 2D para anular componentes transversales.",
@@ -750,16 +1350,27 @@
     "strategy": "Para que no se desvíe, la fuerza que tira hacia una orilla debe igualar a la que tira hacia la otra (F1y = F2y). Una vez obtenido el ángulo, sumamos las proyecciones Fx.",
     "hints": [{"title": "Ecuación transversal", "body": "F1·sen(60) = F2·sen(α2)."}],
     "formulas": ["$F_1 \\sin(\\alpha_1) = F_2 \\sin(\\alpha_2)$", "$F_{total} = F_1 \\cos(\\alpha_1) + F_2 \\cos(\\alpha_2)$"],
+    "steps": [
+      "Igualamos componentes perpendiculares: 250 · sen(60°) = 320 · sen(α2).",
+      "216,5 = 320 · sen(α2) → sen(α2) = 0,676 → α2 = arcsen(0,676) = 42,6°.",
+      "Sumamos las componentes paralelas al canal: F_x = 250 · cos(60°) + 320 · cos(42,6°).",
+      "F_x = 125 + 235,5 = 360,5 N (aprox 360 N)."
+    ],
     "solution": ["Ángulo = 42,6°", "Fuerza total = 360 N"],
     "mistakes": ["Sumar 250N y 320N directamente como magnitudes escalares."],
-    "quiz": {"question": "¿Es la fuerza resultante mayor o menor que si estuvieran en el mismo ángulo?", "options": ["Mayor", "Menor"], "correct": 1, "feedback": "Al formar ángulo, parte de la fuerza se desperdicia 'peleando' entre las dos orillas. Si ambas tiraran a 0°, la fuerza total sería 570 N."},
+    "quiz": {
+      "question": "¿Es la fuerza resultante mayor o menor que si estuvieran en el mismo ángulo?",
+      "options": ["Mayor", "Menor"],
+      "correct": 1,
+      "feedback": "Al formar ángulo, parte de la fuerza se desperdicia 'peleando' entre las dos orillas. Si ambas tiraran a 0°, la fuerza total sería 570 N."
+    },
     "dcl": {"type": "horizontal", "labels": {"up": "F1y = F2y", "right": "F_total (Avance)"}}
   },
   {
     "id": 47,
     "tag": "Cinemática y Dinámica",
     "title": "Fuerzas a partir de trayectorias",
-    "source": "Ejercicio 47 del dossier[cite: 2].",
+    "source": "Ejercicio 47 del dossier.",
     "statement": "Halla la fuerza constante para un cuerpo de 20 kg si: a) a = 1,2 m/s². b) Alcanza 12 m/s en 4,0 s. c) Recorre 450 m en 15 s.",
     "givens": ["m = 20 kg", "a) a = 1,2 m/s²", "b) v = 12 m/s, t = 4 s", "c) x = 450 m, t = 15 s"],
     "objective": "Vincular las ecuaciones del MRUA con la 2ª Ley de Newton.",
@@ -767,16 +1378,26 @@
     "strategy": "La masa es fija. La clave está en deducir la aceleración de cada apartado usando cinemática de MRUA partiendo del reposo, y luego aplicar F = m·a.",
     "hints": [{"title": "MRUA (Espacio)", "body": "En el caso c, usa x = 0.5 · a · t²."}],
     "formulas": ["$a = \\frac{v}{t}$", "$x = \\frac{1}{2}at^2$", "$F = m \\cdot a$"],
+    "steps": [
+      "Caso a: Cálculo directo. F = 20 · 1,2 = 24 N.",
+      "Caso b: a = v/t = 12 / 4 = 3,0 m/s². Dinámica: F = 20 · 3,0 = 60 N.",
+      "Caso c: x = 0,5·a·t² → 450 = 0,5 · a · 15² → 450 = 112,5 · a → a = 4,0 m/s². Dinámica: F = 20 · 4,0 = 80 N."
+    ],
     "solution": ["a) F = 24 N", "b) F = 60 N", "c) F = 80 N"],
     "mistakes": ["Usar velocidad media en lugar de aceleración en el apartado c."],
-    "quiz": {"question": "Si el objeto ya tuviera velocidad inicial, ¿cambiaría la fuerza necesaria?", "options": ["Sí", "No"], "correct": 0, "feedback": "Sí, para alcanzar la misma meta en el mismo tiempo requieres menos aceleración si ya llevas inercia (velocidad previa)."},
+    "quiz": {
+      "question": "Si el objeto ya tuviera velocidad inicial, ¿cambiaría la fuerza necesaria?",
+      "options": ["Sí", "No"],
+      "correct": 0,
+      "feedback": "Sí, para alcanzar la misma meta en el mismo tiempo requieres menos aceleración si ya llevas inercia (velocidad previa)."
+    },
     "dcl": {"type": "horizontal", "labels": {"up": "N", "down": "P", "right": "F_aplicada"}}
   },
   {
     "id": 48,
     "tag": "Ascensores y Sistemas No Inerciales",
     "title": "Cinemática de ascensor",
-    "source": "Ejercicio 48 del dossier[cite: 2].",
+    "source": "Ejercicio 48 del dossier.",
     "statement": "Ascensor de 729 kg sube 25 m. A los 2,0 s llega a 1,0 m/s. Faltando 2,5 m frena con a = 0,20 m/s². Tensión en: a) primer segundo, b) último metro.",
     "givens": ["m = 729 kg", "Arranque: t=2s, v=1 m/s", "Frenada: a_freno = -0,20 m/s²"],
     "objective": "Dividir el movimiento del ascensor en fases de aceleración y frenado para la Tensión.",
@@ -784,16 +1405,27 @@
     "strategy": "Para el primer segundo, hallamos la aceleración de arranque. Para el último metro, usamos la desaceleración dada. Aplicamos T - P = m·a en ambos.",
     "hints": [{"title": "Aceleración de arranque", "body": "a = Δv / Δt = 1.0 / 2.0."}],
     "formulas": ["$a = \\frac{v}{t}$", "$T - m \\cdot g = m \\cdot a$"],
+    "steps": [
+      "Arranque: a = 1,0 / 2,0 = 0,50 m/s².",
+      "Tensión de arranque: T - mg = ma → T = 729(9,8 + 0,50) = 7508 N (aprox 7,5 kN).",
+      "Frenada (último metro): La aceleración es -0,20 m/s² (opuesta al avance).",
+      "Tensión de frenado: T = 729(9,8 - 0,20) = 6998 N (aprox 7,0 kN)."
+    ],
     "solution": ["a) T = 7,5 kN", "b) T = 7,0 kN"],
     "mistakes": ["Poner la aceleración de frenada positiva, lo que daría una tensión mayor que el peso en la fase de parada."],
-    "quiz": {"question": "¿Durante la fase de velocidad constante (en medio del trayecto), cuál es la tensión?", "options": ["7.5 kN", "7.14 kN (Igual al peso)", "7.0 kN"], "correct": 1, "feedback": "A velocidad constante (a=0), la tensión iguala al peso: T = 729 * 9.8 = 7144 N = 7.14 kN."},
+    "quiz": {
+      "question": "¿Durante la fase de velocidad constante (en medio del trayecto), cuál es la tensión?",
+      "options": ["7.5 kN", "7.14 kN (Igual al peso)", "7.0 kN"],
+      "correct": 1,
+      "feedback": "A velocidad constante (a=0), la tensión iguala al peso: T = 729 * 9.8 = 7144 N = 7.14 kN."
+    },
     "dcl": {"type": "horizontal", "labels": {"up": "Tensión cable", "down": "P = 7144 N"}}
   },
   {
     "id": 49,
     "tag": "Sistemas enlazados",
     "title": "Plano inclinado y masa colgante",
-    "source": "Ejercicio 49 del dossier[cite: 2].",
+    "source": "Ejercicio 49 del dossier.",
     "statement": "Masa m1 (2,0 kg) en rampa de 30° atada por polea a m2 (700 g) que cuelga. Sin fricción. a) Sentido y aceleración, b) Tensión.",
     "givens": ["m1 = 2,0 kg", "α = 30°", "m2 = 0,700 kg", "μ = 0"],
     "objective": "Determinar sentido de movimiento comparando fuerzas opuestas y calcular dinámica de poleas.",
@@ -801,9 +1433,21 @@
     "strategy": "Calculamos la fuerza que empuja m1 hacia abajo de la rampa y la que tira de m2 en caída vertical. La mayor decide el sentido. Luego restamos ambas fuerzas y aplicamos Newton al conjunto.",
     "hints": [{"title": "Fuerzas enfrentadas", "body": "P1x = m1·g·sen(30). P2 = m2·g."}],
     "formulas": ["$a = \\frac{|P_{1x} - P_2|}{m_1 + m_2}$"],
+    "steps": [
+      "Calculamos la tracción del plano: P1x = 2,0 · 9,8 · sen(30°) = 9,8 N.",
+      "Calculamos la tracción colgante: P2 = 0,700 · 9,8 = 6,86 N.",
+      "Como 9,8 > 6,86, m1 baja por el plano y m2 sube.",
+      "Aceleración global: a = (9,8 - 6,86) / (2,0 + 0,7) = 2,94 / 2,7 = 1,08 m/s² (aprox 1,1 m/s²).",
+      "Tensión (aislando m2, que sube): T - P2 = m2·a → T = 6,86 + 0,7·(1,08) = 7,6 N."
+    ],
     "solution": ["Sentido: m1 baja por el plano.", "a = 1,1 m/s²", "T = 7,6 N"],
     "mistakes": ["Asumir que m1 arrastra a m2 sin comprobar Px, solo por ser más pesada (m1=2kg vs m2=0.7kg)."],
-    "quiz": {"question": "Si añadimos mucho rozamiento en el plano inclinado, ¿podría moverse hacia m2?", "options": ["Sí", "No"], "correct": 1, "feedback": "El rozamiento siempre se opone al movimiento. Si P1x > P2, el sistema tiende a ir hacia m1. El rozamiento solo podría frenarlo hasta pararlo, nunca invertir el movimiento."},
+    "quiz": {
+      "question": "Si añadimos mucho rozamiento en el plano inclinado, ¿podría moverse hacia m2?",
+      "options": ["Sí", "No"],
+      "correct": 1,
+      "feedback": "El rozamiento siempre se opone al movimiento. Si P1x > P2, el sistema tiende a ir hacia m1. El rozamiento solo podría frenarlo hasta pararlo, nunca invertir el movimiento."
+    },
     "dcl": {
       "type": "inclined_pulley",
       "angle": "30°",
@@ -821,7 +1465,7 @@
     "id": 50,
     "tag": "Sistemas enlazados",
     "title": "Masa plana conectada a rampa con fricción",
-    "source": "Ejercicio 50 del dossier[cite: 2].",
+    "source": "Ejercicio 50 del dossier.",
     "statement": "Masa m1 (2 kg) en horizontal atada a m2 (5 kg) en rampa de 30°. Coeficiente de rozamiento 0,200 para ambas. Calcula a y Tensión.",
     "givens": ["m1 = 2 kg (Plano)", "m2 = 5 kg (Rampa 30°)", "μ = 0,200"],
     "objective": "Integrar rozamientos diferenciados según la topología de apoyo.",
@@ -829,9 +1473,21 @@
     "strategy": "Calculamos la fuerza tractora (Px de m2). Restamos las fricciones (ambas se oponen al arrastre de m2). Dividimos por masa total.",
     "hints": [{"title": "Ecuación global", "body": "P2x - Fr1 - Fr2 = (m1+m2)·a"}],
     "formulas": ["$Fr_1 = \\mu \\cdot m_1 \\cdot g$", "$Fr_2 = \\mu \\cdot m_2 \\cdot g \\cdot \\cos(30^\\circ)$"],
+    "steps": [
+      "Fuerza tractora de la rampa: P2x = 5 · 9,8 · sen(30°) = 24,5 N.",
+      "Fricción m1 (horizontal): Fr1 = 0,200 · 2 · 9,8 = 3,92 N.",
+      "Fricción m2 (rampa): Fr2 = 0,200 · 5 · 9,8 · cos(30°) = 8,49 N.",
+      "Aceleración: a = (24,5 - 3,92 - 8,49) / 7,0 = 12,09 / 7,0 = 1,727 m/s² (aprox 1,73).",
+      "Tensión (aislando m1 horizontal): T - Fr1 = m1·a → T = 3,92 + 2·(1,727) = 7,37 N (aprox 7,38 N)."
+    ],
     "solution": ["a = 1,73 m/s²", "T = 7,38 N"],
     "mistakes": ["Aplicar m·g·cos(30) a la masa horizontal (m1)."],
-    "quiz": {"question": "¿Qué pasaría si invertimos las masas (m2 horizontal, m1 rampa)?", "options": ["Misma aceleración", "No se movería"], "correct": 1, "feedback": "Px tractor pasaría a ser de la masa pequeña (2kg): 9.8N. La fricción total sería mayor a 9.8N, quedando el sistema estático."},
+    "quiz": {
+      "question": "¿Qué pasaría si invertimos las masas (m2 horizontal, m1 rampa)?",
+      "options": ["Misma aceleración", "No se movería"],
+      "correct": 1,
+      "feedback": "Px tractor pasaría a ser de la masa pequeña (2kg): 9.8N. La fricción total sería mayor a 9.8N, quedando el sistema estático."
+    },
     "dcl": {
       "type": "inclined_pulley",
       "angle": "30°",
@@ -850,7 +1506,7 @@
     "id": 51,
     "tag": "Cinemática y Rozamiento",
     "title": "Ascenso y descenso en rampa con fricción",
-    "source": "Ejercicio 51 del dossier[cite: 2].",
+    "source": "Ejercicio 51 del dossier.",
     "statement": "Bloque de 5,0 kg lanzado rampa arriba (37°) a 9,8 m/s. Sube 6,0 m y vuelve a caer. Calcula: a) Fuerza de rozamiento, b) Velocidad al volver a la base.",
     "givens": ["m = 5,0 kg", "α = 37°", "v0_subida = 9,8 m/s", "Δx = 6,0 m", "vf_subida = 0"],
     "objective": "Demostrar la asimetría de la aceleración al subir vs bajar por culpa del rozamiento.",
@@ -858,16 +1514,27 @@
     "strategy": "Usamos la cinemática de subida para hallar la aceleración de frenado. Sabiendo 'a', despejamos Fr en la 2ª Ley de Newton. Con esa Fr, calculamos la aceleración (más lenta) de bajada, y su cinemática final.",
     "hints": [{"title": "Cinemática subida", "body": "a = (0 - v0²) / (2Δx)"}],
     "formulas": ["$v_f^2 - v_o^2 = 2a\\Delta x$", "$-P_x - Fr = m \\cdot a_{subida}$", "$P_x - Fr = m \\cdot a_{bajada}$"],
+    "steps": [
+      "Aceleración de subida: a_sub = (0 - 9,8²) / (2 · 6,0) = -8,0 m/s².",
+      "Newton (subida): -m·g·sen(37°) - Fr = m·a_sub → -5·9,8·sen(37°) - Fr = 5·(-8,0). Despejamos Fr = 10,5 N.",
+      "Aceleración bajada (Px motor, Fr freno): Px - Fr = m·a_baj → 29,5 - 10,5 = 5 · a_baj → a_baj = 3,8 m/s².",
+      "Velocidad de retorno (bajada de 6m partiendo del reposo): v = √(2 · 3,8 · 6,0) = 6,75 m/s (aprox 6,8 m/s)."
+    ],
     "solution": ["a) Fr = 10,5 N", "b) v_retorno = 6,8 m/s"],
     "mistakes": ["Asumir que baja con la misma velocidad con la que se lanzó (eso solo ocurre en sistemas conservativos sin fricción)."],
-    "quiz": {"question": "¿Tarda lo mismo en subir que en bajar?", "options": ["Sí", "No, tarda más en bajar", "No, tarda menos"], "correct": 1, "feedback": "Como al bajar la aceleración es menor (porque el rozamiento frena la gravedad), el tiempo de caída es mayor que el de subida."},
+    "quiz": {
+      "question": "¿Tarda lo mismo en subir que en bajar?",
+      "options": ["Sí", "No, tarda más en bajar", "No, tarda menos"],
+      "correct": 1,
+      "feedback": "Como al bajar la aceleración es menor (porque el rozamiento frena la gravedad), el tiempo de caída es mayor que el de subida."
+    },
     "dcl": {"type": "inclined", "angle": "37°", "labels": {"perp_up": "N", "parallel_down": "P∥", "parallel_up": "Fr (al bajar)"}}
   },
   {
     "id": 52,
     "tag": "Rozamiento",
     "title": "Dos bloques subiendo rampa",
-    "source": "Ejercicio 52 del dossier[cite: 2].",
+    "source": "Ejercicio 52 del dossier.",
     "statement": "m1=4,00 kg y m2=2,00 kg unidos por cuerda suben rampa 30° arrastrados por m2 a velocidad constante. μ=0,300. a) Fuerza F aplicada a m2, b) Tensión.",
     "givens": ["m1 = 4,00 kg", "m2 = 2,00 kg", "α = 30°", "μ = 0,300", "v = constante (a=0)"],
     "objective": "Resolver estática dinámica (a=0) con fuerza externa motriz.",
@@ -875,16 +1542,27 @@
     "strategy": "Al ser velocidad constante, la aceleración es cero y las fuerzas se equilibran. F motriz = Peso paralelo total + Fricción total. Para la tensión, se aísla m1, que solo recibe la tensión hacia arriba.",
     "hints": [{"title": "Equilibrio", "body": "F - Px_tot - Fr_tot = 0"}],
     "formulas": ["$F = (m_1+m_2)g\\sin(30^\\circ) + \\mu(m_1+m_2)g\\cos(30^\\circ)$"],
+    "steps": [
+      "Fuerza en contra de la gravedad (Total): Px = (4+2) · 9,8 · sen(30°) = 29,4 N.",
+      "Fuerza de fricción total: Fr = 0,300 · 6 · 9,8 · cos(30°) = 15,27 N.",
+      "Velocidad constante (F equilibradora): F = Px + Fr = 29,4 + 15,27 = 44,67 N (aprox 44,7 N).",
+      "Aislamos m1 (está detrás, subiendo): T = P1x + Fr1 = 4·9,8·sen(30) + 0,3·4·9,8·cos(30) = 19,6 + 10,18 = 29,78 N (aprox 29,8 N)."
+    ],
     "solution": ["F = 44,7 N", "T = 29,8 N"],
     "mistakes": ["Aplicar m·a cuando el enunciado especifica 'velocidad constante'."],
-    "quiz": {"question": "Si se corta la cuerda, ¿qué le ocurre a m1?", "options": ["Se para instantáneamente", "Frena hasta pararse y baja", "Sube indefinidamente"], "correct": 1, "feedback": "Por inercia seguiría subiendo un poco, pero al no tener fuerza motriz F ni tensión, Px y Fr lo frenarían hasta pararlo, y luego bajaría."},
+    "quiz": {
+      "question": "Si se corta la cuerda, ¿qué le ocurre a m1?",
+      "options": ["Se para instantáneamente", "Frena hasta pararse y baja", "Sube indefinidamente"],
+      "correct": 1,
+      "feedback": "Por inercia seguiría subiendo un poco, pero al no tener fuerza motriz F ni tensión, Px y Fr lo frenarían hasta pararlo, y luego bajaría."
+    },
     "dcl": {"type": "inclined", "angle": "30°", "labels": {"parallel_up": "F", "parallel_down": "P∥ + Fr"}}
   },
   {
     "id": 53,
     "tag": "Cinemática y Rozamiento",
     "title": "Factores de frenado por fricción",
-    "source": "Ejercicio 53 del dossier[cite: 2].",
+    "source": "Ejercicio 53 del dossier.",
     "statement": "Si un cuerpo desliza sobre un plano horizontal con rozamiento, ¿qué factores influyen en el tiempo que tarda en detenerse? a) Velocidad inicial. b) Masa. c) Naturaleza de los materiales.",
     "givens": ["Plano horizontal", "Existe rozamiento (μ)"],
     "objective": "Análisis dimensional y conceptual de las ecuaciones dinámicas.",
@@ -892,16 +1570,27 @@
     "strategy": "La aceleración de frenado viene dada por -μg (la masa se cancela). El tiempo de frenado depende directamente de la velocidad inicial y de la aceleración resultante.",
     "hints": [{"title": "Ecuación de tiempo", "body": "t = v_o / (μ·g)"}],
     "formulas": ["$Fr = \\mu \\cdot m \\cdot g$", "$-Fr = m \\cdot a$", "$v_f = v_o + a \\cdot t$"],
+    "steps": [
+      "Dinámica de frenado: -Fr = m·a → -μ·m·g = m·a.",
+      "Las masas se cancelan: a = -μ·g. La aceleración depende solo de la gravedad y del coeficiente de rozamiento (materiales).",
+      "Cinemática (v_f = 0): 0 = v_o - μ·g·t.",
+      "Despejando el tiempo: t = v_o / (μ·g). Influyen v_o y μ, no la masa."
+    ],
     "solution": ["Influyen la velocidad inicial (a) y los materiales (c). La masa (b) no influye."],
     "mistakes": ["Pensar que un objeto más masivo tarda más en frenar. Tiene más inercia, pero también genera más fricción proporcionalmente."],
-    "quiz": {"question": "Si duplicas la masa del bloque, manteniendo la velocidad inicial, ¿la distancia de frenado cambia?", "options": ["Es la misma", "Es el doble", "Es la mitad"], "correct": 0, "feedback": "Como la aceleración es a = -μg, es independiente de la masa. Frenará en el mismo tiempo y en la misma distancia."},
+    "quiz": {
+      "question": "Si duplicas la masa del bloque, manteniendo la velocidad inicial, ¿la distancia de frenado cambia?",
+      "options": ["Es la misma", "Es el doble", "Es la mitad"],
+      "correct": 0,
+      "feedback": "Como la aceleración es a = -μg, es independiente de la masa. Frenará en el mismo tiempo y en la misma distancia."
+    },
     "dcl": {"type": "horizontal", "labels": {"up": "N", "down": "P", "left": "Fr"}}
   },
   {
     "id": 54,
     "tag": "Dinámica Vectorial",
     "title": "Empuje oblicuo en plano inclinado",
-    "source": "Ejercicio 54 del dossier[cite: 2].",
+    "source": "Ejercicio 54 del dossier.",
     "statement": "Un cuerpo de 12,5 kg asciende por un plano de 30° al aplicarle F = 122 N con un ángulo de 20° respecto al plano. μc = 0,480. Calcula a) Aceleración, b) Tiempo en recorrer 18,2 m.",
     "givens": ["m = 12,5 kg", "α = 30°", "F = 122 N", "β = 20° (ángulo de F)", "μ = 0,480", "x = 18,2 m"],
     "objective": "Descomponer una fuerza externa no paralela a los ejes del plano inclinado.",
@@ -909,27 +1598,33 @@
     "strategy": "Descomponemos F en sus ejes paralelos y perpendiculares al plano. Recalculamos la Normal (N = P_y - F_y) y con ella la nueva fricción. Finalmente, aplicamos la 2ª Ley de Newton en el eje X.",
     "hints": [{"title": "La Normal", "body": "N = mg·cos(30) - F·sen(20). No es solo el peso perpendicular."}],
     "formulas": ["$N = m \\cdot g \\cdot \\cos(\\alpha) - F \\cdot \\sin(\\beta)$", "$F \\cdot \\cos(\\beta) - P_x - Fr = m \\cdot a$"],
+    "steps": [
+      "Componentes de F: Fx = 122·cos(20°) = 114,6 N. Fy = 122·sen(20°) = 41,7 N.",
+      "Componentes del Peso: Px = 12,5·9,8·sen(30°) = 61,25 N. Py = 12,5·9,8·cos(30°) = 106,1 N.",
+      "Normal: N = Py - Fy = 106,1 - 41,7 = 64,4 N. Fricción: Fr = 0,480 · 64,4 = 30,9 N.",
+      "Aceleración: Fx - Px - Fr = m·a → 114,6 - 61,25 - 30,9 = 12,5·a → a = 1,796 m/s² (1,79 m/s²).",
+      "Cinemática (v_o = 0): 18,2 = 0,5 · 1,79 · t² → t = √(36,4 / 1,79) = 4,5 s."
+    ],
     "solution": ["a = 1,79 m/s²", "t = 4,5 s"],
     "mistakes": ["Usar F íntegramente como fuerza paralela.", "Calcular el rozamiento asumiendo N = P_y."],
-    "quiz": {"question": "¿Si el ángulo de la fuerza de 122 N fuera 0° (paralela al plano), la fricción sería mayor o menor?", "options": ["Mayor", "Menor"], "correct": 0, "feedback": "Si tira a 0°, no hay componente que levante el bloque. La Normal será máxima (todo el Py), por lo que la fricción también será máxima."},
+    "quiz": {
+      "question": "¿Si el ángulo de la fuerza de 122 N fuera 0° (paralela al plano), la fricción sería mayor o menor?",
+      "options": ["Mayor", "Menor"],
+      "correct": 0,
+      "feedback": "Si tira a 0°, no hay componente que levante el bloque. La Normal será máxima (todo el Py), por lo que la fricción también será máxima."
+    },
     "dcl": {
       "type": "inclined_external",
       "angle": "30°",
       "externalAngle": 20,
-      "labels": {
-        "perp_up": "N",
-        "parallel_down": "P∥",
-        "parallel_up": "Fr",
-        "down": "P",
-        "external": "F=122 N"
-      }
+      "labels": {"perp_up": "N", "parallel_down": "P∥", "parallel_up": "Fr", "down": "P", "external": "F=122 N"}
     }
   },
   {
     "id": 55,
     "tag": "Estática y Dinámica",
     "title": "Fuerza puramente horizontal en plano inclinado",
-    "source": "Ejercicio 55 del dossier[cite: 2].",
+    "source": "Ejercicio 55 del dossier.",
     "statement": "Se quiere subir un cuerpo de 4,0 kg por un plano de 15° aplicando una fuerza HORIZONTAL mínima. μ = 0,65. Calcula F si: a) Sube a velocidad constante. b) Sube con a = 2,0 m/s².",
     "givens": ["m = 4,0 kg", "α = 15°", "μ = 0,65", "F es paralela al suelo, no al plano"],
     "objective": "Descomponer empujes horizontales contra una rampa.",
@@ -937,27 +1632,33 @@
     "strategy": "Al ser horizontal, Fx = F·cos(15) y Fy = F·sen(15). La Normal es P_y + F_y. Igualamos fuerzas para a=0 y aplicamos F_neta = m·a para el segundo caso.",
     "hints": [{"title": "Normal aplastada", "body": "N = mg·cos(15) + F·sen(15). Este detalle matemático aumenta brutalmente la fricción a mayor empuje."}],
     "formulas": ["$N = m \\cdot g \\cdot \\cos(\\alpha) + F \\cdot \\sin(\\alpha)$", "$F \\cdot \\cos(\\alpha) - P_x - Fr = m \\cdot a$"],
+    "steps": [
+      "Expresión de Fr: Fr = 0,65 · (4·9,8·cos15° + F·sen15°) = 24,6 + 0,168·F.",
+      "Fuerza a favor: Fx = F·cos15° = 0,966·F. Fuerza en contra: Px = 4·9,8·sen15° = 10,14 N.",
+      "Ecuación general: 0,966·F - 10,14 - (24,6 + 0,168·F) = m·a → 0,798·F - 34,74 = m·a.",
+      "Caso a) a=0: 0,798·F = 34,74 → F = 43,5 N (aprox 44 N).",
+      "Caso b) a=2,0: 0,798·F - 34,74 = 4·2,0 = 8,0 → 0,798·F = 42,74 → F = 53,55 N (aprox 54 N)."
+    ],
     "solution": ["a) F = 44 N", "b) F = 54 N"],
     "mistakes": ["Considerar la fuerza F como paralela a la rampa.", "Restar la componente Y de F a la Normal en lugar de sumarla."],
-    "quiz": {"question": "¿Llegará un punto en que empujar más fuerte no sirva de nada?", "options": ["Sí, si el ángulo es muy cerrado", "No, más fuerza siempre ayuda"], "correct": 0, "feedback": "Si la rampa tiene mucho rozamiento y ángulo, empujar horizontalmente aumenta tanto la fricción (por el aplastamiento) que anula el beneficio del empuje. Existe un ángulo de bloqueo."},
+    "quiz": {
+      "question": "¿Llegará un punto en que empujar más fuerte no sirva de nada?",
+      "options": ["Sí, si el ángulo es muy cerrado", "No, más fuerza siempre ayuda"],
+      "correct": 0,
+      "feedback": "Si la rampa tiene mucho rozamiento y ángulo, empujar horizontalmente aumenta tanto la fricción (por el aplastamiento) que anula el beneficio del empuje. Existe un ángulo de bloqueo."
+    },
     "dcl": {
       "type": "inclined_external",
       "angle": "15°",
       "externalAngle": 15,
-      "labels": {
-        "perp_up": "N",
-        "parallel_down": "P∥",
-        "parallel_up": "Fr",
-        "down": "P",
-        "external": "F_horiz"
-      }
+      "labels": {"perp_up": "N", "parallel_down": "P∥", "parallel_up": "Fr", "down": "P", "external": "F_horiz"}
     }
   },
   {
     "id": 56,
     "tag": "Conservación del Momento",
     "title": "Muelle comprimido liberado",
-    "source": "Ejercicio 56 del dossier[cite: 2].",
+    "source": "Ejercicio 56 del dossier.",
     "statement": "Objeto A (1,2 kg) y B en reposo separados por un muelle comprimido por una cuerda. Se quema la cuerda. A se mueve a 2,1 m/s y B a 3,3 m/s en sentido opuesto. ¿Masa de B?",
     "givens": ["mA = 1,2 kg", "vA = 2,1 m/s", "vB = -3,3 m/s", "p_inicial = 0"],
     "objective": "Aplicar conservación de la cantidad de movimiento tras una explosión/liberación interna.",
@@ -965,14 +1666,25 @@
     "strategy": "El momento lineal total antes de quemar la cuerda es cero. Por tanto, el momento que gana A hacia un lado debe ser exactamente cancelado por el momento que gana B hacia el otro.",
     "hints": [{"title": "Equilibrio de Momentos", "body": "mA · |vA| = mB · |vB|"}],
     "formulas": ["$p_{inicial} = p_{final} = 0$", "$m_A \\cdot v_A + m_B \\cdot v_B = 0$"],
+    "steps": [
+      "Conservación del momento: 0 = mA · vA + mB · vB.",
+      "Sustituimos: 0 = 1,2 · 2,1 + mB · (-3,3).",
+      "Despejamos: 3,3 · mB = 2,52.",
+      "mB = 2,52 / 3,3 = 0,763 kg (aprox 0,76 kg)."
+    ],
     "solution": ["mB = 0,76 kg"],
     "mistakes": ["Utilizar fórmulas de energía elástica sin conocer la constante ni la deformación del muelle."],
-    "quiz": {"question": "¿Si calculamos la energía cinética total, será cero?", "options": ["Sí, se conserva", "No, será positiva"], "correct": 1, "feedback": "La energía cinética es un escalar (1/2 mv²) y siempre es positiva. La energía salió del muelle (potencial elástica a cinética). Solo se anula el momento (vector)."},
+    "quiz": {
+      "question": "¿Si calculamos la energía cinética total, será cero?",
+      "options": ["Sí, se conserva", "No, será positiva"],
+      "correct": 1,
+      "feedback": "La energía cinética es un escalar (1/2 mv²) y siempre es positiva. La energía salió del muelle (potencial elástica a cinética). Solo se anula el momento (vector)."
+    },
     "dcl": {
       "type": "horizontalTwoBlocks",
       "labels": {
-        "leftBlock": { "up": "N", "down": "P_A", "right": "p_A" },
-        "rightBlock": { "up": "N", "down": "P_B", "left": "p_B" }
+        "leftBlock": {"up": "N", "down": "P_A", "right": "p_A"},
+        "rightBlock": {"up": "N", "down": "P_B", "left": "p_B"}
       }
     }
   },
@@ -980,7 +1692,7 @@
     "id": 57,
     "tag": "Órbitas",
     "title": "Órbita de satélite geoestacionario",
-    "source": "Ejercicio 57 del dossier[cite: 2].",
+    "source": "Ejercicio 57 del dossier.",
     "statement": "Un satélite es geoestacionario si tiene el mismo periodo de revolución que la rotación de la Tierra. ¿A qué altura estará?",
     "givens": ["T = 24 h = 86400 s", "MT = 5,98e24 kg", "RT = 6400 km", "G = 6,67e-11"],
     "objective": "Despejar la distancia radial usando la 3ª Ley de Kepler y deducir la altitud superficial.",
@@ -988,16 +1700,27 @@
     "strategy": "A partir de la igualdad entre fuerza gravitatoria y fuerza centrípeta, deducimos la Tercera Ley de Kepler para la Tierra, despejando r (radio orbital). La altura h será r - RT.",
     "hints": [{"title": "Fórmula compacta", "body": "r = ∛(G·M·T² / 4π²)"}],
     "formulas": ["$G \\frac{M_T m}{r^2} = m \\omega^2 r$", "$r = \\sqrt[3]{\\frac{G M_T T^2}{4\\pi^2}}$", "$h = r - R_T$"],
+    "steps": [
+      "Convertimos periodo: T = 24 · 3600 = 86.400 s.",
+      "Cálculo del radio orbital: r = ∛( (6,67×10⁻¹¹ · 5,98×10²⁴ · 86400²) / (4·π²) ).",
+      "r = ∛( (2,977×10²⁴) / 39,478 ) = ∛(7,54×10²²) = 4,22 × 10⁷ m.",
+      "Cálculo de la altura: h = r - RT = (4,22 × 10⁷) - (6,4 × 10⁶) = 3,58 × 10⁷ m (aprox 36.000 km)."
+    ],
     "solution": ["h = 3,59 × 10⁷ m (aprox 36.000 km)"],
     "mistakes": ["Dar como resultado el radio orbital sin restarle el radio de la Tierra."],
-    "quiz": {"question": "¿Puede haber un satélite geoestacionario orbitando sobre los polos?", "options": ["Sí", "No"], "correct": 1, "feedback": "El plano de la órbita siempre debe pasar por el centro de masas de la Tierra. Una órbita polar cruzaría el ecuador, viéndose moverse desde la superficie. Solo las órbitas ecuatoriales son geoestacionarias."},
-    "dcl": { "type": "orbit", "labels": { "left": "Fc", "up": "v" } }
+    "quiz": {
+      "question": "¿Puede haber un satélite geoestacionario orbitando sobre los polos?",
+      "options": ["Sí", "No"],
+      "correct": 1,
+      "feedback": "El plano de la órbita siempre debe pasar por el centro de masas de la Tierra. Una órbita polar cruzaría el ecuador, viéndose moverse desde la superficie. Solo las órbitas ecuatoriales son geoestacionarias."
+    },
+    "dcl": {"type": "orbit", "labels": {"left": "Fc", "up": "v"}}
   },
   {
     "id": 58,
     "tag": "Estática",
     "title": "Verificación de movimiento por fricción",
-    "source": "Ejercicio 58 del dossier[cite: 2].",
+    "source": "Ejercicio 58 del dossier.",
     "statement": "Bloque de 3,0 kg en plano de 5°. μ = 0,50. ¿Con qué velocidad descenderá a los 5,0 s? ¿Obtienes una velocidad negativa?",
     "givens": ["m = 3,0 kg", "α = 5°", "μ = 0,50", "t = 5,0 s"],
     "objective": "Demostrar que una ecuación no es válida si no se cumple el umbral estático.",
@@ -1005,16 +1728,27 @@
     "strategy": "Un error común de software/estudiante es restar fuerzas ciegamente. Si Px < Fr_max, la fuerza neta no es negativa (moviéndose hacia arriba), sino que la fuerza de fricción iguala a Px, quedando a=0.",
     "hints": [{"title": "Cálculo previo", "body": "tg(5°) = 0,087. Como μ (0,50) es mucho mayor, ni de broma se mueve."}],
     "formulas": ["$P_x = m \\cdot g \\cdot \\sin(5^\\circ)$", "$Fr_{max} = \\mu \\cdot m \\cdot g \\cdot \\cos(5^\\circ)$"],
+    "steps": [
+      "Tracción a favor: Px = 3,0 · 9,8 · sen(5°) = 2,56 N.",
+      "Límite de fricción: Fr_max = 0,50 · 3,0 · 9,8 · cos(5°) = 14,64 N.",
+      "Como Px < Fr_max (2,56 < 14,64), el cuerpo no rompe la adherencia estática.",
+      "La aceleración es nula y por tanto la velocidad es 0 m/s."
+    ],
     "solution": ["No desciende. El bloque está en reposo estático."],
     "mistakes": ["Aplicar a = (Px - Fr) / m y obtener a = -4 m/s², deduciendo absurdamente que el bloque sube solo por la rampa."],
-    "quiz": {"question": "¿Cuánto vale la fuerza de rozamiento exacta en este caso?", "options": ["Fr_max = 14.6 N", "Igual a Px = 2.5 N"], "correct": 1, "feedback": "El rozamiento estático es reactivo. Solo ejerce la fuerza necesaria para evitar el movimiento, hasta su límite máximo. Aquí vale exactamente lo mismo que Px."},
+    "quiz": {
+      "question": "¿Cuánto vale la fuerza de rozamiento exacta en este caso?",
+      "options": ["Fr_max = 14.6 N", "Igual a Px = 2.5 N"],
+      "correct": 1,
+      "feedback": "El rozamiento estático es reactivo. Solo ejerce la fuerza necesaria para evitar el movimiento, hasta su límite máximo. Aquí vale exactamente lo mismo que Px."
+    },
     "dcl": {"type": "inclined", "angle": "5°", "labels": {"perp_up": "N", "parallel_down": "P∥", "parallel_up": "Fr (igual a P∥)"}}
   },
   {
     "id": 59,
     "tag": "Momento Lineal",
     "title": "Retroceso de ametralladora",
-    "source": "Ejercicio 59 del dossier[cite: 2].",
+    "source": "Ejercicio 59 del dossier.",
     "statement": "Soldado dispara ametralladora. Balas de 100 g a 400 m/s. Fuerza máxima de sujeción = 200 N. ¿Máximo número de balas por minuto?",
     "givens": ["m_bala = 0,1 kg", "v_bala = 400 m/s", "F_max = 200 N", "t_total = 60 s"],
     "objective": "Relacionar ráfagas discretas con fuerza promedio mediante Impulso.",
@@ -1022,16 +1756,26 @@
     "strategy": "El retroceso es un flujo continuo de cantidad de movimiento. Calculamos el Impulso (cambio de p) de una sola bala, y averiguamos cuántas de esas podemos permitir en 60 segundos para promediar 200 N de fuerza constante.",
     "hints": [{"title": "Impulso por bala", "body": "I = 0,1 kg · 400 m/s = 40 N·s por bala."}],
     "formulas": ["$\\Delta p_{total} = n \\cdot m \\cdot v$", "$F_{media} = \\frac{\\Delta p_{total}}{t}$"],
+    "steps": [
+      "Calculamos el Impulso de un disparo: Δp = 0,1 · 400 = 40 kg·m/s.",
+      "Fuerza media total tolerada en 60s: F = (n · Δp) / t  →  200 = (n · 40) / 60.",
+      "Despejamos la cantidad (n): 12000 = 40 · n  →  n = 300 balas."
+    ],
     "solution": ["n = 300 balas/minuto"],
     "mistakes": ["Aplicar las fórmulas a un segundo sin multiplicar por 60 al final."],
-    "quiz": {"question": "¿Por qué el retroceso empuja en sentido contrario a la bala?", "options": ["Conservación de masa", "Conservación del momento lineal", "Aerodinámica"], "correct": 1, "feedback": "El sistema arma-bala empieza con momento 0. Para seguir siendo 0, el arma debe ganar momento negativo igual al momento positivo de la bala."},
+    "quiz": {
+      "question": "¿Por qué el retroceso empuja en sentido contrario a la bala?",
+      "options": ["Conservación de masa", "Conservación del momento lineal", "Aerodinámica"],
+      "correct": 1,
+      "feedback": "El sistema arma-bala empieza con momento 0. Para seguir siendo 0, el arma debe ganar momento negativo igual al momento positivo de la bala."
+    },
     "dcl": {"type": "horizontal", "labels": {"left": "F_retroceso (200 N)", "right": "F_bala"}}
   },
   {
     "id": 60,
     "tag": "Sistemas No Inerciales",
     "title": "Aceleración máxima de un cohete",
-    "source": "Ejercicio 60 del dossier[cite: 2].",
+    "source": "Ejercicio 60 del dossier.",
     "statement": "Cohete meteorológico lleva dispositivo de 200 g colgado de un hilo con resistencia 6,4 N. Máxima aceleración de despegue sin romper el hilo.",
     "givens": ["m = 0,200 kg", "T_max = 6,4 N", "g = 9,8 m/s²"],
     "objective": "Cálculo de Tensión en fase de lanzamiento vertical.",
@@ -1039,16 +1783,27 @@
     "strategy": "El hilo sufre el peso estático de la caja más la fuerza inercial de arrastre hacia arriba. T - P = m·a. Despejamos la aceleración motriz 'a'.",
     "hints": [{"title": "Aceleración inercial", "body": "a = (T - mg) / m"}],
     "formulas": ["$T_{max} - m \\cdot g = m \\cdot a_{max}$"],
+    "steps": [
+      "Calculamos el peso del dispositivo: P = 0,200 · 9,8 = 1,96 N.",
+      "Planteamos la 2ª Ley de Newton: T - P = m · a.",
+      "Despejamos 'a' en el límite de rotura: 6,4 - 1,96 = 0,200 · a.",
+      "4,44 = 0,200 · a  →  a = 4,44 / 0,200 = 22,2 m/s² (22 m/s² con cifras significativas)."
+    ],
     "solution": ["a = 22 m/s²"],
     "mistakes": ["Dividir la Tensión entre la masa asumiendo que no hay gravedad (esto daría 32 m/s²)."],
-    "quiz": {"question": "¿Si el cohete entrara en órbita (gravedad cero aparente), la tensión sería la misma acelerando?", "options": ["Sí, la masa sigue ahí", "No, sería solo m*a", "La tensión sería cero"], "correct": 1, "feedback": "En ingravidez, el peso desaparece. La tensión solo tendría que vencer la inercia del objeto: T = m*a."},
+    "quiz": {
+      "question": "¿Si el cohete entrara en órbita (gravedad cero aparente), la tensión sería la misma acelerando?",
+      "options": ["Sí, la masa sigue ahí", "No, sería solo m*a", "La tensión sería cero"],
+      "correct": 1,
+      "feedback": "En ingravidez, el peso desaparece. La tensión solo tendría que vencer la inercia del objeto: T = m*a."
+    },
     "dcl": {"type": "horizontal", "labels": {"up": "T_max = 6.4 N", "down": "P = 1.96 N"}}
   },
   {
     "id": 61,
     "tag": "Dinámica Circular",
     "title": "Coche en curva de máximo agarre",
-    "source": "Ejercicio 61 del dossier[cite: 2].",
+    "source": "Ejercicio 61 del dossier.",
     "statement": "Automóvil (μ = 0,420) en curva R=100 m. a) Velocidad máxima segura. b) ¿Se incrementaría si tuviera peralte?",
     "givens": ["R = 100 m", "μ = 0,420", "g = 9,8 m/s²"],
     "objective": "Balancear fuerza centrípeta límite con fricción estática máxima.",
@@ -1056,16 +1811,27 @@
     "strategy": "Igualar mv²/R con μ·mg. Despejar v. En cuanto al peralte, añadirlo inclina la Normal, lo que proporciona una componente centrípeta extra sin depender de la goma.",
     "hints": [{"title": "Paso clave", "body": "v = √(μ·g·R)"}],
     "formulas": ["$m \\frac{v^2}{R} = \\mu \\cdot m \\cdot g$"],
+    "steps": [
+      "Igualamos fuerza centrípeta a fricción máxima: m·v² / R = μ·m·g.",
+      "Eliminamos masa y despejamos v: v = √(μ·g·R).",
+      "Calculamos: v = √(0,420 · 9,8 · 100) = √411,6 = 20,28 m/s (aprox 73 km/h).",
+      "Para b): El peralte generaría una N·sen(α) hacia el centro, ayudando a la fricción y permitiendo mayor velocidad."
+    ],
     "solution": ["a) v = 20,3 m/s (aprox 73 km/h).", "b) Sí, un peralte sumaría componente N_x a la fuerza centrípeta."],
     "mistakes": ["Tratar de resolverlo pidiendo la masa del coche."],
-    "quiz": {"question": "¿Qué tipo de rozamiento evita que el coche derrape en la curva?", "options": ["Cinético", "Estático", "Fluido"], "correct": 1, "feedback": "Estático. Aunque la rueda ruede hacia adelante, no desliza lateralmente respecto al asfalto. Si el coche derrapa, pasa a cinético (menor) y te sales de la curva."},
-    "dcl": {"type": "horizontal", "labels": {"up": "N", "down": "P", "left": "Fr_estático_max (Centrípeta)"}}
+    "quiz": {
+      "question": "¿Qué tipo de rozamiento evita que el coche derrape en la curva?",
+      "options": ["Cinético", "Estático", "Fluido"],
+      "correct": 1,
+      "feedback": "Estático. Aunque la rueda ruede hacia adelante, no desliza lateralmente respecto al asfalto. Si el coche derrapa, pasa a cinético (menor) y te sales de la curva."
+    },
+    "dcl": {"type": "mcu", "labels": {"left": "Fr_max (Centrípeta)", "up": "v"}}
   },
   {
     "id": 62,
     "tag": "Estática (Torques)",
     "title": "Puerta bloqueada con rajola",
-    "source": "Ejercicio 62 del dossier[cite: 2].",
+    "source": "Ejercicio 62 del dossier.",
     "statement": "Puerta de 90 cm de ancho. Se aplica F=30 N en el centro perpendicularmente. Se intenta bloquear poniendo una baldosa (μ=0,45) en el extremo (0,90 m). ¿Masa mínima de la baldosa?",
     "givens": ["L = 0,90 m", "d_F = 0,45 m", "F_empuje = 30 N", "μ = 0,45"],
     "objective": "Equilibrar Momentos de fuerza (Torques) y transformarlos en fuerza de fricción.",
@@ -1073,16 +1839,27 @@
     "strategy": "Calculamos el momento de rotación que genera la fuerza de 30N. La baldosa debe generar un momento igual en sentido contrario. Como está al doble de distancia, necesitará hacer la mitad de fuerza. Luego usamos Fr = μmg para hallar su masa.",
     "hints": [{"title": "Torques", "body": "M_empuje = 30 · 0,45. M_baldosa = Fr_baldosa · 0,90."}],
     "formulas": ["$\\sum M = 0$", "$F_{empuje} \\cdot d_1 = Fr_{baldosa} \\cdot d_2$", "$Fr_{baldosa} = \\mu \\cdot m \\cdot g$"],
+    "steps": [
+      "Momento motor: M_motor = 30 · 0,45 = 13,5 Nm.",
+      "Para anularlo, la fricción de la baldosa (a 0,90 m) debe equilibrarlo: Fr · 0,90 = 13,5 → Fr = 15 N.",
+      "Convertimos la fricción requerida en masa: 15 = μ·m·g → 15 = 0,45 · m · 9,8.",
+      "Despejamos: 15 = 4,41 · m → m = 3,40 kg."
+    ],
     "solution": ["m = 3,4 kg"],
     "mistakes": ["Igualar la fricción directamente a 30N, ignorando las distancias de palanca."],
-    "quiz": {"question": "¿Si ponemos la baldosa también en el medio (0.45m)?", "options": ["Necesitará el doble de masa", "Misma masa"], "correct": 0, "feedback": "Al reducir su brazo de palanca a la mitad, debe hacer el doble de fuerza, por lo que requerirás una baldosa de casi 7 kg."},
+    "quiz": {
+      "question": "¿Si ponemos la baldosa también en el medio (0.45 m)?",
+      "options": ["Necesitará el doble de masa", "Misma masa"],
+      "correct": 0,
+      "feedback": "Al reducir su brazo de palanca a la mitad, debe hacer el doble de fuerza, por lo que requerirá una baldosa de casi 7 kg."
+    },
     "dcl": {"type": "horizontal", "labels": {"left": "F_baldosa", "right": "F_empuje"}}
   },
   {
     "id": 63,
     "tag": "Momento Lineal",
     "title": "Análisis forense de accidente (Choque inelástico)",
-    "source": "Ejercicio 63 del dossier[cite: 2].",
+    "source": "Ejercicio 63 del dossier.",
     "statement": "Choque frontal: Furgoneta (1200 kg) a 45 km/h vs Utilitario (950 kg). Tras el impacto, van UNIDOS a 15 m/s en el sentido que llevaba el utilitario. ¿A qué velocidad iba el utilitario antes del choque?",
     "givens": ["m1 = 1200 kg", "v1 = 45 km/h = 12,5 m/s", "m2 = 950 kg", "v_final = +15 m/s (sentido del utilitario)"],
     "objective": "Recalcular velocidades pre-impacto usando vectorización estricta.",
@@ -1090,16 +1867,29 @@
     "strategy": "El choque es inelástico perfecto. p_inicial = p_final. El utilitario arrastró a la furgoneta hacia atrás, por lo que debía ir rapidísimo.",
     "hints": [{"title": "Ecuación de momento", "body": "m2·v2 - m1·v1 = (m1+m2)·v_f"}],
     "formulas": ["$m_1v_1 + m_2v_2 = (m_1 + m_2)v_{final}$"],
+    "steps": [
+      "Convertimos la velocidad de la furgoneta a m/s: 45 / 3,6 = 12,5 m/s.",
+      "Asignamos sentidos: Utilitario (+), Furgoneta (-).",
+      "Momento final del amasijo: p_f = (1200 + 950) · 15 = 2150 · 15 = 32.250 kg·m/s.",
+      "Igualamos al inicial: 950 · v2 + 1200 · (-12,5) = 32.250.",
+      "950 · v2 - 15.000 = 32.250 → 950 · v2 = 47.250 → v2 = 49,73 m/s.",
+      "Convertimos a km/h: 49,73 · 3,6 = 179 km/h (aprox 180 km/h)."
+    ],
     "solution": ["v = 180 km/h (49,7 m/s)"],
     "mistakes": ["Poner la velocidad de la furgoneta con el mismo signo que la velocidad final del conjunto."],
-    "quiz": {"question": "¿Qué indica el resultado a nivel pericial?", "options": ["Exceso de velocidad masivo del utilitario", "Falla de frenos de la furgoneta"], "correct": 0, "feedback": "El utilitario iba a casi 180 km/h y, a pesar de ser más ligero, tenía tanta energía (momento) que arrastró a la furgoneta en sentido contrario a su marcha original."},
+    "quiz": {
+      "question": "¿Qué indica el resultado a nivel pericial?",
+      "options": ["Exceso de velocidad masivo del utilitario", "Falla de frenos de la furgoneta"],
+      "correct": 0,
+      "feedback": "El utilitario iba a casi 180 km/h y, a pesar de ser más ligero, tenía tanta energía (momento) que arrastró a la furgoneta en sentido contrario a su marcha original."
+    },
     "dcl": {"type": "collisionMomentum", "labels": {"beforeLeft": "p_furgoneta", "beforeRight": "p_utilitario", "afterRight": "p_conjunto"}}
   },
   {
     "id": 64,
     "tag": "Momento Lineal y Dinámica",
     "title": "Fuerzas de impacto entre bloques",
-    "source": "Ejercicio 64 del dossier[cite: 2].",
+    "source": "Ejercicio 64 del dossier.",
     "statement": "Impacto: Objeto de 3 kg a 10 m/s golpea a uno de 4 kg y el primero queda detenido en 0,2 s. Calcula la fuerza sobre el de 4 kg y su aceleración durante el choque.",
     "givens": ["m1 (golpeado) = 4 kg", "m2 (proyectil) = 3 kg", "v2_i = 10 m/s", "v2_f = 0", "Δt = 0,2 s"],
     "objective": "Acoplar Impulso (para m2) y Acción-Reacción (para m1).",
@@ -1107,16 +1897,26 @@
     "strategy": "Calculamos la fuerza que la pared/bloque hizo para frenar al proyectil de 3kg usando I=Δp. Esa misma fuerza, en positivo, es la que recibe el bloque de 4kg. Con ella hallamos su aceleración.",
     "hints": [{"title": "Fuerza de impacto", "body": "F = Δp / Δt = (0 - 3·10) / 0,2."}],
     "formulas": ["$F_2 = \\frac{\\Delta p_2}{\\Delta t}$", "$F_1 = -F_2$", "$a_1 = \\frac{F_1}{m_1}$"],
+    "steps": [
+      "Impulso sobre el proyectil de 3kg para pararlo: F2 = (0 - 3·10) / 0,2 = -30 / 0,2 = -150 N.",
+      "Por 3ª Ley de Newton, el objeto de 4kg recibe la fuerza opuesta: F1 = +150 N.",
+      "Aceleración del objeto golpeado: a = F / m = 150 / 4 = 37,5 m/s² (aprox 37 m/s²)."
+    ],
     "solution": ["F = 150 N (sobre el de 4kg)", "a = 37,5 m/s² (sobre el de 4kg)"],
     "mistakes": ["Aplicar las velocidades del de 3kg directamente para calcular cinemática del de 4kg."],
-    "quiz": {"question": "¿El objeto de 4 kg sufre algún daño por tener más o menos masa?", "options": ["Más masa = más aceleración", "Más masa = menos aceleración brusca"], "correct": 1, "feedback": "La fuerza es idéntica por Acción/Reacción. A mayor masa del objetivo, la aceleración (F/m) se diluye y sufre un choque menos brusco cinemáticamente."},
+    "quiz": {
+      "question": "¿El objeto de 4 kg sufre más aceleración por tener más o menos masa?",
+      "options": ["Más masa = más aceleración", "Más masa = menos aceleración brusca"],
+      "correct": 1,
+      "feedback": "La fuerza es idéntica por Acción/Reacción. A mayor masa del objetivo, la aceleración (F/m) se diluye y sufre un choque menos brusco cinemáticamente."
+    },
     "dcl": {"type": "collision", "labels": {"left": "F_impacto", "right": "F_impacto"}}
   },
   {
     "id": 65,
     "tag": "Estática 2D y Elástica",
     "title": "Tensión estructural con gomas",
-    "source": "Ejercicio 65 del dossier[cite: 2].",
+    "source": "Ejercicio 65 del dossier.",
     "statement": "Estructura de juguete: la carga genera 20 N a 45° de apertura sobre dos columnas. Distancia basal 30 cm, y se unen con goma de 20 cm en reposo. a) Constante de la goma.",
     "givens": ["F_carga = 20 N (sobre cada columna)", "Ángulo = 45° hacia fuera", "d_columnas = 30 cm = 0,3 m", "L_goma_0 = 20 cm = 0,2 m"],
     "objective": "Equilibrar empujes axiales con tracciones elásticas.",
@@ -1124,16 +1924,27 @@
     "strategy": "Aislamos una columna. El peso desde arriba genera una fuerza lateral Fx. Para que no se abra, la goma debe tirar hacia adentro con exactamente la misma fuerza (Fe = Fx). Aplicamos Hooke con el Δx de la goma.",
     "hints": [{"title": "Fuerza separadora", "body": "Fx = 20 · cos(45°). Ojo, 45° respecto a la horizontal."}],
     "formulas": ["$F_x = F \\cdot \\cos(\\alpha)$", "$F_e = k \\cdot \\Delta x$", "$F_e = F_x$"],
+    "steps": [
+      "Fuerza lateral expansiva por columna: Fx = 20 · cos(45°) = 14,14 N.",
+      "Deformación elástica de la goma para encajar (de 20 a 30cm): Δx = 30 - 20 = 10 cm = 0,10 m.",
+      "Equilibrio de retención: Fe = Fx → k · 0,10 = 14,14.",
+      "k = 14,14 / 0,10 = 141,4 N/m (aprox 1,4 × 10² N/m)."
+    ],
     "solution": ["k = 141 N/m (1,4 × 10² N/m)"],
     "mistakes": ["Usar 30 cm o 20 cm enteros en Hooke en lugar del alargamiento (10 cm)."],
-    "quiz": {"question": "¿Si el ángulo de apertura se amplía a 60° (carga más aplastada)?", "options": ["La goma sufriría menos", "La goma sufriría más"], "correct": 1, "feedback": "Cuanto más horizontal (mayor ángulo respecto a la vertical), mayor componente Fx genera la carga, requiriendo un muelle más duro."},
+    "quiz": {
+      "question": "¿Si el ángulo de apertura se amplía a 60° (carga más aplastada)?",
+      "options": ["La goma sufriría menos", "La goma sufriría más"],
+      "correct": 1,
+      "feedback": "Cuanto más horizontal (mayor ángulo respecto a la vertical), mayor componente Fx genera la carga, requiriendo un muelle más duro."
+    },
     "dcl": {"type": "horizontal", "labels": {"left": "Fe (Goma)", "right": "F_carga_x"}}
   },
   {
     "id": 66,
     "tag": "Momento Lineal y Cinemática",
     "title": "Misterio de dos cuerpos",
-    "source": "Ejercicio 66 del dossier[cite: 2].",
+    "source": "Ejercicio 66 del dossier.",
     "statement": "Misma F y tiempo a dos cuerpos. Uno va al triple de velocidad (v1 = 3·v2). Suma masas = 8,4 kg. F actúa 2,3s, luego el más rápido hace 18m en 3s. Masas y Fuerza?",
     "givens": ["Impulsos iguales: I1 = I2", "v1 = 3·v2", "m1 + m2 = 8,4 kg", "t_empuje = 2,3 s", "Fase MRU: Δx=18m en t=3s (para m1)"],
     "objective": "Desencriptar relaciones de momento y cinemática en cadena.",
@@ -1141,14 +1952,26 @@
     "strategy": "Como F y t son iguales, Δp es igual. Como parten del reposo, m1·v1 = m2·v2. Sustituimos la relación de velocidades para sacar las masas individuales. Luego usamos el MRU final para hallar v1 real, calculamos la aceleración y despejamos F.",
     "hints": [{"title": "MRU post-empuje", "body": "Una vez deja de actuar F, va a velocidad constante. v1 = 18/3 = 6 m/s."}],
     "formulas": ["$m_1 v_1 = m_2 v_2$", "$m_1 + m_2 = M_{tot}$", "$v = \\frac{x}{t}$", "$F = m \\cdot \\frac{\\Delta v}{\\Delta t}$"],
+    "steps": [
+      "Relación de masas (igualdad de p): m1(3v2) = m2(v2) → m2 = 3m1.",
+      "Sistema de masas: m1 + 3m1 = 8,4 → 4m1 = 8,4 → m1 = 2,1 kg. Por tanto m2 = 6,3 kg.",
+      "Calculamos v final de m1 (MRU post-empuje): v1 = 18 / 3 = 6 m/s.",
+      "Calculamos aceleración durante empuje: a1 = 6 / 2,3 = 2,608 m/s².",
+      "Fuerza aplicada: F = m1 · a1 = 2,1 · 2,608 = 5,47 N (aprox 5,5 N)."
+    ],
     "solution": ["m1 = 2,1 kg", "m2 = 6,3 kg", "F = 5,5 N"],
     "mistakes": ["Aplicar las fórmulas cinemáticas mezclando los 2.3s con los 3s."],
-    "quiz": {"question": "¿Qué energía cinética adquirió el cuerpo pesado (m2)?", "options": ["La misma que m1", "Menos que m1", "Más que m1"], "correct": 1, "feedback": "Ec = p² / 2m. Como ambos tienen el mismo momento 'p', el que tiene más masa 'm' tendrá menos energía cinética transferida."},
+    "quiz": {
+      "question": "¿Qué energía cinética adquirió el cuerpo pesado (m2)?",
+      "options": ["La misma que m1", "Menos que m1", "Más que m1"],
+      "correct": 1,
+      "feedback": "Ec = p² / 2m. Como ambos tienen el mismo momento 'p', el que tiene más masa 'm' tendrá menos energía cinética transferida."
+    },
     "dcl": {
       "type": "horizontalTwoBlocks",
       "labels": {
-        "leftBlock": { "up": "N", "down": "P1", "right": "F" },
-        "rightBlock": { "up": "N", "down": "P2", "right": "F" }
+        "leftBlock": {"up": "N", "down": "P1", "right": "F"},
+        "rightBlock": {"up": "N", "down": "P2", "right": "F"}
       }
     }
   },
@@ -1156,7 +1979,7 @@
     "id": 67,
     "tag": "Dinámica Circular / Estática",
     "title": "Peralte seguro con vehículos detenidos",
-    "source": "Ejercicio 67 del dossier[cite: 2].",
+    "source": "Ejercicio 67 del dossier.",
     "statement": "Curva radio 30 m. μ_lateral = 0,5. Los coches han de permanecer aturados (v=0) sin resbalar. ¿Ángulo máximo?",
     "givens": ["R = 30 m", "μ = 0,5", "v = 0"],
     "objective": "Balancear gravedad con fricción estática en plano inclinado (Peralte límite).",
@@ -1164,16 +1987,27 @@
     "strategy": "Para que un coche quieto no resbale hacia el interior del peralte, el rozamiento estático máximo hacia arriba debe igualar la componente Px del peso hacia abajo. El radio no importa en reposo.",
     "hints": [{"title": "Fórmula mágica", "body": "En reposo límite, tan(α) = μ."}],
     "formulas": ["$m \\cdot g \\cdot \\sin(\\alpha) = \\mu \\cdot m \\cdot g \\cdot \\cos(\\alpha)$", "$\\tan(\\alpha) = \\mu$"],
+    "steps": [
+      "Equilibrio estático en el eje del plano: Px = Fr_max.",
+      "Sustituyendo: m·g·sen(α) = μ·m·g·cos(α).",
+      "Simplificamos (eliminando mg): sen(α) / cos(α) = μ → tan(α) = 0,5.",
+      "Ángulo límite: α = arctan(0,5) = 26,56° (aprox 26,5°)."
+    ],
     "solution": ["Ángulo = 26,5°"],
     "mistakes": ["Empezar a usar fórmulas de v² / R asumiendo un coche en movimiento."],
-    "quiz": {"question": "¿Si el ángulo supera los 26,5°, qué le pasa a un coche que se frena?", "options": ["Nada", "Se cae hacia el interior"], "correct": 1, "feedback": "Si hay atasco y los coches frenan, la fricción no aguantará y los vehículos se deslizarán hacia el agujero interior del peralte."},
+    "quiz": {
+      "question": "¿Si el ángulo supera los 26,5°, qué le pasa a un coche que se frena?",
+      "options": ["Nada", "Se cae hacia el interior"],
+      "correct": 1,
+      "feedback": "Si hay atasco y los coches frenan, la fricción no aguantará y los vehículos se deslizarán hacia el agujero interior del peralte."
+    },
     "dcl": {"type": "inclined", "angle": "26°", "labels": {"perp_up": "N", "parallel_down": "P∥", "parallel_up": "Fr_max"}}
   },
   {
     "id": 68,
     "tag": "Dinámica Circular",
     "title": "Ángulo de un tiovivo (Péndulo cónico)",
-    "source": "Ejercicio 68 del dossier[cite: 2].",
+    "source": "Ejercicio 68 del dossier.",
     "statement": "Calcula el ángulo de unos caballitos colgantes respecto a la vertical girando a 0,10 vueltas/seg a 5 m del centro.",
     "givens": ["f = 0,10 rev/s", "R = 5 m"],
     "objective": "Descomposición de fuerzas en un péndulo cónico.",
@@ -1181,16 +2015,27 @@
     "strategy": "Descomponemos la Tensión de las cadenas. T_y = P, T_x = Fuerza Centrípeta. Al dividir ambas ecuaciones, la tangente del ángulo se despeja fácilmente sin necesitar masas ni la Tensión misma.",
     "hints": [{"title": "Velocidad angular", "body": "ω = 2π·f = 0,2π rad/s."}],
     "formulas": ["$T \\cdot \\cos(\\alpha) = m \\cdot g$", "$T \\cdot \\sin(\\alpha) = m \\cdot \\omega^2 \\cdot R$", "$\\tan(\\alpha) = \\frac{\\omega^2 R}{g}$"],
+    "steps": [
+      "Calculamos ω: 0,10 · 2π = 0,628 rad/s.",
+      "Planteamos tangencial: tan(α) = (ω²R) / g.",
+      "Sustituimos: tan(α) = (0,628² · 5) / 9,8 = (0,394 · 5) / 9,8 = 0,201.",
+      "Despejamos: α = arctan(0,201) = 11,38° (aprox 11,4°)."
+    ],
     "solution": ["Ángulo = 11,4°"],
     "mistakes": ["Usar frecuencia (0.10) directamente en vez de velocidad angular."],
-    "quiz": {"question": "¿Si el niño sube la maleta de su hermana a su asiento?", "options": ["Sube el ángulo", "Baja el ángulo", "Sigue igual"], "correct": 2, "feedback": "Como la masa está en ambos lados del sistema de ecuaciones, se cancela al dividirlas (tan α). El ángulo solo depende de la velocidad del motor."},
+    "quiz": {
+      "question": "¿Si el niño sube la maleta de su hermana a su asiento?",
+      "options": ["Sube el ángulo", "Baja el ángulo", "Sigue igual"],
+      "correct": 2,
+      "feedback": "Como la masa está en ambos lados del sistema de ecuaciones, se cancela al dividirlas (tan α). El ángulo solo depende de la velocidad del motor."
+    },
     "dcl": {"type": "horizontal", "labels": {"up": "Ty", "down": "P", "right": "Tx (Centrípeta)"}}
   },
   {
     "id": 69,
     "tag": "Integración",
     "title": "Muelle, fricción y plano inclinado combinados",
-    "source": "Ejercicio 69 del dossier[cite: 2].",
+    "source": "Ejercicio 69 del dossier.",
     "statement": "Cuerpo de 10 kg en rampa 40° atado a muelle (k=1200 N/m) estirado 3 cm. Calcula el coeficiente μ. ¿Cuánto más se estiraría si se elimina la fricción lubricando?",
     "givens": ["m = 10 kg", "α = 40°", "k = 1200 N/m", "x1 = 0,03 m"],
     "objective": "Desglose total de estática con fuerzas de Hooke y fricción concurrentes.",
@@ -1198,9 +2043,25 @@
     "strategy": "Calculamos la fuerza elástica estirada 3cm. Como no basta para aguantar la gravedad (Px), la fricción (Fr) debe estar ayudando al muelle (apunta arriba). Igualamos fuerzas para sacar μ. Luego lo resolvemos sin fricción para ver qué sufre el muelle solo.",
     "hints": [{"title": "Fuerzas que suben", "body": "Fe + Fr = Px."}],
     "formulas": ["$F_e = k \\cdot x$", "$P_x = m \\cdot g \\cdot \\sin(40^\\circ)$", "$P_x = F_e + Fr$", "$\\mu = \\frac{Fr}{N}$"],
+    "steps": [
+      "Fuerza del muelle a 3cm: Fe = 1200 · 0,03 = 36 N.",
+      "Atracción del plano: Px = 10 · 9,8 · sen(40°) = 62,99 N.",
+      "Vemos que Px > Fe. Falta fuerza para equilibrar. La aporta la fricción estática: Fr = 62,99 - 36 = 26,99 N.",
+      "Calculamos la Normal: N = 10 · 9,8 · cos(40°) = 75,07 N.",
+      "Despejamos coeficiente de rozamiento: μ = Fr / N = 26,99 / 75,07 = 0,359 (aprox 0,36).",
+      "Caso B (Sin rozamiento): El muelle soporta todo Px. k·x2 = 62,99 → 1200·x2 = 62,99 → x2 = 0,0525 m (5,25 cm).",
+      "Deformación adicional sufrida: 5,25 - 3,00 = 2,25 cm (aprox 2,3 cm)."
+    ],
     "solution": ["μ = 0,36", "Estiramiento extra = 2,3 cm"],
     "mistakes": ["Asumir que el rozamiento apunta hacia abajo porque el bloque está arriba del plano."],
-    "quiz": {"question": "¿Si cortamos el muelle tras lubricar, qué aceleración tendrá?", "options": ["4 m/s²", "6.3 m/s²"], "correct": 1, "feedback": "Caerá libre en el plano liso: a = g*sen(40) = 6.3 m/s²."},
+    "quiz": {
+      "question": "¿Si cortamos el muelle tras lubricar, qué aceleración tendrá?",
+      "options": ["4 m/s²", "6.3 m/s²"],
+      "correct": 1,
+      "feedback": "Caerá libre en el plano liso: a = g·sen(40) = 6.3 m/s²."
+    },
     "dcl": {"type": "inclined", "angle": "40°", "labels": {"perp_up": "N", "parallel_down": "P∥ (63 N)", "parallel_up": "Fe (36N) + Fr"}}
   }
 ]
+
+

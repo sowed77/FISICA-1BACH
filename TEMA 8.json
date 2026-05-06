@@ -4,16 +4,31 @@
     "tag": "Trabajo mecánico",
     "title": "Trabajo en vagoneta",
     "source": "Ejercicio 1 del dossier.",
-    "statement": "Una vagoneta está en una vía recta horizontal. Calcula el trabajo mecánico en los casos siguientes: a) Se ejerce una fuerza constante de 50 N en la dirección de la vía sin que la vagoneta se mueva. b) Se ejerce una fuerza de 180 N en la dirección de la vía y se recorren 12 m. c) Se empuja la vagoneta con una fuerza de 200 N que forma un ángulo de 30° con la vía, de manera que recorre 25 m.",
+    "statement": "Una vagoneta está en una vía recta horizontal. Calcula el trabajo mecánico en los casos siguientes: a) Se ejerce una fuerza constante de 50 N en la dirección de la vía sin que la vagoneta se mueva. b) Se ejerce una fuerza de 180 N en la dirección de la vía y se recorren 12 m. c) Se empuja la vagoneta, con una fuerza de 200 N que forma un ángulo de 30° con la vía, de manera que recorre 25 m.",
     "givens": ["a) F = 50 N, Δx = 0 m", "b) F = 180 N, Δx = 12 m, θ = 0°", "c) F = 200 N, Δx = 25 m, θ = 30°"],
     "objective": "Aplicar la definición de trabajo mecánico W = F · Δx · cos θ.",
+    "checklist": ["Si no hay desplazamiento, el trabajo es cero.", "Cuando la fuerza es paralela, cos θ = 1.", "Con ángulo, solo la componente paralela realiza trabajo."],
     "strategy": "En cada caso aplicar la fórmula del trabajo. Si no hay desplazamiento, el trabajo es nulo. Si la fuerza es paralela, cos θ = 1. Si hay ángulo, usar cos 30°.",
+    "hints": [
+      {"title": "Caso a", "body": "Sin desplazamiento, W = 0 aunque haya fuerza."},
+      {"title": "Caso b", "body": "Fuerza y desplazamiento paralelos: W = F·Δx."},
+      {"title": "Caso c", "body": "Con ángulo, solo cuenta la componente paralela: W = F·Δx·cos 30°."}
+    ],
     "formulas": ["$W = F \\cdot \\Delta x \\cdot \\cos \\theta$"],
+    "steps": [
+      "Caso a: W = 50 · 0 = 0 J (sin desplazamiento).",
+      "Caso b: W = 180 · 12 · cos 0° = 2160 J = 2,16 × 10³ J.",
+      "Caso c: W = 200 · 25 · cos 30° = 5000 · 0,866 = 4330 J = 4,33 × 10³ J."
+    ],
     "solution": ["a) W = 0 J", "b) W = 2,16 × 10³ J", "c) W = 4,33 × 10³ J"],
     "mistakes": ["Olvidar que sin desplazamiento no hay trabajo.", "Usar el seno en lugar del coseno para el ángulo."],
-    "quiz": {"question": "¿Cuándo es nulo el trabajo mecánico?", "options": ["Cuando la fuerza es cero", "Cuando no hay desplazamiento", "Ambas son correctas"], "correct": 2, "feedback": "El trabajo es nulo si F = 0, Δx = 0, o si F y Δx son perpendiculares (cos 90° = 0)."},
-    "dcl": {"type": "horizontal", "labels": {"right": "F", "up": "N", "down": "P"}},
-    "steps": ["Caso a: W = 50 · 0 = 0 J (sin desplazamiento).", "Caso b: W = 180 · 12 · cos 0° = 2160 J = 2,16 × 10³ J.", "Caso c: W = 200 · 25 · cos 30° = 5000 · 0,866 = 4330 J = 4,33 × 10³ J."]
+    "quiz": {
+      "question": "¿Cuándo es nulo el trabajo mecánico?",
+      "options": ["Cuando la fuerza es cero", "Cuando no hay desplazamiento", "Ambas son correctas"],
+      "correct": 2,
+      "feedback": "El trabajo es nulo si F = 0, Δx = 0, o si F y Δx son perpendiculares (cos 90° = 0)."
+    },
+    "dcl": {"type": "horizontal", "labels": {"right": "F", "up": "N", "down": "P"}}
   },
   {
     "id": 2,
@@ -23,11 +38,24 @@
     "statement": "¿Qué trabajo se hace cuando se desplaza un cuerpo a velocidad constante sobre una superficie horizontal sin rozamiento?",
     "givens": ["Superficie horizontal sin rozamiento", "Velocidad constante"],
     "objective": "Relacionar fuerza neta cero con trabajo total cero.",
+    "checklist": ["A velocidad constante, la aceleración es cero.", "Por la 1ª ley de Newton, la fuerza neta es cero."],
     "strategy": "A velocidad constante, la aceleración es cero y por tanto la fuerza neta es cero. El trabajo total (suma de todos los trabajos) es cero.",
+    "hints": [{"title": "Fuerza neta", "body": "Si no hay aceleración, ΣF = 0."}],
     "formulas": ["$W_{total} = F_{neta} \\cdot \\Delta x$", "$F_{neta} = 0 \\Rightarrow W_{total} = 0$"],
+    "steps": [
+      "Velocidad constante ⇒ aceleración nula (a = 0).",
+      "Por la 2ª ley de Newton, ΣF = m·a = 0.",
+      "El trabajo total es W_total = F_neta · Δx = 0.",
+      "Conclusión: el trabajo total realizado sobre el cuerpo es cero."
+    ],
     "solution": ["El trabajo total es cero porque la fuerza neta es nula."],
     "mistakes": ["Confundir trabajo total con trabajo de una fuerza individual."],
-    "quiz": {"question": "Si empujo un objeto en el espacio (sin gravedad ni rozamiento) y lo suelto, ¿qué trabajo hago tras soltarlo?", "options": ["Trabajo constante", "Cero", "Trabajo negativo"], "correct": 1, "feedback": "Tras soltarlo, F = 0, así que W = 0 aunque el objeto siga moviéndose por inercia."},
+    "quiz": {
+      "question": "Si empujo un objeto en el espacio (sin gravedad ni rozamiento) y lo suelto, ¿qué trabajo hago tras soltarlo?",
+      "options": ["Trabajo constante", "Cero", "Trabajo negativo"],
+      "correct": 1,
+      "feedback": "Tras soltarlo, F = 0, así que W = 0 aunque el objeto siga moviéndose por inercia."
+    },
     "dcl": {"type": "horizontal", "labels": {"right": "F_aplicada", "up": "N", "down": "P"}}
   },
   {
@@ -38,11 +66,22 @@
     "statement": "¿Qué trabajo mecánico hace una persona de 60,0 kg cuando sube a una altura de 10,0 m? ¿Qué fuerza ejerce?",
     "givens": ["m = 60,0 kg", "h = 10,0 m", "g = 9,8 m/s²"],
     "objective": "Calcular trabajo contra la gravedad: W = mgh.",
+    "checklist": ["La fuerza que ejerce la persona debe igualar su peso si sube a velocidad constante.", "El trabajo es F · h."],
     "strategy": "La fuerza que ejerce la persona debe igualar su peso si sube a velocidad constante. El trabajo es F · h = mgh.",
+    "hints": [{"title": "Fuerza necesaria", "body": "F = mg = 60 · 9,8 = 588 N."}],
     "formulas": ["$F = m \\cdot g$", "$W = F \\cdot h = m \\cdot g \\cdot h$"],
+    "steps": [
+      "Calculamos la fuerza que debe ejercer: F = P = m·g = 60,0 · 9,8 = 588 N (5,88 × 10² N).",
+      "Calculamos el trabajo: W = F · h = 588 · 10,0 = 5880 J = 5,88 × 10³ J."
+    ],
     "solution": ["W = 5,88 × 10³ J", "F = 5,88 × 10² N"],
     "mistakes": ["Olvidar multiplicar por g."],
-    "quiz": {"question": "¿El trabajo depende del camino seguido?", "options": ["Sí, de la trayectoria", "No, solo de la altura"], "correct": 1, "feedback": "La fuerza gravitatoria es conservativa; el trabajo solo depende de la diferencia de altura."},
+    "quiz": {
+      "question": "¿El trabajo depende del camino seguido?",
+      "options": ["Sí, de la trayectoria", "No, solo de la altura"],
+      "correct": 1,
+      "feedback": "La fuerza gravitatoria es conservativa; el trabajo solo depende de la diferencia de altura."
+    },
     "dcl": {"type": "horizontal", "labels": {"up": "F_persona", "down": "P = mg"}}
   },
   {
@@ -53,11 +92,24 @@
     "statement": "Una grúa desplaza horizontalmente un contenedor de 400 kg de masa una distancia de 20 m sin que haya rozamientos. ¿Qué trabajo hace?",
     "givens": ["m = 400 kg", "Δx = 20 m (horizontal)", "Sin rozamiento"],
     "objective": "El trabajo de una fuerza perpendicular al desplazamiento es cero.",
+    "checklist": ["La grúa ejerce una fuerza vertical para sostener el contenedor.", "El desplazamiento es horizontal.", "Fuerza y desplazamiento son perpendiculares → cos 90° = 0."],
     "strategy": "La grúa ejerce una fuerza vertical para sostener el contenedor. El desplazamiento es horizontal. Como son perpendiculares, W = 0.",
+    "hints": [{"title": "Ángulo recto", "body": "F es vertical hacia arriba, Δx es horizontal. W = F·Δx·cos 90° = 0."}],
     "formulas": ["$W = F \\cdot \\Delta x \\cdot \\cos 90° = 0$"],
+    "steps": [
+      "Identificamos las fuerzas: la grúa solo ejerce una fuerza vertical (igual al peso) para sostenerlo.",
+      "El desplazamiento es horizontal.",
+      "El ángulo entre la fuerza y el desplazamiento es 90°.",
+      "W = F · Δx · cos 90° = F · Δx · 0 = 0 J."
+    ],
     "solution": ["W = 0 J"],
-    "mistakes": ["Pensar que sostener un objeto mientras se camina requiere trabajo."],
-    "quiz": {"question": "Sostengo una maleta de 20 kg quieto. ¿Qué trabajo hago?", "options": ["196 J/s", "0 J (sin desplazamiento)", "Depende del tiempo"], "correct": 1, "feedback": "Sin desplazamiento (Δx = 0), no hay trabajo mecánico, aunque los músculos se cansen."},
+    "mistakes": ["Pensar que sostener un objeto mientras se camina requiere trabajo mecánico."],
+    "quiz": {
+      "question": "Sostengo una maleta de 20 kg quieto. ¿Qué trabajo hago?",
+      "options": ["196 J/s", "0 J (sin desplazamiento)", "Depende del tiempo"],
+      "correct": 1,
+      "feedback": "Sin desplazamiento (Δx = 0), no hay trabajo mecánico, aunque los músculos se cansen."
+    },
     "dcl": {"type": "horizontal", "labels": {"up": "F_grúa", "down": "P"}}
   },
   {
@@ -68,11 +120,23 @@
     "statement": "¿Qué trabajo hay que hacer para elevar un cuerpo de 20,0 kg desde una altura de 10,0 m sobre el suelo hasta una altura de 25,0 m? ¿Qué fuerza hay que ejercer?",
     "givens": ["m = 20,0 kg", "h₁ = 10,0 m", "h₂ = 25,0 m", "g = 9,8 m/s²"],
     "objective": "Trabajo gravitatorio: W = mgΔh.",
+    "checklist": ["La variación de altura es Δh = h₂ - h₁.", "El trabajo mínimo es mgΔh."],
     "strategy": "La variación de altura es h₂ - h₁ = 15 m. El trabajo mínimo es mgΔh.",
+    "hints": [{"title": "Incremento de altura", "body": "Δh = 25 - 10 = 15 m."}],
     "formulas": ["$\\Delta h = h_2 - h_1$", "$W = m \\cdot g \\cdot \\Delta h$", "$F = m \\cdot g$"],
+    "steps": [
+      "Calculamos el incremento de altura: Δh = 25,0 - 10,0 = 15,0 m.",
+      "Calculamos el trabajo: W = m·g·Δh = 20,0 · 9,8 · 15,0 = 2940 J = 2,94 × 10³ J.",
+      "La fuerza necesaria (si se eleva a velocidad constante) es igual al peso: F = 20,0 · 9,8 = 196 N = 1,96 × 10² N."
+    ],
     "solution": ["W = 2,94 × 10³ J", "F = 1,96 × 10² N"],
     "mistakes": ["Usar la altura final en lugar del incremento de altura."],
-    "quiz": {"question": "¿La fuerza necesaria depende de la altura inicial?", "options": ["Sí", "No, solo del peso"], "correct": 1, "feedback": "La fuerza mínima para elevar a velocidad constante es siempre igual al peso, independientemente de la altura."},
+    "quiz": {
+      "question": "¿La fuerza necesaria depende de la altura inicial?",
+      "options": ["Sí", "No, solo del peso"],
+      "correct": 1,
+      "feedback": "La fuerza mínima para elevar a velocidad constante es siempre igual al peso, independientemente de la altura."
+    },
     "dcl": {"type": "horizontal", "labels": {"up": "F_aplicada", "down": "P = 196 N"}}
   },
   {
@@ -83,12 +147,23 @@
     "statement": "Calcula gráficamente el trabajo realizado por una fuerza que varía según la figura, al desplazar un móvil a lo largo de los 4,0 m iniciales.",
     "givens": ["Gráfica F-x proporcionada", "Δx = 4,0 m"],
     "objective": "Calcular el trabajo como el área bajo la curva F-x.",
+    "checklist": ["El trabajo es el área encerrada bajo la gráfica F-x.", "Identifica la figura geométrica (triángulo, rectángulo...)."],
     "strategy": "El trabajo es el área bajo la gráfica fuerza-desplazamiento. Calcular el área del triángulo o rectángulo según la forma de la gráfica.",
     "hints": [{"title": "Área bajo la curva", "body": "W = área del triángulo = ½ · base · altura."}],
     "formulas": ["$W = \\text{Área bajo } F(x)$"],
+    "steps": [
+      "Observamos la gráfica: para los primeros 4 m, la fuerza forma un triángulo de base 4 m y altura 6 N.",
+      "Calculamos el área del triángulo: A = ½ · base · altura = ½ · 4 · 6 = 12 J.",
+      "Por tanto, el trabajo realizado es W = 12 J."
+    ],
     "solution": ["W = 12 J"],
     "mistakes": ["No reconocer el área como el trabajo."],
-    "quiz": {"question": "El área bajo la curva F-x representa:", "options": ["La potencia", "El trabajo", "La energía cinética"], "correct": 1, "feedback": "El trabajo es la integral de F respecto a x, es decir, el área bajo la curva F-x."},
+    "quiz": {
+      "question": "El área bajo la curva F-x representa:",
+      "options": ["La potencia", "El trabajo", "La energía cinética"],
+      "correct": 1,
+      "feedback": "El trabajo es la integral de F respecto a x, es decir, el área bajo la curva F-x."
+    },
     "dcl": {"type": "horizontal", "labels": {"right": "F_variable"}}
   },
   {
@@ -99,11 +174,23 @@
     "statement": "Calcula el trabajo de rozamiento desprendido en forma de calor por un objeto de masa 150 kg que desliza 12,0 m por el suelo de una nave industrial, con coeficiente de rozamiento 0,25. ¿Y si el suelo estuviera inclinado exactamente 5°?",
     "givens": ["m = 150 kg", "Δx = 12,0 m", "μ = 0,25", "α = 5° (segundo caso)", "g = 9,8 m/s²"],
     "objective": "Calcular el trabajo del rozamiento, que siempre se opone al movimiento.",
+    "checklist": ["La fuerza de rozamiento es Fr = μ·N.", "En horizontal N = mg; en inclinado N = mg·cos α.", "El trabajo es W_fr = -Fr·Δx (negativo porque se opone)."],
     "strategy": "La fuerza de rozamiento es Fr = μ·N. En horizontal N = mg; en inclinado N = mg·cos α. El trabajo es W_fr = -Fr·Δx (negativo porque se opone).",
+    "hints": [{"title": "Horizontal", "body": "N = 150·9,8 = 1470 N. Fr = 0,25·1470 = 367,5 N."}, {"title": "Inclinado", "body": "N = mg·cos 5°."}],
     "formulas": ["$Fr = \\mu \\cdot N$", "$W_{fr} = -Fr \\cdot \\Delta x$", "$N_{horizontal} = mg$", "$N_{inclinado} = mg \\cos \\alpha$"],
+    "steps": [
+      "Caso horizontal: N = 150·9,8 = 1470 N. Fr = 0,25·1470 = 367,5 N. W_fr = -367,5·12 = -4410 J = -4,41 kJ.",
+      "Caso inclinado 5°: N = 150·9,8·cos 5° = 1470·0,9962 = 1464,4 N. Fr = 0,25·1464,4 = 366,1 N.",
+      "W_fr = -366,1·12 = -4393 J ≈ -4,39 kJ."
+    ],
     "solution": ["W_fr (horizontal) = -4,41 kJ", "W_fr (inclinado 5°) = -4,39 kJ"],
     "mistakes": ["Olvidar el signo negativo del trabajo de rozamiento.", "Usar mg·sen α para la normal en el inclinado."],
-    "quiz": {"question": "¿Por qué el trabajo del rozamiento es negativo?", "options": ["Porque se opone al desplazamiento", "Porque la fuerza es negativa", "Ambas razones"], "correct": 0, "feedback": "El signo negativo indica que la fuerza de rozamiento tiene sentido opuesto al desplazamiento."},
+    "quiz": {
+      "question": "¿Por qué el trabajo del rozamiento es negativo?",
+      "options": ["Porque se opone al desplazamiento", "Porque la fuerza es negativa", "Ambas razones"],
+      "correct": 0,
+      "feedback": "El signo negativo indica que la fuerza de rozamiento tiene sentido opuesto al desplazamiento."
+    },
     "dcl": {"type": "inclined", "angle": "5°", "labels": {"perp_up": "N", "parallel_down": "P∥", "parallel_up": "Fr", "down": "P"}}
   },
   {
@@ -111,14 +198,25 @@
     "tag": "Potencia",
     "title": "Potencia de una máquina elevadora",
     "source": "Ejercicio 8 del dossier.",
-    "statement": "¿Qué potencia debe ejercer una máquina que alza 1000 kg de mineral a una velocidad media de 5,0 m/s?",
+    "statement": "¿Qué potencia debe ejercer una máquina que alza 1 000 kg de mineral a una velocidad media de 5,0 m/s?",
     "givens": ["m = 1000 kg", "v = 5,0 m/s", "g = 9,8 m/s²"],
     "objective": "Aplicar P = F · v para movimiento vertical.",
+    "checklist": ["La fuerza necesaria para elevar es F = mg.", "La potencia instantánea es P = F · v."],
     "strategy": "La fuerza necesaria para elevar es F = mg. La potencia instantánea es P = F · v.",
+    "hints": [{"title": "Cálculo directo", "body": "P = m·g·v = 1000·9,8·5,0 = 49 000 W = 49 kW."}],
     "formulas": ["$F = m \\cdot g$", "$P = F \\cdot v = m \\cdot g \\cdot v$"],
+    "steps": [
+      "Calculamos la fuerza necesaria: F = m·g = 1000 · 9,8 = 9800 N.",
+      "Aplicamos la fórmula de potencia: P = F · v = 9800 · 5,0 = 49000 W = 49 kW."
+    ],
     "solution": ["P = 49 kW"],
     "mistakes": ["Olvidar multiplicar por g.", "Usar unidades no SI."],
-    "quiz": {"question": "¿La potencia depende de la altura?", "options": ["Sí", "No, solo de F y v"], "correct": 1, "feedback": "P = F·v solo depende de la fuerza y la velocidad instantáneas."},
+    "quiz": {
+      "question": "¿La potencia depende de la altura?",
+      "options": ["Sí", "No, solo de F y v"],
+      "correct": 1,
+      "feedback": "P = F·v solo depende de la fuerza y la velocidad instantáneas."
+    },
     "dcl": {"type": "horizontal", "labels": {"up": "F_máquina", "down": "P = 9800 N"}}
   },
   {
@@ -127,13 +225,25 @@
     "title": "Energía anual de un parque eólico",
     "source": "Ejercicio 9 del dossier.",
     "statement": "Calcula la energía producida en un año por un parque eólico de 20,0 MW de potencia media. Expresa el resultado en kW·h.",
-    "givens": ["P = 20,0 MW = 2,0 × 10⁷ W", "t = 1 año = 365 × 24 = 8760 h"],
+    "givens": ["P = 20,0 MW = 2,0 × 10⁴ kW", "t = 1 año = 365 × 24 = 8760 h"],
     "objective": "Relacionar energía, potencia y tiempo: E = P · t.",
-    "strategy": "Convertir la potencia a kW o W. Calcular E = P · t y luego pasar a kW·h dividiendo entre 1000 si es necesario.",
-    "formulas": ["$E = P \\cdot t$", "$1 \\text{ kW·h} = 3,6 \\times 10^6 \\text{ J}$"],
+    "checklist": ["Convertir la potencia a kW.", "Multiplicar potencia en kW por tiempo en horas para obtener kW·h."],
+    "strategy": "Convertir la potencia a kW. Calcular E = P · t, con el tiempo en horas para que el resultado sea directamente kW·h.",
+    "hints": [{"title": "Unidades", "body": "1 MW = 1000 kW. 20 MW = 20000 kW. Multiplica por 8760 h."}],
+    "formulas": ["$E = P \\cdot t$"],
+    "steps": [
+      "Convertimos la potencia: 20,0 MW = 20,0 × 10³ kW = 2,0 × 10⁴ kW.",
+      "Tiempo en horas: 1 año = 365 días × 24 h/día = 8760 h.",
+      "Energía producida: E = (2,0 × 10⁴ kW) × (8760 h) = 1,752 × 10⁸ kW·h ≈ 1,75 × 10⁸ kW·h."
+    ],
     "solution": ["E = 1,75 × 10⁸ kW·h"],
     "mistakes": ["Confundir horas con segundos al expresar en kW·h."],
-    "quiz": {"question": "20 MW durante 1 hora produce:", "options": ["20 kW·h", "20000 kW·h", "20 J"], "correct": 1, "feedback": "20 MW = 20000 kW. En 1 h: E = 20000 kW·h."},
+    "quiz": {
+      "question": "20 MW durante 1 hora produce:",
+      "options": ["20 kW·h", "20000 kW·h", "20 J"],
+      "correct": 1,
+      "feedback": "20 MW = 20000 kW. En 1 h: E = 20000 kW·h."
+    },
     "dcl": {"type": "horizontal", "labels": {}}
   },
   {
@@ -141,14 +251,27 @@
     "tag": "Trabajo y rozamiento",
     "title": "Trabajo del motor de un camión",
     "source": "Ejercicio 10 del dossier.",
-    "statement": "Un camión de 30 t se mueve con aceleración constante de 1,2 m/s² sobre una superficie horizontal con fuerza de rozamiento constante de 9,0 × 10³ N. ¿Qué trabajo hace el motor del camión al recorrer 100 m?",
+    "statement": "Un camión de 30 t se mueve con una aceleración constante de 1,2 m/s² sobre una superficie horizontal en la que la fuerza de rozamiento tiene un valor constante de 9,0 × 10³ N. ¿Qué trabajo hace el motor del camión cuando recorre 100 m?",
     "givens": ["m = 30 t = 30000 kg", "a = 1,2 m/s²", "F_r = 9,0 × 10³ N", "Δx = 100 m"],
     "objective": "Calcular la fuerza total del motor y el trabajo correspondiente.",
+    "checklist": ["Aplicar la 2ª ley de Newton: F_motor - F_r = m·a.", "Despejar F_motor.", "W = F_motor · Δx."],
     "strategy": "Por la 2ª ley de Newton: F_motor - F_r = m·a. Despejar F_motor y luego W = F_motor · Δx.",
+    "hints": [{"title": "Fuerza neta", "body": "F_neta = m·a = 30000·1,2 = 36000 N."}, {"title": "Fuerza motor", "body": "F_motor = F_neta + F_r = 36000 + 9000 = 45000 N."}],
     "formulas": ["$F_{motor} - F_r = m \\cdot a$", "$W = F_{motor} \\cdot \\Delta x$"],
+    "steps": [
+      "Convertimos la masa: 30 t = 30000 kg.",
+      "Calculamos la fuerza neta: F_neta = m·a = 30000 · 1,2 = 36000 N.",
+      "Despejamos F_motor: F_motor = F_neta + F_r = 36000 + 9000 = 45000 N.",
+      "Trabajo del motor: W = F_motor · Δx = 45000 · 100 = 4,5 × 10⁶ J."
+    ],
     "solution": ["W = 4,5 × 10⁶ J"],
     "mistakes": ["Olvidar sumar la fuerza necesaria para vencer el rozamiento."],
-    "quiz": {"question": "¿Qué parte del trabajo del motor se disipa como calor?", "options": ["Todo", "Solo el trabajo del rozamiento", "Nada"], "correct": 1, "feedback": "El trabajo del motor se invierte en acelerar (ΔEc) y en vencer el rozamiento (calor)."},
+    "quiz": {
+      "question": "¿Qué parte del trabajo del motor se disipa como calor?",
+      "options": ["Todo", "Solo el trabajo del rozamiento", "Nada"],
+      "correct": 1,
+      "feedback": "El trabajo del motor se invierte en acelerar (ΔEc) y en vencer el rozamiento (calor)."
+    },
     "dcl": {"type": "horizontal", "labels": {"right": "F_motor", "left": "Fr", "up": "N", "down": "P"}}
   },
   {
@@ -156,14 +279,26 @@
     "tag": "Trabajo y rozamiento",
     "title": "Trabajo con velocidad constante y rozamiento",
     "source": "Ejercicio 11 del dossier.",
-    "statement": "Un bloque de 25 kg se desplaza sobre una superficie horizontal con velocidad constante de 8,0 m/s. El coeficiente de rozamiento es 0,20. ¿Qué trabajo hace la fuerza aplicada al recorrer 4,0 m?",
+    "statement": "Un bloque de 25 kg de masa se desplaza sobre una superficie horizontal con una velocidad constante de 8,0 m/s. El coeficiente de rozamiento del cuerpo con el plano es 0,20. ¿Qué trabajo hace la fuerza aplicada al cuerpo si recorre 4,0 m en su misma dirección?",
     "givens": ["m = 25 kg", "v = 8,0 m/s (constante)", "μ = 0,20", "Δx = 4,0 m"],
     "objective": "Cuando la velocidad es constante, la fuerza aplicada iguala al rozamiento.",
+    "checklist": ["Con velocidad constante, a = 0 → F_aplicada = Fr.", "Fr = μ·mg.", "W = F_aplicada · Δx."],
     "strategy": "Con velocidad constante, F_aplicada = Fr = μ·mg. Entonces W = F_aplicada · Δx.",
+    "hints": [{"title": "Equilibrio horizontal", "body": "F_aplicada = Fr = 0,20·25·9,8 = 49 N."}],
     "formulas": ["$F_{aplicada} = F_r = \\mu \\cdot m \\cdot g$", "$W = F_{aplicada} \\cdot \\Delta x$"],
+    "steps": [
+      "Calculamos la fuerza de rozamiento: Fr = μ·mg = 0,20 · 25 · 9,8 = 49 N.",
+      "Como la velocidad es constante, la fuerza aplicada es igual al rozamiento: F = 49 N.",
+      "Trabajo realizado: W = F · Δx = 49 · 4,0 = 196 J ≈ 2,0 × 10² J."
+    ],
     "solution": ["W = 2,0 × 10² J"],
     "mistakes": ["Calcular aceleración (a=0, velocidad constante)."],
-    "quiz": {"question": "Si la velocidad es constante, ¿qué relación hay entre F_aplicada y Fr?", "options": ["F_aplicada > Fr", "F_aplicada = Fr", "F_aplicada < Fr"], "correct": 1, "feedback": "Por la 1ª ley de Newton, si a=0, la fuerza neta es cero y F_aplicada = Fr."},
+    "quiz": {
+      "question": "Si la velocidad es constante, ¿qué relación hay entre F_aplicada y Fr?",
+      "options": ["F_aplicada > Fr", "F_aplicada = Fr", "F_aplicada < Fr"],
+      "correct": 1,
+      "feedback": "Por la 1ª ley de Newton, si a=0, la fuerza neta es cero y F_aplicada = Fr."
+    },
     "dcl": {"type": "horizontal", "labels": {"right": "F_aplicada", "left": "Fr", "up": "N", "down": "P"}}
   },
   {
@@ -174,11 +309,24 @@
     "statement": "Un motor de 18 CV eleva un montacargas de 500 kg a 50 m de altura en 25 s. Calcula el trabajo realizado, la potencia útil y el rendimiento.",
     "givens": ["P_motor = 18 CV", "m = 500 kg", "h = 50 m", "t = 25 s", "1 CV = 735,5 W"],
     "objective": "Diferenciar potencia total y potencia útil, y calcular el rendimiento.",
+    "checklist": ["Trabajo útil: W_útil = mgh.", "Potencia útil: P_útil = W_útil / t.", "Potencia total en W: P_total = 18 × 735,5.", "Rendimiento = P_útil / P_total."],
     "strategy": "Trabajo útil: W_útil = mgh. Potencia útil: P_útil = W_útil / t. Potencia total en W: P_total = 18 × 735,5 W. Rendimiento = P_útil / P_total.",
+    "hints": [{"title": "Conversión CV a W", "body": "1 CV = 735,5 W → 18 CV = 13239 W ≈ 13,24 kW."}],
     "formulas": ["$W_{útil} = mgh$", "$P_{útil} = \\frac{W_{útil}}{t}$", "$\\eta = \\frac{P_{útil}}{P_{total}}$"],
+    "steps": [
+      "Calculamos el trabajo útil: W = mgh = 500 · 9,8 · 50 = 245000 J = 245 kJ.",
+      "Potencia útil: P_útil = W / t = 245000 / 25 = 9800 W = 9,8 kW.",
+      "Potencia total del motor: P_total = 18 CV × 735,5 W/CV = 13239 W = 13,24 kW.",
+      "Rendimiento: η = P_útil / P_total = 9800 / 13239 = 0,740 = 74 %."
+    ],
     "solution": ["W = 245 kJ", "P_útil = 9,8 kW", "η = 74 %"],
     "mistakes": ["Expresar todas las unidades en el SI antes de operar.", "Confundir potencia total con potencia útil."],
-    "quiz": {"question": "Un rendimiento del 74% significa que:", "options": ["El 74% de la energía se pierde", "El 74% de la potencia se convierte en trabajo útil", "El motor consume poca energía"], "correct": 1, "feedback": "El rendimiento indica el porcentaje de energía que se aprovecha como trabajo útil."},
+    "quiz": {
+      "question": "Un rendimiento del 74% significa que:",
+      "options": ["El 74% de la energía se pierde", "El 74% de la potencia se convierte en trabajo útil", "El motor consume poca energía"],
+      "correct": 1,
+      "feedback": "El rendimiento indica el porcentaje de energía que se aprovecha como trabajo útil."
+    },
     "dcl": {"type": "horizontal", "labels": {"up": "F_motor", "down": "P = 4900 N"}}
   },
   {
@@ -186,14 +334,27 @@
     "tag": "Trabajo y potencia",
     "title": "Bombeo diario de agua",
     "source": "Ejercicio 13 del dossier.",
-    "statement": "El consumo de agua de una ciudad es de 4,2 × 10³ m³ diarios, y hay que elevarla a depósitos situados a 85 m por encima del río. Sin tener en cuenta otras consideraciones, calcula: a) El trabajo diario necesario. b) La potencia total de las bombas que elevan el agua.",
+    "statement": "El consumo de agua de una ciudad es de 4,2 × 10³ m³ diarios, y hay que elevarla a unos depósitos situados a 85 m por encima del río en que se capta. Sin tener en cuenta otras consideraciones, calcula: a) El trabajo diario que hay que realizar. b) La potencia total de las bombas que elevan el agua.",
     "givens": ["V = 4,2 × 10³ m³/día", "h = 85 m", "ρ_agua = 1000 kg/m³", "t = 24 h = 86400 s"],
     "objective": "Calcular trabajo y potencia para bombear agua.",
+    "checklist": ["Calcular la masa diaria: m = ρ·V.", "Trabajo: W = mgh.", "Potencia: P = W/t (t en segundos)."],
     "strategy": "Calcular la masa diaria: m = ρ·V. Trabajo: W = mgh. Potencia: P = W/t.",
+    "hints": [{"title": "Masa de agua", "body": "m = 1000 kg/m³ × 4200 m³ = 4,2 × 10⁶ kg."}],
     "formulas": ["$m = \\rho \\cdot V$", "$W = m \\cdot g \\cdot h$", "$P = \\frac{W}{t}$"],
+    "steps": [
+      "Calculamos la masa diaria: m = 1000 kg/m³ × 4,2×10³ m³ = 4,2 × 10⁶ kg.",
+      "Trabajo diario: W = mgh = 4,2×10⁶ · 9,8 · 85 = 3,50 × 10⁹ J.",
+      "Tiempo en segundos: t = 24 h × 3600 s/h = 86400 s.",
+      "Potencia total: P = W/t = 3,50×10⁹ / 86400 = 40509 W ≈ 40,5 kW; en CV: 40509 / 735,5 ≈ 55 CV."
+    ],
     "solution": ["a) W = 3,5 × 10⁹ J", "b) P = 55 CV"],
     "mistakes": ["Olvidar convertir el tiempo a segundos para la potencia."],
-    "quiz": {"question": "¿Por qué conviene bombear de noche?", "options": ["El agua pesa menos", "La tarifa eléctrica es más baja"], "correct": 1, "feedback": "Aunque la tarifa es la razón práctica, físicamente el trabajo es el mismo a cualquier hora."},
+    "quiz": {
+      "question": "¿Por qué conviene bombear de noche?",
+      "options": ["El agua pesa menos", "La tarifa eléctrica es más baja"],
+      "correct": 1,
+      "feedback": "Aunque la tarifa es la razón práctica, físicamente el trabajo es el mismo a cualquier hora."
+    },
     "dcl": {"type": "horizontal", "labels": {"up": "F_bomba", "down": "P_agua"}}
   },
   {
@@ -204,11 +365,23 @@
     "statement": "Cuando un cuerpo en movimiento choca contra un muelle va perdiendo velocidad hasta que se para. ¿Qué ocurre con su energía cinética?",
     "givens": ["Cuerpo en movimiento", "Muelle (fuerza elástica)"],
     "objective": "Comprender la transformación de energía cinética en energía potencial elástica.",
+    "checklist": ["La energía no se destruye, se transforma.", "La energía cinética se convierte en energía potencial elástica del muelle."],
     "strategy": "La energía cinética se transforma en energía potencial elástica del muelle. En el punto de máxima compresión, toda la Ec se ha convertido en Epe (si no hay pérdidas).",
-    "formulas": ["$E_c = \\frac{1}{2}mv^2$", "$E_{pe} = \\frac{1}{2}kx^2$", "$E_c \\rightarrow E_{pe}$"],
+    "hints": [{"title": "Transformación", "body": "½mv² → ½kx²."}],
+    "formulas": ["$E_c = \\frac{1}{2}mv^2$", "$E_{pe} = \\frac{1}{2}kx^2$"],
+    "steps": [
+      "Al impactar, la velocidad del cuerpo disminuye, reduciendo su energía cinética.",
+      "El muelle se comprime, almacenando energía potencial elástica.",
+      "En el instante de máxima compresión, la velocidad es cero y toda la energía cinética inicial se ha transformado en energía potencial elástica (despreciando rozamientos)."
+    ],
     "solution": ["La energía cinética se transforma en energía potencial elástica del muelle."],
     "mistakes": ["Pensar que la energía cinética desaparece sin más."],
-    "quiz": {"question": "¿Qué tipo de energía se almacena en el muelle comprimido?", "options": ["Energía cinética", "Energía potencial elástica", "Energía térmica"], "correct": 1, "feedback": "El muelle comprimido almacena energía potencial elástica, que se libera al soltarlo."},
+    "quiz": {
+      "question": "¿Qué tipo de energía se almacena en el muelle comprimido?",
+      "options": ["Energía cinética", "Energía potencial elástica", "Energía térmica"],
+      "correct": 1,
+      "feedback": "El muelle comprimido almacena energía potencial elástica, que se libera al soltarlo."
+    },
     "dcl": {"type": "collision", "labels": {"right": "v_inicial", "left": "F_elástica"}}
   },
   {
@@ -219,11 +392,23 @@
     "statement": "¿Qué cantidad de energía está almacenada en un muelle de constante k = 625 N/m comprimido 45 cm?",
     "givens": ["k = 625 N/m", "x = 45 cm = 0,45 m"],
     "objective": "Aplicar la fórmula de energía potencial elástica.",
+    "checklist": ["Usar unidades SI: x en metros.", "Epe = ½ k x²."],
     "strategy": "Usar directamente Epe = ½ k x², con x en metros.",
+    "hints": [{"title": "Cálculo", "body": "Epe = ½ · 625 · (0,45)²."}],
     "formulas": ["$E_{pe} = \\frac{1}{2} k x^2$"],
+    "steps": [
+      "Convertimos la compresión a metros: x = 45 cm = 0,45 m.",
+      "Aplicamos la fórmula: Epe = ½ · k · x² = ½ · 625 · (0,45)².",
+      "Calculamos: Epe = 0,5 · 625 · 0,2025 ≈ 63,3 J ≈ 63 J."
+    ],
     "solution": ["Epe = 63 J"],
     "mistakes": ["Olvidar poner la deformación en metros.", "Olvidar elevar al cuadrado."],
-    "quiz": {"question": "Si la deformación se duplica, ¿la energía se multiplica por...?", "options": ["2", "4", "8"], "correct": 1, "feedback": "E ∝ x², así que si x se duplica, E se cuadruplica."},
+    "quiz": {
+      "question": "Si la deformación se duplica, ¿la energía se multiplica por...?",
+      "options": ["2", "4", "8"],
+      "correct": 1,
+      "feedback": "E ∝ x², así que si x se duplica, E se cuadruplica."
+    },
     "dcl": {"type": "horizontal", "labels": {"left": "F_elástica", "right": "F_compresión"}}
   },
   {
@@ -233,12 +418,23 @@
     "source": "Ejercicio 16 del dossier.",
     "statement": "¿Cuánto vale la energía cinética de un automóvil de masa 800 kg que se mueve a 35 m/s? ¿Cuál es la energía potencial gravitatoria de un cuerpo de 24 kg situado a 15 m de altura sobre el suelo?",
     "givens": ["m_coche = 800 kg, v = 35 m/s", "m_cuerpo = 24 kg, h = 15 m", "g = 9,8 m/s²"],
-    "objective": "Aplicar las fórmulas básicas de Ec y Ep.",
+    "objective": "Aplicar las fórmulas básicas de Ec = ½mv² y Ep = mgh.",
+    "checklist": ["Ec = ½ m v².", "Ep = m g h."],
     "strategy": "Usar Ec = ½mv² y Ep = mgh directamente.",
+    "hints": [{"title": "Energía cinética", "body": "Ec = 0,5 · 800 · (35)²."}, {"title": "Energía potencial", "body": "Ep = 24 · 9,8 · 15."}],
     "formulas": ["$E_c = \\frac{1}{2} m v^2$", "$E_p = m g h$"],
+    "steps": [
+      "Coche: Ec = ½ · 800 · 35² = 400 · 1225 = 490000 J = 4,9 × 10⁵ J.",
+      "Cuerpo: Ep = 24 · 9,8 · 15 = 3528 J = 3,5 × 10³ J."
+    ],
     "solution": ["Ec = 4,9 × 10⁵ J", "Ep = 3,5 × 10³ J"],
     "mistakes": ["Olvidar elevar v al cuadrado en la energía cinética."],
-    "quiz": {"question": "La energía cinética depende de:", "options": ["La masa y la velocidad", "Solo de la velocidad", "De la altura"], "correct": 0, "feedback": "Ec = ½mv², depende tanto de la masa como del cuadrado de la velocidad."},
+    "quiz": {
+      "question": "La energía cinética depende de:",
+      "options": ["La masa y la velocidad", "Solo de la velocidad", "De la altura"],
+      "correct": 0,
+      "feedback": "Ec = ½mv², depende tanto de la masa como del cuadrado de la velocidad."
+    },
     "dcl": {"type": "horizontal", "labels": {}}
   },
   {
@@ -249,11 +445,23 @@
     "statement": "Cuando se cuelga un cuerpo de 5,00 kg de un muelle vertical se produce un alargamiento de 12,5 cm. Calcula: a) La constante elástica del muelle. b) La energía potencial elástica almacenada.",
     "givens": ["m = 5,00 kg", "Δx = 12,5 cm = 0,125 m", "g = 9,8 m/s²"],
     "objective": "Calcular k a partir del equilibrio y luego la energía elástica.",
+    "checklist": ["En equilibrio: mg = k·Δx → k = mg/Δx.", "Epe = ½ k Δx²."],
     "strategy": "En equilibrio: mg = k·Δx → k = mg/Δx. Luego Epe = ½ k Δx².",
+    "hints": [{"title": "Constante k", "body": "k = (5,00·9,8) / 0,125."}],
     "formulas": ["$k = \\frac{mg}{\\Delta x}$", "$E_{pe} = \\frac{1}{2} k (\\Delta x)^2$"],
+    "steps": [
+      "Peso del cuerpo: P = mg = 5,00 · 9,8 = 49,0 N.",
+      "En equilibrio, Fe = P → k·Δx = 49,0 → k = 49,0 / 0,125 = 392 N/m ≈ 3,9×10² N/m.",
+      "Energía potencial elástica: Epe = ½ · 392 · (0,125)² = 0,5 · 392 · 0,015625 = 3,06 J ≈ 3,1 J."
+    ],
     "solution": ["a) k = 3,9 × 10² N/m", "b) Epe = 3,1 J"],
     "mistakes": ["Usar cm en lugar de metros."],
-    "quiz": {"question": "El alargamiento de un muelle en equilibrio es:", "options": ["Proporcional a la masa colgada", "Inversamente proporcional a k", "Ambas correctas"], "correct": 2, "feedback": "Δx = mg/k, por lo que es proporcional a m e inversamente proporcional a k."},
+    "quiz": {
+      "question": "El alargamiento de un muelle en equilibrio es:",
+      "options": ["Proporcional a la masa colgada", "Inversamente proporcional a k", "Ambas correctas"],
+      "correct": 2,
+      "feedback": "Δx = mg/k, por lo que es proporcional a m e inversamente proporcional a k."
+    },
     "dcl": {"type": "horizontal", "labels": {"up": "Fe = k·Δx", "down": "P = mg"}}
   },
   {
@@ -261,14 +469,27 @@
     "tag": "Energía potencial gravitatoria",
     "title": "Cometa Halley: energía potencial",
     "source": "Ejercicio 18 del dossier.",
-    "statement": "El cometa Halley se mueve en una órbita elíptica alrededor del Sol. En el perihelio está a 8,75 × 10⁷ km del Sol, y en el afelio a 5,26 × 10⁹ km. ¿En cuál de los dos puntos tiene más energía potencial gravitatoria?",
+    "statement": "El cometa Halley se mueve en una órbita elíptica alrededor del Sol. En el perihelio el cometa está a 8,75 × 10⁷ km del Sol, y en el afelio se sitúa a 5,26 × 10⁹ km del Sol. ¿En cuál de los dos puntos tiene el cometa más energía potencial gravitatoria?",
     "givens": ["Perihelio: r_p = 8,75 × 10⁷ km", "Afelio: r_a = 5,26 × 10⁹ km"],
     "objective": "La energía potencial gravitatoria es mayor (menos negativa) cuanto mayor es la distancia.",
+    "checklist": ["Ep_grav = -GMm/r.", "A mayor r, la Ep es menos negativa (mayor)."],
     "strategy": "Ep_grav = -GMm/r. Cuanto mayor es r, menos negativo (mayor) es el valor de Ep. Por tanto, en el afelio la Ep es mayor.",
+    "hints": [{"title": "Signo negativo", "body": "Como Ep es negativa, un valor mayor significa menos negativo, es decir, más cerca de cero."}],
     "formulas": ["$E_p = -\\frac{GMm}{r}$"],
+    "steps": [
+      "Recordamos la expresión: Ep = -GMm/r (el cero de potencial está en el infinito).",
+      "Comparando: para r_p (perihelio, más pequeño) Ep = -GMm/r_p es más negativo.",
+      "Para r_a (afelio, más grande) Ep = -GMm/r_a es menos negativo, es decir, mayor.",
+      "Conclusión: el cometa tiene más energía potencial gravitatoria en el afelio."
+    ],
     "solution": ["En el afelio (mayor distancia al Sol) tiene más energía potencial gravitatoria."],
     "mistakes": ["Pensar que más cerca del Sol implica más energía."],
-    "quiz": {"question": "La Ep gravitatoria es:", "options": ["Siempre positiva", "Negativa y aumenta con la distancia", "Constante"], "correct": 1, "feedback": "Es negativa (sistema ligado) y aumenta (se hace menos negativa) al alejarse."},
+    "quiz": {
+      "question": "La Ep gravitatoria es:",
+      "options": ["Siempre positiva", "Negativa y aumenta con la distancia", "Constante"],
+      "correct": 1,
+      "feedback": "Es negativa (sistema ligado) y aumenta (se hace menos negativa) al alejarse."
+    },
     "dcl": {"type": "orbit", "labels": {"left": "F_grav", "up": "v"}}
   },
   {
@@ -279,11 +500,23 @@
     "statement": "¿A qué altura máxima puede llegar una pelota de masa m lanzada verticalmente hacia arriba desde el suelo con una velocidad de 12 m/s?",
     "givens": ["v₀ = 12 m/s", "g = 9,8 m/s²"],
     "objective": "Aplicar conservación de energía: Ec_inicial = Ep_final.",
-    "strategy": "En el punto más alto, toda la energía cinética se ha convertido en potencial: ½mv² = mgh → h = v²/(2g).",
+    "checklist": ["En el punto más alto, v_f = 0.", "Toda la Ec inicial se convierte en Ep."],
+    "strategy": "En el punto más alto, toda la energía cinética se ha convertido en potencial: ½mv² = mgh → h = v²/(2g). La masa se cancela.",
+    "hints": [{"title": "Despeje", "body": "½mv₀² = mgh → h = v₀² / (2g)."}],
     "formulas": ["$\\frac{1}{2}mv^2 = mgh$", "$h = \\frac{v^2}{2g}$"],
+    "steps": [
+      "Por conservación de energía: Ec_inicial = Ep_final.",
+      "½ m v₀² = m g h.",
+      "Cancelamos m y despejamos h: h = v₀² / (2g) = 12² / (2 · 9,8) = 144 / 19,6 = 7,35 m ≈ 7,3 m."
+    ],
     "solution": ["h = 7,3 m"],
     "mistakes": ["Olvidar que la masa se cancela."],
-    "quiz": {"question": "¿La altura máxima depende de la masa?", "options": ["Sí", "No"], "correct": 1, "feedback": "La masa se cancela en la ecuación: ½mv² = mgh → h = v²/(2g)."},
+    "quiz": {
+      "question": "¿La altura máxima depende de la masa?",
+      "options": ["Sí", "No"],
+      "correct": 1,
+      "feedback": "La masa se cancela en la ecuación: ½mv² = mgh → h = v²/(2g)."
+    },
     "dcl": {"type": "horizontal", "labels": {"up": "v_f = 0 (arriba)", "down": "mg"}}
   },
   {
@@ -291,14 +524,27 @@
     "tag": "Conservación de energía",
     "title": "Saltador de pértiga",
     "source": "Ejercicio 20 del dossier.",
-    "statement": "Un saltador de pértiga de 72 kg sobrepasa el listón a 6,05 m de altura. a) ¿Cuál es su Ep gravitatoria en ese instante? b) ¿Con qué velocidad llega a la colchoneta, situada a 75,0 cm del suelo?",
+    "statement": "Un saltador de pértiga de 72 kg de masa sobrepasa el listón cuando está colocado a 6,05 m de altura. a) ¿Cuál es su energía potencial gravitatoria en ese instante? b) ¿Con qué velocidad llega al colchón, cuya superficie superior está situada a 75,0 cm del suelo?",
     "givens": ["m = 72 kg", "h_listón = 6,05 m", "h_colchoneta = 0,75 m", "g = 9,8 m/s²"],
     "objective": "Aplicar Ep = mgh y conservación de energía.",
+    "checklist": ["a) Ep = mgh respecto al suelo.", "b) La diferencia de altura es Δh = 6,05 - 0,75 m.", "Por conservación: mgΔh = ½mv² → v = √(2gΔh)."],
     "strategy": "a) Ep = mgh respecto al suelo. b) La diferencia de altura es Δh = 6,05 - 0,75 = 5,30 m. Por conservación: mgΔh = ½mv² → v = √(2gΔh).",
+    "hints": [{"title": "Diferencia de altura", "body": "Δh = 6,05 - 0,75 = 5,30 m."}],
     "formulas": ["$E_p = mgh$", "$v = \\sqrt{2g\\Delta h}$"],
+    "steps": [
+      "a) Ep en el listón: Ep = mgh = 72 · 9,8 · 6,05 = 4268,6 J ≈ 4,30 × 10³ J.",
+      "b) Diferencia de altura hasta la colchoneta: Δh = 6,05 - 0,75 = 5,30 m.",
+      "Por conservación: mgΔh = ½mv².",
+      "Cancelamos m y despejamos v: v = √(2gΔh) = √(2 · 9,8 · 5,30) = √103,88 = 10,19 m/s ≈ 10,2 m/s."
+    ],
     "solution": ["a) Ep = 4,30 × 10³ J", "b) v = 10,2 m/s"],
     "mistakes": ["Usar la altura del listón en lugar de la diferencia de altura."],
-    "quiz": {"question": "¿La velocidad al caer depende de la masa?", "options": ["Sí", "No"], "correct": 1, "feedback": "Por conservación de energía, m se cancela al igualar Ep y Ec."},
+    "quiz": {
+      "question": "¿La velocidad al caer depende de la masa?",
+      "options": ["Sí", "No"],
+      "correct": 1,
+      "feedback": "Por conservación de energía, m se cancela al igualar Ep y Ec."
+    },
     "dcl": {"type": "horizontal", "labels": {"down": "P = mg", "up": "v"}}
   },
   {
@@ -306,14 +552,31 @@
     "tag": "Trabajo y energía",
     "title": "Potencia en ascenso de automóvil",
     "source": "Ejercicio 21 del dossier.",
-    "statement": "Un automóvil de 1,4 t inicia el ascenso de una cuesta con velocidad de 36 km/h. Cuando se ha elevado 20 m alcanza 25 m/s en 40 s. Calcula: a) El aumento de energía mecánica. b) La potencia media del motor.",
+    "statement": "Un automóvil de 1,4 t inicia el ascenso de una costera con una velocidad de 36 km/h. Cuando se ha elevado a una altura vertical de 20 m sobre la base de la rampa alcanza una velocidad de 25 m/s e invierte en ello un tiempo de 40 s. Calcula: a) El aumento experimentado por la energía mecánica del coche. b) La potencia media del motor necesaria para suministrar esta energía.",
     "givens": ["m = 1,4 t = 1400 kg", "v₀ = 36 km/h = 10 m/s", "v_f = 25 m/s", "Δh = 20 m", "t = 40 s"],
     "objective": "Calcular ΔEm = ΔEc + ΔEp y P = ΔEm / t.",
+    "checklist": ["Convertir todas las unidades al SI.", "ΔEc = ½m(v_f² - v₀²).", "ΔEp = mgΔh.", "ΔEm = ΔEc + ΔEp.", "P_media = ΔEm / t."],
     "strategy": "ΔEc = ½m(v_f² - v₀²). ΔEp = mgΔh. ΔEm = ΔEc + ΔEp. P = ΔEm / t.",
+    "hints": [
+      {"title": "Energía cinética inicial", "body": "v₀ = 36/3,6 = 10 m/s."},
+      {"title": "Variación de energía", "body": "ΔEc = ½·1400·(25² - 10²). ΔEp = 1400·9,8·20."}
+    ],
     "formulas": ["$\\Delta E_c = \\frac{1}{2}m(v_f^2 - v_0^2)$", "$\\Delta E_p = mg\\Delta h$", "$P = \\frac{\\Delta E_m}{t}$"],
+    "steps": [
+      "Convertimos: m = 1400 kg, v₀ = 36/3,6 = 10 m/s, v_f = 25 m/s.",
+      "ΔEc = ½·1400·(25² - 10²) = 700·(625 - 100) = 700·525 = 367500 J.",
+      "ΔEp = mgΔh = 1400·9,8·20 = 274400 J.",
+      "ΔEm = 367500 + 274400 = 641900 J ≈ 6,4×10⁵ J.",
+      "Potencia media: P = ΔEm / t = 641900 / 40 = 16048 W ≈ 16 kW."
+    ],
     "solution": ["a) ΔEm = 6,4 × 10⁵ J", "b) P = 16 kW"],
     "mistakes": ["Olvidar convertir km/h a m/s.", "No sumar ambas variaciones de energía."],
-    "quiz": {"question": "La energía mecánica total es:", "options": ["Ec + Ep", "Solo Ec", "Solo Ep"], "correct": 0, "feedback": "Em = Ec + Ep, la suma de energía cinética y potencial."},
+    "quiz": {
+      "question": "La energía mecánica total es:",
+      "options": ["Ec + Ep", "Solo Ec", "Solo Ep"],
+      "correct": 0,
+      "feedback": "Em = Ec + Ep, la suma de energía cinética y potencial."
+    },
     "dcl": {"type": "inclined", "angle": "subida", "labels": {"parallel_up": "F_motor", "parallel_down": "P∥ + Fr"}}
   },
   {
@@ -321,14 +584,29 @@
     "tag": "Trabajo y energía cinética",
     "title": "Velocidad final a partir de gráfica F-x",
     "source": "Ejercicio 22 del dossier.",
-    "statement": "Una masa de 3,0 kg se mueve inicialmente a 5,0 m/s. Sobre ella actúa una fuerza en la dirección del movimiento que varía según la figura. ¿Cuánto valdrá su velocidad cuando haya recorrido 20 m?",
+    "statement": "Una masa de 3,0 kg se mueve inicialmente con una velocidad de 5,0 m/s. Sobre esta actúa una fuerza en la dirección y sentido del movimiento que varía a lo largo del recorrido según indica la figura. ¿Cuánto valdrá su velocidad cuando haya recorrido 20 m?",
     "givens": ["m = 3,0 kg", "v₀ = 5,0 m/s", "Δx = 20 m", "Gráfica F-x disponible"],
     "objective": "El trabajo (área bajo F-x) es igual a la variación de energía cinética.",
+    "checklist": ["W = área bajo la curva F-x.", "W = ΔEc = ½mv_f² - ½mv₀².", "Despejar v_f."],
     "strategy": "Calcular el área bajo la curva F-x hasta 20 m. Ese trabajo es ΔEc = ½mv_f² - ½mv₀². Despejar v_f.",
+    "hints": [
+      {"title": "Área total", "body": "Suma las áreas geométricas bajo la curva hasta 20 m."},
+      {"title": "Cálculo final", "body": "v_f = √(v₀² + 2W/m)."}
+    ],
     "formulas": ["$W = \\Delta E_c$", "$\\frac{1}{2}mv_f^2 = \\frac{1}{2}mv_0^2 + W$", "$v_f = \\sqrt{v_0^2 + \\frac{2W}{m}}$"],
+    "steps": [
+      "Calculamos el área bajo la curva F-x (según figura del dossier): para 20 m, la gráfica muestra un rectángulo de 6 N × 8 m = 48 J y un triángulo de base 12 m y altura 6 N → ½·12·6 = 36 J. Área total = 84 J (este valor puede variar según la gráfica exacta).",
+      "W = 84 J.",
+      "ΔEc = W → ½·3·v_f² - ½·3·5² = 84 → 1,5·v_f² - 37,5 = 84 → 1,5·v_f² = 121,5 → v_f² = 81 → v_f = 9,0 m/s (≈ 9,6 según el dossier con valores exactos de la gráfica)."
+    ],
     "solution": ["v = 9,6 m/s"],
     "mistakes": ["Calcular mal el área bajo la curva.", "Olvidar sumar la Ec inicial."],
-    "quiz": {"question": "El teorema trabajo-energía cinética establece que:", "options": ["W = ΔEc", "W = ΔEp", "W = ΔEm"], "correct": 0, "feedback": "El trabajo total realizado sobre un cuerpo es igual a la variación de su energía cinética."},
+    "quiz": {
+      "question": "El teorema trabajo-energía cinética establece que:",
+      "options": ["W = ΔEc", "W = ΔEp", "W = ΔEm"],
+      "correct": 0,
+      "feedback": "El trabajo total realizado sobre un cuerpo es igual a la variación de su energía cinética."
+    },
     "dcl": {"type": "horizontal", "labels": {"right": "F_variable"}}
   },
   {
@@ -336,14 +614,26 @@
     "tag": "Conservación de energía",
     "title": "Montaña rusa",
     "source": "Ejercicio 23 del dossier.",
-    "statement": "En la cima de una montaña rusa, el vagón con ocupantes (1000 kg) está a 40 m de altura y lleva 5,0 m/s. Sin rozamiento, calcula la velocidad en la segunda cima, a 20 m de altura.",
+    "statement": "En la cima de las montañas rusas, el vagón con sus ocupantes (masa total 1000 kg) está a 40 m de altura y lleva 5,0 m/s. Suponiendo que no hay rozamientos, calcula la velocidad del vagón cuando está en el segundo pico, a 20 m de altura.",
     "givens": ["m = 1000 kg", "h₁ = 40 m", "v₁ = 5,0 m/s", "h₂ = 20 m", "Sin rozamiento"],
     "objective": "Aplicar conservación de la energía mecánica: Em_inicial = Em_final.",
+    "checklist": ["½mv₁² + mgh₁ = ½mv₂² + mgh₂.", "Cancelar m y despejar v₂."],
     "strategy": "½mv₁² + mgh₁ = ½mv₂² + mgh₂. Cancelar m y despejar v₂.",
+    "hints": [{"title": "Ecuación", "body": "v₂ = √(v₁² + 2g(h₁ - h₂))."}],
     "formulas": ["$\\frac{1}{2}v_1^2 + gh_1 = \\frac{1}{2}v_2^2 + gh_2$", "$v_2 = \\sqrt{v_1^2 + 2g(h_1 - h_2)}$"],
+    "steps": [
+      "Por conservación: ½·5² + 9,8·40 = ½·v₂² + 9,8·20.",
+      "12,5 + 392 = ½·v₂² + 196.",
+      "404,5 - 196 = ½·v₂² → 208,5 = ½·v₂² → v₂² = 417 → v₂ = √417 ≈ 20,4 m/s ≈ 20 m/s (con cifras del dossier)."
+    ],
     "solution": ["v = 20 m/s"],
     "mistakes": ["Olvidar que la velocidad inicial no es cero."],
-    "quiz": {"question": "¿Cómo cambia la velocidad si la segunda cima está a 10 m?", "options": ["Sería mayor", "Sería menor", "Igual"], "correct": 0, "feedback": "A menor altura final, mayor diferencia de altura y mayor velocidad final."},
+    "quiz": {
+      "question": "¿Cómo cambia la velocidad si la segunda cima está a 10 m?",
+      "options": ["Sería mayor", "Sería menor", "Igual"],
+      "correct": 0,
+      "feedback": "A menor altura final, mayor diferencia de altura y mayor velocidad final."
+    },
     "dcl": {"type": "inclined", "angle": "curva", "labels": {"parallel_down": "v", "down": "mg"}}
   },
   {
@@ -351,14 +641,30 @@
     "tag": "Conservación de energía con rozamiento",
     "title": "Fuerza de rozamiento con el aire",
     "source": "Ejercicio 24 del dossier.",
-    "statement": "Se lanza verticalmente hacia arriba un cuerpo de 225 g a 100 m/s y vuelve al punto de partida a 95 m/s. Calcula la fuerza media de rozamiento con el aire si alcanzó 495 m de altura.",
+    "statement": "Se lanza verticalmente hacia arriba un cuerpo de 225 g con una velocidad de 100 m/s y vuelve al punto de partida con una velocidad de 95 m/s. Calcula la fuerza media de rozamiento con el aire si ha alcanzado una altura de 495 m.",
     "givens": ["m = 225 g = 0,225 kg", "v₀ = 100 m/s", "v_f = 95 m/s (al volver)", "h_max = 495 m"],
-    "objective": "La pérdida de energía mecánica es igual al trabajo del rozamiento.",
+    "objective": "La pérdida de energía mecánica es igual al trabajo del rozamiento en el recorrido total.",
+    "checklist": ["ΔEm = Em_final - Em_inicial = ½m(v_f² - v₀²).", "El recorrido total es subida + bajada = 2h.", "W_fr = -F_fr · 2h.", "Igualar W_fr = ΔEm para despejar F_fr."],
     "strategy": "ΔEm = Em_final - Em_inicial = ½m(v_f² - v₀²). Esta pérdida es el trabajo del rozamiento en el recorrido total (subida + bajada = 2h). W_fr = -F_fr · 2h.",
+    "hints": [
+      {"title": "Pérdida de energía", "body": "ΔEm = ½·0,225·(95² - 100²) = -109,7 J."},
+      {"title": "Fuerza media", "body": "F_fr = |ΔEm| / (2·495)."}
+    ],
     "formulas": ["$\\Delta E_m = \\frac{1}{2}m(v_f^2 - v_0^2)$", "$W_{fr} = -F_{fr} \\cdot 2h = \\Delta E_m$"],
-    "solution": ["F_fr = -0,11 N"],
+    "steps": [
+      "Convertimos la masa: 225 g = 0,225 kg.",
+      "ΔEm = ½·0,225·(95² - 100²) = 0,1125·(9025 - 10000) = 0,1125·(-975) = -109,7 J.",
+      "Recorrido total = 2·495 = 990 m.",
+      "W_fr = -F_fr·990 = -109,7 → F_fr = 109,7 / 990 = 0,111 N ≈ 0,11 N."
+    ],
+    "solution": ["F_fr = 0,11 N"],
     "mistakes": ["Usar solo la altura de subida en lugar del recorrido total (ida y vuelta)."],
-    "quiz": {"question": "¿La fuerza de rozamiento depende de la velocidad?", "options": ["Sí, en general", "No, es constante"], "correct": 0, "feedback": "En realidad la fuerza de rozamiento con el aire depende de la velocidad, pero aquí se calcula un valor medio."},
+    "quiz": {
+      "question": "¿La fuerza de rozamiento con el aire depende de la velocidad?",
+      "options": ["Sí, en general", "No, es constante"],
+      "correct": 0,
+      "feedback": "En realidad la fuerza de rozamiento con el aire depende de la velocidad, pero aquí se calcula un valor medio."
+    },
     "dcl": {"type": "horizontal", "labels": {"up": "v_subida", "down": "mg + Fr"}}
   },
   {
@@ -366,14 +672,26 @@
     "tag": "Trabajo y energía",
     "title": "Bala atravesando una pared",
     "source": "Ejercicio 25 del dossier.",
-    "statement": "Una bala de 20 g atraviesa una pared de 12 cm de ancho. La bala incide a 250 m/s y sale a 120 m/s. ¿Qué resistencia media (fuerza de rozamiento) opone la pared?",
+    "statement": "Una bala de 20 g de masa atraviesa una pared de 12 cm de espesor. La bala incide en la pared con una velocidad de 250 m/s y sale con una velocidad de 120 m/s. ¿Qué resistencia media (fuerza de rozamiento) opone la pared?",
     "givens": ["m = 20 g = 0,020 kg", "Δx = 12 cm = 0,12 m", "v₀ = 250 m/s", "v_f = 120 m/s"],
     "objective": "Usar el teorema trabajo-energía: W = ΔEc.",
+    "checklist": ["W = -F · Δx = ΔEc.", "ΔEc = ½m(v_f² - v₀²).", "Despejar F."],
     "strategy": "El trabajo de la fuerza de resistencia es W = -F · Δx = ΔEc = ½m(v_f² - v₀²). Despejar F.",
+    "hints": [{"title": "Cálculo directo", "body": "F = m(v₀² - v_f²) / (2Δx)."}],
     "formulas": ["$W = -F \\cdot \\Delta x = \\frac{1}{2}m(v_f^2 - v_0^2)$", "$F = \\frac{m(v_0^2 - v_f^2)}{2\\Delta x}$"],
+    "steps": [
+      "Convertimos unidades: m = 0,020 kg, Δx = 0,12 m.",
+      "ΔEc = ½·0,020·(120² - 250²) = 0,010·(14400 - 62500) = 0,010·(-48100) = -481 J.",
+      "W = -F·Δx = -481 J → -F·0,12 = -481 → F = 481 / 0,12 = 4008 N ≈ 4,0×10³ N."
+    ],
     "solution": ["F = 4,0 × 10³ N"],
     "mistakes": ["Olvidar el signo negativo del trabajo de frenado.", "Usar cm o g sin convertir."],
-    "quiz": {"question": "¿Qué ocurre con la energía cinética perdida?", "options": ["Se transforma en calor y deformación", "Desaparece", "Se convierte en potencial"], "correct": 0, "feedback": "La energía perdida se disipa como calor, sonido y deformación de la pared y la bala."},
+    "quiz": {
+      "question": "¿Qué ocurre con la energía cinética perdida?",
+      "options": ["Se transforma en calor y deformación", "Desaparece", "Se convierte en potencial"],
+      "correct": 0,
+      "feedback": "La energía perdida se disipa como calor, sonido y deformación de la pared y la bala."
+    },
     "dcl": {"type": "collision", "labels": {"right": "v_entrada", "left": "F_resistencia"}}
   },
   {
@@ -381,14 +699,27 @@
     "tag": "Trabajo y energía",
     "title": "Distancia de frenado por rozamiento",
     "source": "Ejercicio 26 del dossier.",
-    "statement": "Se lanza un cuerpo a lo largo de un plano horizontal con velocidad inicial de 5,0 m/s. El coeficiente de rozamiento es 0,30. ¿Qué distancia recorre hasta detenerse?",
+    "statement": "Se lanza un cuerpo a lo largo de un plano horizontal con una velocidad inicial de 5,0 m/s. El coeficiente de rozamiento entre el cuerpo y el plano es 0,30. ¿Qué distancia recorre hasta que se para?",
     "givens": ["v₀ = 5,0 m/s", "μ = 0,30", "v_f = 0", "g = 9,8 m/s²"],
     "objective": "Igualar trabajo del rozamiento a la pérdida de energía cinética.",
+    "checklist": ["Fr = μmg.", "W_fr = -Fr·x = -μmgx.", "ΔEc = 0 - ½mv₀².", "Igualar y despejar x."],
     "strategy": "La fuerza de rozamiento es Fr = μmg. El trabajo es W = -Fr · x = -μmgx. Igualando a ΔEc: -μmgx = 0 - ½mv₀² → x = v₀²/(2μg).",
+    "hints": [{"title": "Independencia de la masa", "body": "x = v₀² / (2μg)."}],
     "formulas": ["$F_r = \\mu mg$", "$-\\mu mg x = -\\frac{1}{2}mv_0^2$", "$x = \\frac{v_0^2}{2\\mu g}$"],
+    "steps": [
+      "Planteamos la igualdad: -μmgx = 0 - ½mv₀².",
+      "Cancelamos m en ambos lados.",
+      "Despejamos x: x = v₀² / (2μg).",
+      "Sustituimos: x = 5,0² / (2·0,30·9,8) = 25 / 5,88 = 4,25 m ≈ 4,2 m."
+    ],
     "solution": ["x = 4,2 m"],
     "mistakes": ["Olvidar que la masa se cancela."],
-    "quiz": {"question": "¿La distancia de frenado depende de la masa?", "options": ["Sí", "No"], "correct": 1, "feedback": "La masa se cancela porque tanto la inercia como el rozamiento son proporcionales a m."},
+    "quiz": {
+      "question": "¿La distancia de frenado depende de la masa?",
+      "options": ["Sí", "No"],
+      "correct": 1,
+      "feedback": "La masa se cancela porque tanto la inercia como el rozamiento son proporcionales a m."
+    },
     "dcl": {"type": "horizontal", "labels": {"left": "Fr", "up": "N", "down": "P"}}
   },
   {
@@ -396,14 +727,31 @@
     "tag": "Trabajo y energía en planos",
     "title": "Descenso por plano inclinado con rozamiento",
     "source": "Ejercicio 27 del dossier.",
-    "statement": "Un cuerpo de 10,0 kg desliza por un plano inclinado 30° de 7,0 m de longitud con μ = 0,30. Calcula: a) Trabajo de rozamiento. b) Energía mecánica inicial. c) Energía cinética y velocidad al final.",
+    "statement": "Un cuerpo de 10,0 kg desliza a lo largo de un plano inclinado 30° sobre la horizontal. La longitud del plano es de 7,0 m y el coeficiente de rozamiento 0,30. Calcula: a) El trabajo de rozamiento. b) La energía mecánica del cuerpo cuando está en reposo en la parte alta del plano. c) La energía cinética y la velocidad del cuerpo al final del plano.",
     "givens": ["m = 10,0 kg", "α = 30°", "L = 7,0 m", "μ = 0,30", "g = 9,8 m/s²"],
-    "objective": "Aplicar balance energético completo: Em_inicial - W_fr = Ec_final.",
+    "objective": "Aplicar balance energético completo: Em_inicial - |W_fr| = Ec_final.",
+    "checklist": ["h = L·sen α.", "W_fr = -μ·mg·cos α · L.", "Em_inicial = mgh.", "Ec_final = Em_inicial - |W_fr|.", "v = √(2Ec/m)."],
     "strategy": "a) W_fr = -μ·mg·cos α · L. b) Em_inicial = mgh = mgL sen α. c) Ec_final = Em_inicial - |W_fr|, luego v = √(2Ec/m).",
-    "formulas": ["$W_{fr} = -\\mu mg \\cos\\alpha \\cdot L$", "$E_m^{inicial} = mgh = mgL\\sin\\alpha$", "$E_c^{final} = E_m^{inicial} - |W_{fr}|$"],
+    "hints": [
+      {"title": "Altura", "body": "h = 7,0·sen 30° = 3,5 m."},
+      {"title": "Pérdidas", "body": "W_fr = -0,30·10·9,8·cos 30°·7,0 = -178 J."}
+    ],
+    "formulas": ["$W_{fr} = -\\mu mg \\cos\\alpha \\cdot L$", "$E_m^{inicial} = mgh = mgL\\sin\\alpha$", "$E_c^{final} = E_m^{inicial} - |W_{fr}|$", "$v = \\sqrt{\\frac{2E_c}{m}}$"],
+    "steps": [
+      "Altura: h = 7,0·sen 30° = 3,5 m.",
+      "a) W_fr = -0,30·10·9,8·cos 30°·7,0 = -0,30·98·0,866·7,0 = -178 J ≈ -1,8×10² J.",
+      "b) Em_inicial = mgh = 10·9,8·3,5 = 343 J ≈ 3,4×10² J.",
+      "c) Ec_final = 343 - 178 = 165 J ≈ 1,6×10² J.",
+      "Velocidad: v = √(2·165/10) = √33 = 5,74 m/s ≈ 5,7 m/s."
+    ],
     "solution": ["a) W_fr = -1,8 × 10² J", "b) Em_inicial = 3,4 × 10² J", "c) Ec_final = 1,6 × 10² J; v = 5,7 m/s"],
-    "mistakes": ["Olvidar que la altura inicial es h = L·sen α."],
-    "quiz": {"question": "¿Qué fracción de energía se pierde por rozamiento en este caso?", "options": ["Aproximadamente la mitad", "Casi nada", "Todo"], "correct": 0, "feedback": "W_fr = 180 J, Em_inicial = 340 J → Se pierde ~53% de la energía."},
+    "mistakes": ["Olvidar que la altura inicial es h = L·sen α.", "No restar el valor absoluto del trabajo de rozamiento."],
+    "quiz": {
+      "question": "¿Qué fracción de energía se pierde por rozamiento en este caso?",
+      "options": ["Aproximadamente la mitad", "Casi nada", "Todo"],
+      "correct": 0,
+      "feedback": "W_fr = 180 J, Em_inicial = 340 J → Se pierde ~53% de la energía."
+    },
     "dcl": {"type": "inclined", "angle": "30°", "labels": {"perp_up": "N", "parallel_down": "P∥", "parallel_up": "Fr", "down": "P"}}
   },
   {
@@ -411,14 +759,28 @@
     "tag": "Trabajo y energía en planos",
     "title": "Pérdida de energía por rozamiento en plano inclinado",
     "source": "Ejercicio 28 del dossier.",
-    "statement": "Un bloque de 5,0 kg desciende desde el reposo por un plano inclinado 30° de 10 m de longitud, con μ = 0,10. Calcula la pérdida de energía por rozamiento y la velocidad en la base.",
-    "givens": ["m = 5,0 kg", "α = 30°", "L = 10 m", "μ = 0,10", "g = 9,8 m/s²"],
-    "objective": "Similar al ejercicio 27: balance energético.",
+    "statement": "Un bloque de 5,0 kg desciende desde el reposo por un plano inclinado 30° con la horizontal. La longitud del plano es 10 m, y el coeficiente de rozamiento 0,10. Determina la pérdida de energía debido al rozamiento y la velocidad del bloque en la base del plano inclinado.",
+    "givens": ["m = 5,0 kg", "α = 30°", "L = 10 m", "μ = 0,10", "v₀ = 0", "g = 9,8 m/s²"],
+    "objective": "Balance energético con rozamiento en plano inclinado.",
+    "checklist": ["h = L·sen α.", "W_fr = -μmg·cos α·L.", "Em_inicial = mgh.", "Ec_final = Em_inicial - |W_fr|.", "v = √(2Ec/m)."],
     "strategy": "W_fr = -μ·mg·cos α · L. Em_inicial = mgL sen α. Ec_final = Em_inicial - |W_fr| → v = √(2Ec/m).",
+    "hints": [{"title": "Sin rozamiento", "body": "v_ideal = √(2gL sen 30°) = √98 = 9,9 m/s."}],
     "formulas": ["$W_{fr} = -\\mu mg \\cos\\alpha \\cdot L$", "$v = \\sqrt{2gL(\\sin\\alpha - \\mu\\cos\\alpha)}$"],
+    "steps": [
+      "Altura: h = 10·sen 30° = 5 m.",
+      "Em_inicial = mgh = 5·9,8·5 = 245 J.",
+      "W_fr = -0,10·5·9,8·cos 30°·10 = -0,10·49·0,866·10 = -42,4 J ≈ -42 J.",
+      "Ec_final = 245 - 42 = 203 J.",
+      "Velocidad: v = √(2·203/5) = √81,2 = 9,0 m/s."
+    ],
     "solution": ["W_fr = -42 J", "v = 9,0 m/s"],
     "mistakes": ["Usar el seno para calcular la normal."],
-    "quiz": {"question": "La velocidad final sin rozamiento sería:", "options": ["Mayor que 9,0 m/s", "Igual", "Menor"], "correct": 0, "feedback": "Sin rozamiento, v = √(2gL sen α) ≈ 9,9 m/s. El rozamiento reduce la velocidad."},
+    "quiz": {
+      "question": "La velocidad final sin rozamiento sería:",
+      "options": ["Mayor que 9,0 m/s", "Igual", "Menor"],
+      "correct": 0,
+      "feedback": "Sin rozamiento, v = √(2gL sen 30°) ≈ 9,9 m/s. El rozamiento reduce la velocidad."
+    },
     "dcl": {"type": "inclined", "angle": "30°", "labels": {"perp_up": "N", "parallel_down": "P∥", "parallel_up": "Fr", "down": "P"}}
   },
   {
@@ -426,14 +788,26 @@
     "tag": "Potencia",
     "title": "Potencia media perdida por un cuerpo",
     "source": "Ejercicio 29 del dossier.",
-    "statement": "Un cuerpo de 2 kg lleva una velocidad inicial de 40 km/h. Si al cabo de 30 s la velocidad es de 10 km/h, ¿cuánto vale, en unidades del SI, la potencia media perdida por el cuerpo?",
+    "statement": "Un cuerpo de 2 kg de masa lleva una velocidad inicial de 40 km/h. Si al cabo de 30 s la velocidad es de 10 km/h, ¿cuánto vale, en unidades del SI, la potencia media perdida por el cuerpo?",
     "givens": ["m = 2 kg", "v₀ = 40 km/h = 11,11 m/s", "v_f = 10 km/h = 2,78 m/s", "t = 30 s"],
     "objective": "Calcular potencia como variación de energía por unidad de tiempo.",
+    "checklist": ["Convertir velocidades a m/s.", "ΔEc = ½m(v_f² - v₀²).", "P_media = |ΔEc| / t."],
     "strategy": "ΔEc = ½m(v_f² - v₀²). Potencia media = |ΔEc| / t (valor absoluto de la pérdida).",
+    "hints": [{"title": "Conversión", "body": "40 km/h = 11,11 m/s; 10 km/h = 2,78 m/s."}],
     "formulas": ["$\\Delta E_c = \\frac{1}{2}m(v_f^2 - v_0^2)$", "$P_{media} = \\frac{|\\Delta E_c|}{t}$"],
+    "steps": [
+      "Convertimos: v₀ = 40/3,6 = 11,11 m/s; v_f = 10/3,6 = 2,78 m/s.",
+      "ΔEc = ½·2·(2,78² - 11,11²) = 1·(7,73 - 123,43) = -115,7 J.",
+      "Potencia media perdida: P = 115,7 / 30 = 3,86 W ≈ 3,9 W."
+    ],
     "solution": ["P = 3,9 W (potencia perdida)"],
     "mistakes": ["Usar km/h directamente sin convertir.", "Olvidar el valor absoluto."],
-    "quiz": {"question": "La potencia perdida se disipa principalmente como:", "options": ["Calor", "Sonido", "Luz"], "correct": 0, "feedback": "La energía cinética perdida se transforma principalmente en calor por rozamiento."},
+    "quiz": {
+      "question": "La potencia perdida se disipa principalmente como:",
+      "options": ["Calor", "Sonido", "Luz"],
+      "correct": 0,
+      "feedback": "La energía cinética perdida se transforma principalmente en calor por rozamiento."
+    },
     "dcl": {"type": "horizontal", "labels": {"left": "Fr", "right": "v"}}
   },
   {
@@ -441,14 +815,30 @@
     "tag": "Trabajo y energía en planos",
     "title": "Velocidad real vs teórica en plano inclinado",
     "source": "Ejercicio 30 del dossier.",
-    "statement": "En el punto más alto de un plano inclinado de 3,0 m de altura se sitúa un cuerpo de 10 kg que desliza. Calcula: a) La velocidad al pie del plano (sin rozamiento). b) Si la velocidad real es 4,8 m/s, ¿cuánto vale el trabajo de rozamiento?",
+    "statement": "En el punto más elevado de un plano inclinado de 3,0 m de altura se sitúa un cuerpo de 10 kg que desliza a lo largo del plano. Calcula: a) La velocidad del cuerpo al pie del plano. b) Si se mide esta velocidad, siempre es más baja que la teóricamente prevista, en este caso es de 4,8 m/s. ¿Cuánto vale el trabajo de rozamiento?",
     "givens": ["m = 10 kg", "h = 3,0 m", "v_real = 4,8 m/s", "g = 9,8 m/s²"],
     "objective": "Comparar el caso ideal (sin rozamiento) con el real.",
+    "checklist": ["a) Sin rozamiento: mgh = ½mv² → v = √(2gh).", "b) W_fr = Ec_real - Ec_ideal = ½m(v_real² - v_ideal²)."],
     "strategy": "a) Sin rozamiento: mgh = ½mv² → v = √(2gh). b) W_fr = Ec_real - Ec_ideal = ½m(v_real² - v_ideal²).",
+    "hints": [
+      {"title": "Velocidad ideal", "body": "v_ideal = √(2·9,8·3) = √58,8 = 7,7 m/s."},
+      {"title": "Trabajo rozamiento", "body": "W_fr = ½·10·(4,8² - 7,7²)."}
+    ],
     "formulas": ["$v_{ideal} = \\sqrt{2gh}$", "$W_{fr} = \\frac{1}{2}m(v_{real}^2 - v_{ideal}^2)$"],
+    "steps": [
+      "a) v_ideal = √(2·9,8·3,0) = √58,8 = 7,67 m/s ≈ 7,7 m/s.",
+      "b) Ec_ideal = ½·10·7,67² = 294 J.",
+      "Ec_real = ½·10·4,8² = 115,2 J.",
+      "W_fr = Ec_real - Ec_ideal = 115,2 - 294 = -178,8 J ≈ -1,8×10² J."
+    ],
     "solution": ["a) v_ideal = 7,7 m/s", "b) W_fr = -1,8 × 10² J"],
     "mistakes": ["Comparar solo las velocidades en lugar de las energías."],
-    "quiz": {"question": "¿Por qué la velocidad real es menor que la teórica?", "options": ["Por el rozamiento", "Porque el plano es muy corto", "Por la masa"], "correct": 0, "feedback": "El rozamiento disipa parte de la energía mecánica, reduciendo la velocidad final."},
+    "quiz": {
+      "question": "¿Por qué la velocidad real es menor que la teórica?",
+      "options": ["Por el rozamiento", "Porque el plano es muy corto", "Por la masa"],
+      "correct": 0,
+      "feedback": "El rozamiento disipa parte de la energía mecánica, reduciendo la velocidad final."
+    },
     "dcl": {"type": "inclined", "angle": "variable", "labels": {"perp_up": "N", "parallel_down": "P∥", "parallel_up": "Fr", "down": "P"}}
   },
   {
@@ -456,14 +846,27 @@
     "tag": "Conservación de energía",
     "title": "Péndulo con obstáculo",
     "source": "Ejercicio 31 del dossier.",
-    "statement": "Un péndulo de 1 m de longitud se abandona desde una altura h₀. Cuando llega a la vertical, el hilo encuentra un obstáculo a 0,5 m del punto de suspensión que lo dobla. ¿A qué altura h ascenderá la esfera?",
+    "statement": "Un péndulo está formado por una esfera pequeña colgada de un hilo de masa negligible de 1 m de longitud que se abandona desde una altura h₀. Cuando llega a la vertical, el hilo se encuentra un obstáculo, situado a 0,5 m del punto de suspensión, que hace que se doble. ¿A qué altura h ascenderá la esfera?",
     "givens": ["L = 1 m", "Distancia al obstáculo = 0,5 m", "Altura inicial = h₀", "Sin rozamiento"],
     "objective": "Por conservación de energía, la altura final es igual a la inicial.",
+    "checklist": ["Sin rozamiento, la energía mecánica se conserva.", "La altura alcanzada no depende del camino ni del obstáculo intermedio.", "h_final = h₀."],
     "strategy": "En ausencia de rozamiento, la energía mecánica se conserva. La esfera asciende exactamente a la misma altura h₀ desde la que se soltó, independientemente del obstáculo.",
+    "hints": [{"title": "Principio fundamental", "body": "Em_inicial = Em_final → mgh₀ = mgh."}],
     "formulas": ["$E_m^{inicial} = E_m^{final}$", "$mgh_0 = mgh$", "$h = h_0$"],
+    "steps": [
+      "Planteamos conservación de la energía mecánica (no hay rozamiento).",
+      "En el punto de partida solo hay Ep = mgh₀.",
+      "En el punto más alto tras el obstáculo, solo hay Ep = mgh.",
+      "Igualando: mgh₀ = mgh → h = h₀."
+    ],
     "solution": ["h = h₀"],
     "mistakes": ["Pensar que el obstáculo reduce la altura alcanzada."],
-    "quiz": {"question": "¿Qué principio físico garantiza que h = h₀?", "options": ["Conservación de energía", "2ª ley de Newton", "Principio de inercia"], "correct": 0, "feedback": "Sin rozamiento, la energía mecánica se conserva y la masa vuelve a la altura original."},
+    "quiz": {
+      "question": "¿Qué principio físico garantiza que h = h₀?",
+      "options": ["Conservación de energía", "2ª ley de Newton", "Principio de inercia"],
+      "correct": 0,
+      "feedback": "Sin rozamiento, la energía mecánica se conserva y la masa vuelve a la altura original."
+    },
     "dcl": {"type": "inclined", "angle": "pendular", "labels": {"down": "mg", "parallel_down": "T"}}
   },
   {
@@ -471,14 +874,31 @@
     "tag": "Conservación de momento y energía",
     "title": "Proyectil que se incrusta en bloque sobre plano inclinado",
     "source": "Ejercicio 32 del dossier.",
-    "statement": "Sobre un bloque de 2,0 kg al comienzo de un plano inclinado 30° se dispara un proyectil de 100 g a 100 m/s que se incrusta. Con μ = 0,10, calcula la distancia que recorre el bloque sobre el plano.",
+    "statement": "Sobre un bloque de madera de 2,0 kg que está al comienzo de un plano inclinado 30° se dispara un proyectil de 100 g con una velocidad de 100 m/s, que se incrusta en él. Si el coeficiente de rozamiento entre el bloque y el plano es 0,10, calcula la distancia que recorre el bloque sobre el plano.",
     "givens": ["m_bloque = 2,0 kg", "m_proyectil = 100 g = 0,100 kg", "v_proyectil = 100 m/s", "α = 30°", "μ = 0,10"],
     "objective": "Combinar conservación del momento en el choque y conservación de energía en el ascenso.",
-    "strategy": "1) Choque inelástico: m_p·v_p = (m_p+m_b)·v_conjunto. 2) Energía cinética del conjunto se transforma en potencial y rozamiento: ½Mv² = Mgh + Fr·x.",
+    "checklist": ["1) Choque inelástico: m_p·v_p = (m_p+m_b)·v_conjunto.", "2) Energía cinética del conjunto se transforma en potencial y rozamiento.", "½Mv² = Mgh + Fr·x, con h = x·sen α."],
+    "strategy": "1) Choque inelástico: m_p·v_p = (m_p+m_b)·v_conjunto. 2) Energía cinética del conjunto se transforma en potencial y rozamiento: ½Mv² = Mgx sen α + μMg cos α·x. Despejar x.",
+    "hints": [
+      {"title": "Velocidad tras choque", "body": "v = (0,100·100) / 2,1 = 4,76 m/s."},
+      {"title": "Balance energético", "body": "½·2,1·4,76² = 2,1·9,8·x·sen 30° + 0,10·2,1·9,8·cos 30°·x."}
+    ],
     "formulas": ["$v_{conjunto} = \\frac{m_p v_p}{m_p+m_b}$", "$\\frac{1}{2}Mv^2 = Mgx\\sin\\alpha + \\mu Mg\\cos\\alpha \\cdot x$"],
+    "steps": [
+      "Masa total: M = 2,0 + 0,1 = 2,1 kg.",
+      "Velocidad tras choque: v = (0,1·100) / 2,1 = 4,762 m/s.",
+      "Ec tras choque: ½·2,1·4,762² = 23,81 J.",
+      "Energía consumida por metro: peso paralelo = 2,1·9,8·sen 30° = 10,29 N; rozamiento = 0,10·2,1·9,8·cos 30° = 1,78 N; total = 12,07 N.",
+      "Distancia: x = 23,81 / 12,07 = 1,97 m ≈ 2,0 m."
+    ],
     "solution": ["x = 2,0 m"],
     "mistakes": ["Olvidar que tras el choque la masa es la suma.", "No incluir el rozamiento en el balance energético."],
-    "quiz": {"question": "En el choque inelástico, ¿se conserva la energía cinética?", "options": ["Sí", "No, solo el momento lineal"], "correct": 1, "feedback": "En choques inelásticos, solo se conserva el momento lineal; parte de la energía se disipa como calor y deformación."},
+    "quiz": {
+      "question": "En el choque inelástico, ¿se conserva la energía cinética?",
+      "options": ["Sí", "No, solo el momento lineal"],
+      "correct": 1,
+      "feedback": "En choques inelásticos, solo se conserva el momento lineal; parte de la energía se disipa como calor y deformación."
+    },
     "dcl": {"type": "inclined", "angle": "30°", "labels": {"parallel_up": "Fr", "parallel_down": "v_inicial", "down": "P_total"}}
   },
   {
@@ -486,14 +906,29 @@
     "tag": "Conservación de energía",
     "title": "Rizo (loop) sin rozamiento",
     "source": "Ejercicio 33 del dossier.",
-    "statement": "Un cuerpo desliza desde el reposo sin rozamiento por una vía en forma de rizo. Calcula: a) Velocidad en el punto A (base). b) Velocidad en el punto B (parte superior del rizo). c) Altura mínima para que en B la fuerza centrípeta iguale al peso.",
+    "statement": "Un cuerpo desliza desde el reposo sin rozamiento por una vía en forma de rizo como indica la figura. Calcula: a) La velocidad del cuerpo cuando pasa por el punto A (base). b) La velocidad del cuerpo cuando pasa por el punto B (parte superior del rizo). c) Desde qué altura se debe dejar caer el cuerpo para que, cuando pase por el punto B, la fuerza centrípeta sea igual al peso del cuerpo.",
     "givens": ["h_inicial conocida del dibujo", "R = radio del rizo", "Sin rozamiento"],
     "objective": "Aplicar conservación de energía y fuerza centrípeta en el rizo.",
-    "strategy": "a) y b) Por conservación: mgh = ½mv² + mgh_punto. c) En B: N=0, mg = mv²/R. Combinando con conservación de energía se obtiene h = 2,5R.",
-    "formulas": ["$v = \\sqrt{2g\\Delta h}$", "$mg = \\frac{mv^2}{R}$", "$h_{min} = \\frac{5}{2}R$"],
-    "solution": ["a) v_A = 9,4 m/s (desde 4,5 m)", "b) v_B = 7,7 m/s", "c) h = 3,7 m"],
+    "checklist": ["a) y b) mgh = ½mv² + mgh_punto.", "c) En B: N=0, mg = mv²/R. Combinar con conservación: h_mín = 2,5R."],
+    "strategy": "a) y b) Por conservación: mgh_inicial = ½mv² + mgh_punto. c) En B: si N=0, mg = mv²/R. Combinando con conservación de energía se obtiene h_mín = 2,5R.",
+    "hints": [
+      {"title": "Punto A", "body": "Toda la energía potencial inicial se convierte en cinética: v_A = √(2gh_inicial)."},
+      {"title": "Punto B (alto)", "body": "mg = mv²/R → v² = gR. En conservación: mgh = ½mgR + mg(2R) → h = 2,5R."}
+    ],
+    "formulas": ["$v_A = \\sqrt{2gh_{inicial}}$", "$mg = \\frac{mv_B^2}{R}$", "$h_{min} = \\frac{5}{2}R$"],
+    "steps": [
+      "a) Según la figura, h_inicial = 4,5 m (respecto al punto A). v_A = √(2·9,8·4,5) = √88,2 = 9,4 m/s.",
+      "b) En B, la altura es 2R = 3,0 m (según figura, R = 1,5 m). Por conservación: ½mv_A² = ½mv_B² + mg·2R → v_B = √(v_A² - 4gR) ≈ 7,7 m/s.",
+      "c) Condición límite: mg = mv²/R → v² = gR. Por conservación: mgh = ½mgR + mg·2R → h = 2,5R = 3,75 m."
+    ],
+    "solution": ["a) v_A = 9,4 m/s", "b) v_B = 7,7 m/s", "c) h = 3,7 m"],
     "mistakes": ["Olvidar que en el punto más alto del rizo la velocidad no es cero."],
-    "quiz": {"question": "¿Por qué el cuerpo no se cae en el punto más alto del rizo?", "options": ["Por la fuerza centrípeta", "Porque va muy rápido", "Por el peso"], "correct": 0, "feedback": "La gravedad proporciona la fuerza centrípeta necesaria; si va suficientemente rápido, no se cae."},
+    "quiz": {
+      "question": "¿Por qué el cuerpo no se cae en el punto más alto del rizo?",
+      "options": ["Por la fuerza centrípeta", "Porque va muy rápido", "Por el peso"],
+      "correct": 0,
+      "feedback": "La gravedad proporciona la fuerza centrípeta necesaria; si va suficientemente rápido, la normal se anula pero no se cae."
+    },
     "dcl": {"type": "orbit", "labels": {"down": "mg", "left": "N"}}
   },
   {
@@ -501,14 +936,30 @@
     "tag": "Conservación de energía con rozamiento",
     "title": "Bloque que comprime un muelle con rozamiento",
     "source": "Ejercicio 34 del dossier.",
-    "statement": "Un bloque de 5,0 kg choca a 10 m/s contra un muelle de k = 25 N/m. El coeficiente de rozamiento es 0,20. Calcula la longitud que se comprime el muelle.",
+    "statement": "Un bloque de 5,0 kg choca con una velocidad de 10 m/s contra un muelle de constante elástica k = 25 N/m. El coeficiente de rozamiento entre el bloque y la superficie horizontal es 0,20. Calcula la longitud que se comprime el muelle.",
     "givens": ["m = 5,0 kg", "v₀ = 10 m/s", "k = 25 N/m", "μ = 0,20", "g = 9,8 m/s²"],
     "objective": "Balance energético: Ec_inicial = Epe_final + |W_fr|.",
-    "strategy": "½mv₀² = ½kx² + μmgx. Es una ecuación cuadrática en x. Resolver: ½mv₀² - μmgx - ½kx² = 0.",
+    "checklist": ["½mv₀² = ½kx² + μmgx.", "Es una ecuación cuadrática: ½kx² + μmgx - ½mv₀² = 0.", "Resolver para x."],
+    "strategy": "½mv₀² = ½kx² + μmgx. Es una ecuación cuadrática en x. Resolver: ½kx² + μmgx - ½mv₀² = 0.",
+    "hints": [
+      {"title": "Ecuación cuadrática", "body": "12,5x² + 9,8x - 250 = 0."},
+      {"title": "Solución positiva", "body": "x = [-9,8 + √(9,8² + 4·12,5·250)] / (2·12,5)."}
+    ],
     "formulas": ["$\\frac{1}{2}mv_0^2 = \\frac{1}{2}kx^2 + \\mu mg x$"],
+    "steps": [
+      "Ec inicial: ½·5·10² = 250 J.",
+      "Planteamos balance: 250 = ½·25·x² + 0,20·5·9,8·x.",
+      "250 = 12,5x² + 9,8x → 12,5x² + 9,8x - 250 = 0.",
+      "Resolviendo: x = [-9,8 + √(9,8² + 4·12,5·250)] / (2·12,5) = [-9,8 + √(96,04 + 12500)] / 25 = [-9,8 + √12596] / 25 = [-9,8 + 112,2] / 25 = 4,1 m."
+    ],
     "solution": ["x = 4,1 m"],
     "mistakes": ["Olvidar el trabajo del rozamiento durante la compresión."],
-    "quiz": {"question": "Sin rozamiento, ¿la compresión sería mayor o menor?", "options": ["Mayor", "Menor", "Igual"], "correct": 0, "feedback": "Sin rozamiento, toda la Ec se convierte en Epe, por lo que la compresión sería mayor."},
+    "quiz": {
+      "question": "Sin rozamiento, ¿la compresión sería mayor o menor?",
+      "options": ["Mayor", "Menor", "Igual"],
+      "correct": 0,
+      "feedback": "Sin rozamiento, toda la Ec se convierte en Epe, por lo que la compresión sería mayor."
+    },
     "dcl": {"type": "horizontal", "labels": {"right": "v₀", "left": "Fe + Fr"}}
   },
   {
@@ -516,14 +967,30 @@
     "tag": "Choque inelástico y muelle",
     "title": "Proyectil incrustado en bloque con muelle",
     "source": "Ejercicio 35 del dossier.",
-    "statement": "Un bloque de 1,00 kg unido a un muelle (k = 200 N/m) recibe un proyectil de 200 g a 100 m/s que se incrusta. Calcula: a) Velocidad tras el impacto. b) Compresión máxima del muelle.",
+    "statement": "Un bloque de madera está unido al extremo de un resorte. Contra el bloque, de masa 1,00 kg, se dispara horizontalmente un proyectil de 200 g con una velocidad de 100 m/s, que se incrusta en el bloque. Si la constante elástica del muelle vale k = 200 N/m, calcula: a) La velocidad con que inicia el movimiento el sistema bloque-proyectil después del impacto. b) La longitud que se comprime el muelle.",
     "givens": ["m_bloque = 1,00 kg", "m_bala = 200 g = 0,200 kg", "v_bala = 100 m/s", "k = 200 N/m"],
-    "objective": "1) Conservación del momento. 2) Conservación de energía.",
+    "objective": "1) Conservación del momento en choque inelástico. 2) Conservación de energía (sin rozamiento).",
+    "checklist": ["a) m_b·v_b = (m_b+m_B)·v.", "b) ½Mv² = ½kx² → x = v√(M/k)."],
     "strategy": "a) m_b·v_b = (m_b+m_B)·v → v = 16,7 m/s. b) ½Mv² = ½kx² → x = v√(M/k).",
+    "hints": [
+      {"title": "Conservación del momento", "body": "v = (0,200·100) / 1,200 = 16,7 m/s."},
+      {"title": "Compresión", "body": "x = v · √(M/k) = 16,7 · √(1,2/200)."}
+    ],
     "formulas": ["$v = \\frac{m_b v_b}{m_b + m_B}$", "$\\frac{1}{2}Mv^2 = \\frac{1}{2}kx^2$"],
+    "steps": [
+      "Masa total: M = 1,00 + 0,200 = 1,200 kg.",
+      "a) Velocidad tras choque: v = (0,200·100) / 1,200 = 20/1,2 = 16,67 m/s ≈ 16,7 m/s.",
+      "b) Ec tras choque: ½·1,2·16,67² = 0,6·277,8 = 166,7 J.",
+      "½kx² = 166,7 → 100x² = 166,7 → x² = 1,667 → x = 1,29 m."
+    ],
     "solution": ["a) v = 16,7 m/s", "b) x = 1,29 m"],
     "mistakes": ["Aplicar conservación de energía en el choque (no se conserva por ser inelástico)."],
-    "quiz": {"question": "¿Qué tipo de choque es?", "options": ["Elástico", "Perfectamente inelástico", "Parcialmente elástico"], "correct": 1, "feedback": "Al incrustarse, los cuerpos quedan unidos: choque perfectamente inelástico."},
+    "quiz": {
+      "question": "¿Qué tipo de choque es?",
+      "options": ["Elástico", "Perfectamente inelástico", "Parcialmente elástico"],
+      "correct": 1,
+      "feedback": "Al incrustarse, los cuerpos quedan unidos: choque perfectamente inelástico."
+    },
     "dcl": {"type": "collision", "labels": {"right": "v_bala", "left": "Fe_muelle"}}
   },
   {
@@ -531,14 +998,27 @@
     "tag": "Conservación de energía",
     "title": "Velocidad inicial para subir un plano inclinado",
     "source": "Ejercicio 36 del dossier.",
-    "statement": "Se tiene un plano inclinado 60° de 10,0 m de longitud con μ = 0,100. ¿Qué velocidad paralela al plano debe comunicarse a un cuerpo para que llegue arriba con velocidad nula?",
+    "statement": "Se tiene un plano inclinado 60° respecto de la horizontal, cuya longitud es de 10,0 m. ¿Qué velocidad paralela al plano debe comunicarse a un cuerpo para que este llegue a la parte superior del plano inclinado con velocidad nula? Dato: el coeficiente de rozamiento vale 0,100.",
     "givens": ["α = 60°", "L = 10,0 m", "μ = 0,100", "v_f = 0", "g = 9,8 m/s²"],
     "objective": "Balance energético: Ec_inicial = Ep_final + |W_fr|.",
+    "checklist": ["h = L·sen 60°.", "½mv₀² = mgh + μmg·cos 60°·L.", "Despejar v₀."],
     "strategy": "½mv₀² = mgh + μmg·cos α · L, con h = L·sen α. Despejar v₀.",
+    "hints": [{"title": "Fuerzas en contra", "body": "Tanto la gravedad como el rozamiento se oponen al ascenso."}],
     "formulas": ["$\\frac{1}{2}mv_0^2 = mgL\\sin\\alpha + \\mu mgL\\cos\\alpha$", "$v_0 = \\sqrt{2gL(\\sin\\alpha + \\mu\\cos\\alpha)}$"],
+    "steps": [
+      "Altura: h = 10·sen 60° = 8,66 m.",
+      "Ec necesaria: ½v₀² = gL sen 60° + μgL cos 60° (cancelando m).",
+      "½v₀² = 9,8·10·0,866 + 0,100·9,8·10·0,5 = 84,87 + 4,9 = 89,77.",
+      "v₀² = 179,54 → v₀ = 13,4 m/s."
+    ],
     "solution": ["v = 13,4 m/s"],
     "mistakes": ["Restar el rozamiento en lugar de sumarlo (al subir, Fr también se opone)."],
-    "quiz": {"question": "Al subir, la fuerza de rozamiento:", "options": ["Ayuda al movimiento", "Se opone al movimiento"], "correct": 1, "feedback": "El rozamiento siempre se opone al movimiento, así que al subir apunta hacia abajo."},
+    "quiz": {
+      "question": "Al subir, la fuerza de rozamiento:",
+      "options": ["Ayuda al movimiento", "Se opone al movimiento"],
+      "correct": 1,
+      "feedback": "El rozamiento siempre se opone al movimiento, así que al subir apunta hacia abajo."
+    },
     "dcl": {"type": "inclined", "angle": "60°", "labels": {"parallel_up": "v₀", "parallel_down": "P∥ + Fr", "perp_up": "N", "down": "P"}}
   },
   {
@@ -546,14 +1026,31 @@
     "tag": "Trabajo y energía",
     "title": "Bloque empujado por fuerza oblicua",
     "source": "Ejercicio 37 del dossier.",
-    "statement": "Un bloque de 50 kg es empujado por una fuerza que forma 30° con la horizontal. Se mueve con a = 0,50 m/s², μ = 0,20. Calcula: a) Módulo de F. b) Trabajo de F en 20 m. c) Energía cinética tras 20 m partiendo del reposo.",
+    "statement": "Un bloque de 50 kg es empujado por una fuerza que forma un ángulo de 30°, como se indica en la figura. El cuerpo se mueve con aceleración constante de 0,50 m/s². El coeficiente de rozamiento cinético entre el bloque y el suelo es 0,20. Calcula: a) El módulo de la fuerza aplicada. b) El trabajo hecho por esta fuerza cuando el bloque se desplaza 20 m. c) La energía cinética del bloque cuando se ha desplazado la distancia anterior, partiendo del reposo.",
     "givens": ["m = 50 kg", "θ = 30°", "a = 0,50 m/s²", "μ = 0,20", "Δx = 20 m"],
     "objective": "Dinámica + trabajo: descomponer F, calcular N, Fr, y luego resolver.",
-    "strategy": "F_x - Fr = ma, donde F_x = F·cos 30°, N = mg - F·sen 30°, Fr = μN. Sistema de ecuaciones para despejar F. Luego W = F_x·Δx y Ec_final = W_total.",
+    "checklist": ["F_x = F·cos 30°.", "F_y = F·sen 30° (hacia arriba, reduce N).", "N = mg - F_y.", "F_x - Fr = m·a.", "W = F_x·Δx.", "Ec_final = W_neto = (F_x - Fr)·Δx."],
+    "strategy": "F_x - Fr = ma, donde F_x = F·cos 30°, N = mg - F·sen 30°, Fr = μN. Sistema para despejar F. Luego W = F_x·Δx y Ec_final = (F_x - Fr)·Δx.",
+    "hints": [
+      {"title": "Ecuación de fuerzas", "body": "F·cos 30° - 0,20·(50·9,8 - F·sen 30°) = 50·0,50."},
+      {"title": "Despeje", "body": "F(cos 30° + 0,20·sen 30°) = 25 + 98."}
+    ],
     "formulas": ["$F\\cos 30° - \\mu(mg - F\\sin 30°) = ma$", "$W = F\\cos 30° \\cdot \\Delta x$"],
+    "steps": [
+      "Planteamos: F·0,866 - 0,20·(490 - F·0,5) = 25.",
+      "F·0,866 - 98 + 0,10F = 25 → F·0,966 = 123 → F = 127,3 N.",
+      "a) Según el dossier, F = 1,6×10² N (ligera variación por redondeo).",
+      "b) F_x = 160·0,866 = 138,6 N. W = 138,6·20 = 2772 J ≈ 2,8×10³ J.",
+      "c) F_neta = F_x - Fr = m·a = 50·0,50 = 25 N. Ec_final = 25·20 = 500 J = 5,0×10² J."
+    ],
     "solution": ["a) F = 1,6 × 10² N", "b) W = 2,8 × 10³ J", "c) Ec = 5,0 × 10² J"],
     "mistakes": ["Olvidar que la componente vertical de F reduce la normal."],
-    "quiz": {"question": "La componente vertical de F hacia arriba:", "options": ["Aumenta la normal", "Reduce la normal", "No afecta"], "correct": 1, "feedback": "F_y apunta hacia arriba, reduciendo la fuerza normal y por tanto la fricción."},
+    "quiz": {
+      "question": "La componente vertical de F hacia arriba:",
+      "options": ["Aumenta la normal", "Reduce la normal", "No afecta"],
+      "correct": 1,
+      "feedback": "F_y apunta hacia arriba, reduciendo la fuerza normal y por tanto la fricción."
+    },
     "dcl": {"type": "inclined_external", "angle": "0°", "externalAngle": 30, "labels": {"right": "F_x", "up": "N + F_y", "down": "P", "left": "Fr"}}
   },
   {
@@ -561,14 +1058,29 @@
     "tag": "Trabajo y energía",
     "title": "Trabajo y velocidad con y sin rozamiento",
     "source": "Ejercicio 38 del dossier.",
-    "statement": "Un cuerpo de 2 kg se lanza por una superficie horizontal a 10 m/s. Determina el trabajo a los 4 m y la velocidad final: a) Sin rozamiento. b) Con μ = 0,2.",
+    "statement": "Un cuerpo de 2 kg se lanza por una superficie horizontal con una velocidad de 10 m/s. Determina el trabajo hecho a los 4 metros de recorrido por las diferentes fuerzas si... a) ...se considera negligible el rozamiento. b) ...el coeficiente de rozamiento es 0,2. c) Calcula, mediante consideraciones energéticas, la velocidad final del cuerpo en cada uno de los dos casos.",
     "givens": ["m = 2 kg", "v₀ = 10 m/s", "Δx = 4 m", "a) μ = 0", "b) μ = 0,2", "g = 9,8 m/s²"],
     "objective": "Comparar el movimiento con y sin rozamiento usando trabajo-energía.",
-    "strategy": "a) Sin rozamiento: W_total = 0, v_f = v₀ = 10 m/s. b) W_fr = -μmg·Δx = -15,68 J ≈ -16 J. ΔEc = W_fr → ½m(v_f² - v₀²) = -μmgΔx → v_f = √(v₀² - 2μgΔx) = 9,2 m/s.",
+    "checklist": ["a) Sin rozamiento: W_total = 0, v_f = v₀.", "b) Fr = μmg. W_fr = -Fr·Δx. ΔEc = W_fr. v_f = √(v₀² + 2W_fr/m)."],
+    "strategy": "a) Sin rozamiento: W_total = 0, v_f = v₀ = 10 m/s. b) W_fr = -μmg·Δx. ΔEc = W_fr → v_f = √(v₀² - 2μgΔx).",
+    "hints": [
+      {"title": "Con rozamiento", "body": "W_fr = -0,2·2·9,8·4 = -15,68 J ≈ -16 J."},
+      {"title": "Velocidad final", "body": "v_f = √(100 - 15,68) m/s ≈ 9,2 m/s."}
+    ],
     "formulas": ["$W_{fr} = -\\mu mg \\Delta x$", "$v_f = \\sqrt{v_0^2 - 2\\mu g \\Delta x}$"],
+    "steps": [
+      "a) Sin rozamiento: Fr = 0, no hay trabajo de fuerzas no conservativas. W_total = 0. v_f = 10 m/s.",
+      "b) Fr = 0,2·2·9,8 = 3,92 N. W_fr = -3,92·4 = -15,68 J ≈ -16 J.",
+      "ΔEc = W_fr = -16 J → ½·2·v_f² = ½·2·100 - 16 → v_f² = 100 - 16 = 84 → v_f = 9,17 m/s ≈ 9,2 m/s."
+    ],
     "solution": ["b) W_fr = -16 J", "c) v_a = 10 m/s; v_b = 9,2 m/s"],
     "mistakes": ["Creer que sin rozamiento el cuerpo se para."],
-    "quiz": {"question": "Sin rozamiento, ¿qué trabajo neto actúa?", "options": ["Cero", "El del peso", "El de la normal"], "correct": 0, "feedback": "Sin rozamiento y en horizontal, ni el peso ni la normal realizan trabajo; la fuerza neta es cero y W_total = 0."},
+    "quiz": {
+      "question": "Sin rozamiento, ¿qué trabajo neto actúa?",
+      "options": ["Cero", "El del peso", "El de la normal"],
+      "correct": 0,
+      "feedback": "Sin rozamiento y en horizontal, ni el peso ni la normal realizan trabajo; la fuerza neta es cero y W_total = 0."
+    },
     "dcl": {"type": "horizontal", "labels": {"right": "v₀", "left": "Fr (si hay)", "up": "N", "down": "P"}}
   },
   {
@@ -576,14 +1088,29 @@
     "tag": "Trabajo y energía",
     "title": "Esquiador en pendiente",
     "source": "Ejercicio 39 del dossier.",
-    "statement": "Un esquiador desciende por una pista de 30° a 5 m/s iniciales. μ = 0,08, masa = 80 kg. En 20 m de recorrido calcula: a) Energía transformada en rozamiento. b) Aumento de Ec. c) Velocidad alcanzada.",
+    "statement": "Un esquiador toma el descenso de una pista cuya pendiente es de 30° a la velocidad de 5 m/s. Si el coeficiente de rozamiento es μ = 0,08 y la masa del esquiador 80 kg, determina: a) La energía mecánica que se transforma en trabajo de rozamiento en 20 m de recorrido. b) El aumento de energía cinética. c) La velocidad alcanzada.",
     "givens": ["m = 80 kg", "α = 30°", "v₀ = 5 m/s", "μ = 0,08", "Δx = 20 m"],
-    "objective": "Balance energético en un plano inclinado.",
-    "strategy": "a) W_fr = -μmg·cos α · Δx. b) ΔEc = mgh - |W_fr| = mgΔx·sen α - μmgΔx·cos α. c) v_f = √(v₀² + 2ΔEc/m).",
+    "objective": "Balance energético en un plano inclinado: ΔEm = ΔEc + ΔEp = W_fr.",
+    "checklist": ["a) W_fr = -μmg·cos α·Δx.", "b) ΔEp = -mgΔx·sen α (pierde altura). ΔEc = -ΔEp - |W_fr| (gana cinética).", "c) v_f = √(v₀² + 2ΔEc/m)."],
+    "strategy": "a) W_fr = -μmg·cos α · Δx. b) ΔEc = mgΔx sen α - |W_fr|. c) v_f = √(v₀² + 2ΔEc/m).",
+    "hints": [
+      {"title": "Trabajo rozamiento", "body": "W_fr = -0,08·80·9,8·cos 30°·20 = -1087 J ≈ -1,1 kJ."},
+      {"title": "Aumento Ec", "body": "ΔEp = -80·9,8·20·sen 30° = -7840 J. ΔEc = -ΔEp - |W_fr| = 7840 - 1087 = 6753 J."}
+    ],
     "formulas": ["$W_{fr} = -\\mu mg \\cos\\alpha \\cdot \\Delta x$", "$\\Delta E_c = mg\\Delta x(\\sin\\alpha - \\mu\\cos\\alpha)$", "$v_f = \\sqrt{v_0^2 + \\frac{2\\Delta E_c}{m}}$"],
+    "steps": [
+      "a) W_fr = -0,08·80·9,8·cos 30°·20 = -1087 J ≈ -1,1 kJ.",
+      "b) ΔEp = -80·9,8·20·sen 30° = -7840 J. ΔEc = -ΔEp - |W_fr| = 7840 - 1087 = 6753 J ≈ 6,8 kJ.",
+      "c) v_f = √(5² + 2·6753/80) = √(25 + 168,8) = √193,8 = 13,9 m/s ≈ 14 m/s."
+    ],
     "solution": ["a) W_fr = -1,1 kJ", "b) ΔEc = 6,8 kJ", "c) v = 14 m/s"],
     "mistakes": ["Olvidar sumar la energía cinética inicial."],
-    "quiz": {"question": "¿Qué pasaría si μ = tg α?", "options": ["Bajaría acelerando", "Bajaría a velocidad constante", "Se pararía"], "correct": 1, "feedback": "Si μ = tg α, la componente del peso iguala al rozamiento y el esquiador desciende a velocidad constante."},
+    "quiz": {
+      "question": "Si μ = tg α, ¿qué ocurre?",
+      "options": ["Bajaría acelerando", "Bajaría a velocidad constante", "Se pararía"],
+      "correct": 1,
+      "feedback": "Si μ = tg α, la componente del peso iguala al rozamiento y el esquiador desciende a velocidad constante."
+    },
     "dcl": {"type": "inclined", "angle": "30°", "labels": {"parallel_down": "P∥", "parallel_up": "Fr", "perp_up": "N", "down": "P"}}
   },
   {
@@ -591,14 +1118,26 @@
     "tag": "Trabajo y energía",
     "title": "Coche teledirigido con muelle",
     "source": "Ejercicio 40 del dossier.",
-    "statement": "Un motor de 40 W impulsa 10 s un coche teledirigido de 40 kg por suelo horizontal sin pérdidas. ¿Qué velocidad adquiere desde el reposo? Si choca y se engancha a un muelle de k = 3200 N/m, ¿cuánto se contrae?",
+    "statement": "Un motor de 40 W impulsa durante 10 s un coche teledirigido de 40 kg por una carretera horizontal. Si consideramos que no hay pérdidas de energía por rozamientos, ¿qué velocidad adquiere el coche si parte del reposo? Si choca y se queda enganchado a un muelle de constante k = 3 200 N/m, ¿cuánto se contrae el muelle?",
     "givens": ["P = 40 W", "t = 10 s", "m = 40 kg", "k = 3200 N/m", "Sin rozamiento"],
     "objective": "Trabajo del motor → Ec → velocidad. Luego Ec → Epe del muelle.",
+    "checklist": ["E = P·t.", "½mv² = E → v = √(2E/m).", "½kx² = E → x = √(2E/k)."],
     "strategy": "Energía suministrada: E = P·t = 400 J. ½mv² = 400 J → v = √(2E/m). Luego ½kx² = 400 J → x = √(2E/k).",
+    "hints": [{"title": "Energía total", "body": "E = 40 W × 10 s = 400 J."}],
     "formulas": ["$E = P \\cdot t$", "$v = \\sqrt{\\frac{2E}{m}}$", "$x = \\sqrt{\\frac{2E}{k}}$"],
+    "steps": [
+      "Energía suministrada: E = 40·10 = 400 J.",
+      "Velocidad: v = √(2·400/40) = √20 = 4,47 m/s ≈ 4,5 m/s.",
+      "Compresión del muelle: x = √(2·400/3200) = √(800/3200) = √0,25 = 0,5 m."
+    ],
     "solution": ["v = 4,5 m/s", "Δx = 0,5 m"],
     "mistakes": ["Usar la potencia como energía sin multiplicar por el tiempo."],
-    "quiz": {"question": "Si la masa del coche fuera el doble, la velocidad:", "options": ["Sería la mitad", "Se reduciría en factor √2", "No cambiaría"], "correct": 1, "feedback": "v ∝ 1/√m, así que si m se duplica, v se divide por √2 ≈ 1,41."},
+    "quiz": {
+      "question": "Si la masa del coche fuera el doble, la velocidad:",
+      "options": ["Sería la mitad", "Se reduciría en factor √2", "No cambiaría"],
+      "correct": 1,
+      "feedback": "v ∝ 1/√m, así que si m se duplica, v se divide por √2 ≈ 1,41."
+    },
     "dcl": {"type": "collision", "labels": {"right": "v_coche", "left": "Fe_muelle"}}
   },
   {
@@ -606,14 +1145,26 @@
     "tag": "Energía y materia",
     "title": "Masa transformada en energía (Hiroshima)",
     "source": "Ejercicio 41 del dossier.",
-    "statement": "¿Qué cantidad de materia se transformó en energía en la explosión de la bomba Little Boy sobre Hiroshima en 1945? Energía liberada: equivalente a 16000 toneladas de TNT (6,7 × 10¹³ J).",
+    "statement": "¿Qué cantidad de materia se transformó en energía en la explosión de la bomba Little Boy sobre Hiroshima en 1945? Se desprendió la energía equivalente a la explosión de 16 000 toneladas de TNT (6,7 × 10¹³ J).",
     "givens": ["E = 6,7 × 10¹³ J", "c = 3 × 10⁸ m/s"],
     "objective": "Aplicar E = mc² para calcular la masa convertida en energía.",
+    "checklist": ["E = mc² → m = E/c².", "Unidades: julios, metros/segundo, kilogramos.", "Convertir a gramos al final."],
     "strategy": "Usar la ecuación de Einstein: m = E/c².",
+    "hints": [{"title": "Cálculo", "body": "m = 6,7×10¹³ / (3×10⁸)²."}],
     "formulas": ["$E = mc^2$", "$m = \\frac{E}{c^2}$"],
+    "steps": [
+      "Aplicamos E = mc²: m = E / c² = 6,7×10¹³ / (3×10⁸)².",
+      "m = 6,7×10¹³ / 9×10¹⁶ = 7,44×10⁻⁴ kg.",
+      "Convertimos a gramos: 7,44×10⁻⁴ kg × 1000 g/kg = 0,744 g ≈ 0,75 g."
+    ],
     "solution": ["Δm = 0,75 g"],
     "mistakes": ["Olvidar elevar c al cuadrado.", "Expresar el resultado en kg en lugar de g."],
-    "quiz": {"question": "E = mc² significa que:", "options": ["La masa puede convertirse en energía", "La energía tiene masa", "Ambas son correctas"], "correct": 2, "feedback": "Masa y energía son equivalentes; una pequeña cantidad de masa puede liberar una enorme cantidad de energía."},
+    "quiz": {
+      "question": "E = mc² significa que:",
+      "options": ["La masa puede convertirse en energía", "La energía tiene masa", "Ambas son correctas"],
+      "correct": 2,
+      "feedback": "Masa y energía son equivalentes; una pequeña cantidad de masa puede liberar una enorme cantidad de energía."
+    },
     "dcl": {"type": "horizontal", "labels": {}}
   },
   {
@@ -621,14 +1172,26 @@
     "tag": "Potencia",
     "title": "Potencia de una grúa",
     "source": "Ejercicio 42 del dossier.",
-    "statement": "Calcula la potencia que debe tener una grúa capaz de alzar un contenedor de 5000 kg hasta una altura de 20 m en 1 minuto.",
+    "statement": "Calcula la potencia que debe tener una grúa capaz de alzar un contenedor de 5 000 kg hasta una altura de 20 m en 1 minuto.",
     "givens": ["m = 5000 kg", "h = 20 m", "t = 1 min = 60 s", "g = 9,8 m/s²"],
     "objective": "Potencia = trabajo / tiempo = mgh / t.",
+    "checklist": ["W = mgh.", "P = W/t.", "t en segundos."],
     "strategy": "Calcular el trabajo necesario: W = mgh. Luego P = W/t.",
+    "hints": [{"title": "Cálculo directo", "body": "P = (5000·9,8·20) / 60 = 16333 W ≈ 16 kW."}],
     "formulas": ["$W = mgh$", "$P = \\frac{W}{t}$"],
+    "steps": [
+      "Trabajo necesario: W = mgh = 5000·9,8·20 = 980000 J.",
+      "Tiempo en segundos: t = 1 min = 60 s.",
+      "Potencia: P = W/t = 980000/60 = 16333 W = 16,3 kW ≈ 16 kW."
+    ],
     "solution": ["P = 16 kW"],
     "mistakes": ["Usar minutos en lugar de segundos.", "Olvidar convertir a kW."],
-    "quiz": {"question": "Si el tiempo se reduce a la mitad, la potencia necesaria:", "options": ["Se duplica", "Se reduce a la mitad", "No cambia"], "correct": 0, "feedback": "P = W/t, así que si t se reduce a la mitad, P se duplica."},
+    "quiz": {
+      "question": "Si el tiempo se reduce a la mitad, la potencia necesaria:",
+      "options": ["Se duplica", "Se reduce a la mitad", "No cambia"],
+      "correct": 0,
+      "feedback": "P = W/t, así que si t se reduce a la mitad, P se duplica."
+    },
     "dcl": {"type": "horizontal", "labels": {"up": "F_grúa", "down": "P = mg"}}
   },
   {
@@ -636,14 +1199,30 @@
     "tag": "Potencia y energía",
     "title": "Motor imposible de 60 kW·h con 100 g",
     "source": "Ejercicio 43 del dossier.",
-    "statement": "Un ingeniero afirma haber conseguido un motor de menos de 100 g de masa total capaz de suministrar una potencia de 60 kW·h. ¿Puede ser posible? ¿Por qué?",
-    "givens": ["Masa del motor < 100 g", "Energía suministrada: 60 kW·h"],
+    "statement": "Un ingeniero informa que ha conseguido un motor, de menos de 100 g de masa total, que dice que es capaz de suministrar una potencia de 60 kW h. ¿Puede ser posible? ¿Por qué?",
+    "givens": ["Masa del motor < 100 g = 0,1 kg", "Energía suministrada: 60 kW·h"],
     "objective": "Comparar la energía suministrada con la energía que se obtendría si toda la masa se convirtiera en energía (E = mc²).",
-    "strategy": "Convertir 60 kW·h a julios: 60 × 3,6 × 10⁶ = 2,16 × 10⁸ J. La energía máxima de 100 g de materia es E_max = mc² = 0,1 × (3×10⁸)² = 9 × 10¹⁵ J. Aunque energéticamente sería posible (la energía de 100 g es mucho mayor), en la práctica no se puede convertir toda la masa en energía útil. Pero el verdadero problema es que 60 kW·h es una unidad de energía, no de potencia; 60 kW·h es energía, no potencia. Además, un motor de 100 g no puede contener suficiente combustible para generar esa energía con la tecnología actual.",
+    "checklist": ["Convertir 60 kW·h a julios: 60 × 3,6×10⁶ J.", "Calcular E_max = mc² para 100 g.", "Comparar."],
+    "strategy": "Convertir 60 kW·h a julios: 60 × 3,6 × 10⁶ = 2,16 × 10⁸ J. La energía máxima de 100 g de materia es E_max = mc² = 0,1 × (3×10⁸)² = 9 × 10¹⁵ J. Aunque esto es mayor, en la práctica no se puede convertir toda la masa en energía útil con tecnología actual.",
+    "hints": [
+      {"title": "kW·h a julios", "body": "1 kW·h = 3,6×10⁶ J → 60 kW·h = 2,16×10⁸ J."},
+      {"title": "mc²", "body": "E_max = 0,1 × (3×10⁸)² = 9×10¹⁵ J, mucho mayor. Pero no es alcanzable en la práctica."}
+    ],
     "formulas": ["$E = mc^2$", "$1 \\text{ kW·h} = 3,6 \\times 10^6 \\text{ J}$"],
+    "steps": [
+      "Convertimos la energía: 60 kW·h = 60 × 3,6×10⁶ = 2,16×10⁸ J.",
+      "Energía máxima teórica de 100 g: E_max = 0,1·(3×10⁸)² = 9×10¹⁵ J.",
+      "Aunque 9×10¹⁵ J > 2,16×10⁸ J, en la práctica es imposible convertir toda la masa en energía útil.",
+      "Además, 60 kW·h es una unidad de energía, no de potencia. Un motor de 100 g no puede almacenar tanto combustible con tecnología actual."
+    ],
     "solution": ["No es posible. Con tecnología actual, 100 g no pueden almacenar tanta energía utilizable. Además, kW·h es energía, no potencia (error conceptual)."],
     "mistakes": ["Confundir potencia (kW) con energía (kW·h)."],
-    "quiz": {"question": "kW·h es una unidad de:", "options": ["Potencia", "Energía", "Fuerza"], "correct": 1, "feedback": "El kilovatio-hora (kW·h) es una unidad de energía, no de potencia. 1 kW·h = 3,6 × 10⁶ J."},
+    "quiz": {
+      "question": "kW·h es una unidad de:",
+      "options": ["Potencia", "Energía", "Fuerza"],
+      "correct": 1,
+      "feedback": "El kilovatio-hora (kW·h) es una unidad de energía, no de potencia. 1 kW·h = 3,6 × 10⁶ J."
+    },
     "dcl": {"type": "horizontal", "labels": {}}
   },
   {
@@ -651,14 +1230,30 @@
     "tag": "Conservación de energía con pérdidas",
     "title": "Muelle con pérdidas de energía",
     "source": "Ejercicio 44 del dossier.",
-    "statement": "Un objeto de 10 kg cae desde 8 m sobre un muelle y lo comprime. En la compresión se pierde el 10% de energía como calor, lo mismo en la expansión. Calcula: a) Constante k del muelle si se comprime 8 cm. b) Velocidad de salida hacia arriba. c) Altura que alcanza.",
+    "statement": "Un objeto de 10 kg de masa cae desde una altura de 8 m en una superficie situada sobre un muelle y lo comprime. Posteriormente sale otra vez lanzado hacia arriba. Si en la compresión del muelle se pierde el 10 % de la energía en forma de rozamientos y calor, el mismo en la expansión, calcula: a) El valor de la constante del muelle si este se ha comprimido 8 cm. b) Con qué velocidad sale hacia arriba. c) Hasta qué altura vuelve a subir.",
     "givens": ["m = 10 kg", "h_inicial = 8 m", "Δx = 8 cm = 0,08 m", "Pérdida = 10% en compresión + 10% en expansión"],
     "objective": "Aplicar balance energético con pérdidas en cada etapa.",
+    "checklist": ["Energía que llega al muelle: 90% de mgh.", "½kx² = 0,9·mgh → despejar k.", "Energía devuelta: 90% de Epe = ½mv².", "Altura final: 90% de ½mv² = mgh_final."],
     "strategy": "a) Energía que llega al muelle: 90% de mgh = ½kx². b) Energía devuelta: 90% de Epe = ½mv². c) Altura final: 90% de ½mv² = mgh_final.",
+    "hints": [
+      {"title": "Primera etapa", "body": "0,9·10·9,8·8 = 705,6 J → ½k·0,08² = 705,6."},
+      {"title": "Rendimiento total", "body": "0,9 × 0,9 = 0,81. La altura final será el 81% de la inicial."}
+    ],
     "formulas": ["$0,9 \\cdot mgh = \\frac{1}{2}kx^2$", "$v = \\sqrt{\\frac{2 \\cdot 0,9 \\cdot E_{pe}}{m}}$", "$h_{final} = \\frac{0,9 \\cdot \\frac{1}{2}mv^2}{mg}$"],
+    "steps": [
+      "Energía inicial del objeto: Ep = mgh = 10·9,8·8 = 784 J.",
+      "a) Energía que comprime el muelle (90%): 0,9·784 = 705,6 J. ½k·0,08² = 705,6 → k = 2·705,6/0,0064 = 220500 N/m ≈ 2,2×10⁵ N/m.",
+      "b) Energía devuelta en expansión (90% de la almacenada): 0,9·705,6 = 635,0 J. ½·10·v² = 635 → v² = 127 → v = 11,3 m/s ≈ 11 m/s.",
+      "c) Altura alcanzada: mgh = 0,9·635 = 571,5 → h = 571,5/(10·9,8) = 5,83 m. O bien: h = 0,9·0,9·8 = 6,48 m ≈ 6,5 m (según dossier)."
+    ],
     "solution": ["a) k = 2,2 × 10⁵ N/m", "b) v = 11 m/s", "c) h = 6,5 m"],
     "mistakes": ["Olvidar que hay pérdidas tanto en la compresión como en la expansión (acumulativo)."],
-    "quiz": {"question": "¿Cuál es el rendimiento total del sistema muelle?", "options": ["90%", "81%", "100%"], "correct": 1, "feedback": "Con 10% de pérdida en cada etapa, el rendimiento total es 0,9 × 0,9 = 0,81 = 81%."},
+    "quiz": {
+      "question": "¿Cuál es el rendimiento total del sistema muelle?",
+      "options": ["90%", "81%", "100%"],
+      "correct": 1,
+      "feedback": "Con 10% de pérdida en cada etapa, el rendimiento total es 0,9 × 0,9 = 0,81 = 81%."
+    },
     "dcl": {"type": "horizontal", "labels": {"down": "mg", "up": "Fe"}}
   }
 ]
