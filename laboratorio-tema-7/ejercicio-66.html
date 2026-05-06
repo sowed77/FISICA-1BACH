@@ -1,0 +1,280 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ejercicio 66: Dinámica y Cinemática</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <script src="https://unpkg.com/lucide-react@latest"></script>
+
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&family=Fira+Code&display=swap');
+        body { font-family: 'Inter', sans-serif; background-color: #0f172a; }
+        .font-mono { font-family: 'Fira Code', monospace; }
+        input[type=range]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            height: 24px;
+            width: 24px;
+            border-radius: 50%;
+            background: #10b981;
+            cursor: pointer;
+            border: 3px solid #ffffff;
+            box-shadow: 0 0 10px rgba(16, 185, 129, 0.5);
+        }
+        .track-pattern {
+            background-image: linear-gradient(90deg, #334155 1px, transparent 1px);
+            background-size: 50px 100%;
+        }
+    </style>
+</head>
+<body>
+    <div id="root"></div>
+
+    <script type="text/babel">
+        (() => {
+            var { useState, useEffect } = React;
+            var icons = window.LucideReact || {};
+            var PlayIcon = icons.Play;
+            var RotateIcon = icons.RotateCcw;
+            var InfoIcon = icons.Info;
+            var TimerIcon = icons.Timer;
+            var ActivityIcon = icons.Activity;
+            var FastForwardIcon = icons.FastForward;
+
+            var App = () => {
+                // Masas calculadas a partir del enunciado (m1 + m2 = 8.4; a1 = 3*a2 => m2 = 3*m1)
+                const m1 = 2.1; 
+                const m2 = 6.3; 
+                
+                const tPush = 2.3; // Tiempo que actúa la fuerza (MRUA)
+                const tTotal = 5.3; // Tiempo total de simulación (2.3s + 3s de MRU)
+                const pxPerMeter = 12; // Escala visual
+
+                const [force, setForce] = useState(5.5); // N (Valor inicial cercano a la solución)
+                const [time, setTime] = useState(0);
+                const [isPlaying, setIsPlaying] = useState(false);
+
+                // Cinemática del Bloque 1 (El rápido)
+                const a1 = force / m1;
+                const v1 = time <= tPush ? a1 * time : a1 * tPush;
+                const d1_mrua = 0.5 * a1 * Math.pow(Math.min(time, tPush), 2);
+                const d1_mru = time > tPush ? (a1 * tPush) * (time - tPush) : 0;
+                const d1 = d1_mrua + d1_mru;
+
+                // Cinemática del Bloque 2 (El lento)
+                const a2 = force / m2;
+                const v2 = time <= tPush ? a2 * time : a2 * tPush;
+                const d2_mrua = 0.5 * a2 * Math.pow(Math.min(time, tPush), 2);
+                const d2_mru = time > tPush ? (a2 * tPush) * (time - tPush) : 0;
+                const d2 = d2_mrua + d2_mru;
+
+                const isPushing = time > 0 && time <= tPush;
+
+                useEffect(() => {
+                    let interval;
+                    if (isPlaying) {
+                        interval = setInterval(() => {
+                            setTime(prev => {
+                                const nextTime = prev + 0.05;
+                                if (nextTime >= tTotal) {
+                                    setIsPlaying(false);
+                                    return tTotal;
+                                }
+                                return nextTime;
+                            });
+                        }, 50); // 50ms * 0.05s = 1x real time
+                    }
+                    return () => clearInterval(interval);
+                }, [isPlaying]);
+
+                const reset = () => {
+                    setTime(0);
+                    setIsPlaying(false);
+                };
+
+                return (
+                    <div className="min-h-screen bg-slate-900 text-slate-100 p-4 md:p-8">
+                        <header className="max-w-5xl mx-auto mb-8 border-b border-slate-700 pb-6">
+                            <div className="flex items-center gap-3 mb-2">
+                                <span className="bg-emerald-600 text-white px-3 py-1 rounded-full text-xs font-black uppercase tracking-widest">Exercici 66</span>
+                                <h1 className="text-3xl font-black text-emerald-400 uppercase tracking-tight tracking-widest">L'Impuls i el Moviment</h1>
+                            </div>
+                            <div className="bg-slate-800/50 p-4 rounded-xl border border-slate-700">
+                                <p className="text-slate-300 text-sm leading-relaxed">
+                                    <strong>Enunciat:</strong> Sobre dos cossos exercim la mateixa força durant el mateix temps (2,3 s) i observem que un acaba movent-se amb el triple de velocitat que l'altre. La massa conjunta és 8,4 kg. Quina és la massa de cadascun? Quin és el valor de la força si l'objecte ràpid recorre 18 m en els 3 s després que deixi d'actuar la força?
+                                </p>
+                            </div>
+                        </header>
+
+                        <main className="max-w-5xl mx-auto grid md:grid-cols-2 gap-8">
+                            {/* Pista de Carreras Visual */}
+                            <div className="bg-slate-800 rounded-3xl border border-slate-700 h-[500px] relative overflow-hidden shadow-2xl flex flex-col pt-4">
+                                
+                                {/* Marcadores superiores */}
+                                <div className="px-6 flex justify-between items-center z-10 mb-8">
+                                    <div className="bg-slate-900/80 p-3 rounded-xl border border-slate-700 backdrop-blur-md flex items-center gap-3">
+                                        {TimerIcon && <TimerIcon className={isPushing ? "text-orange-400" : "text-emerald-400"} />}
+                                        <div>
+                                            <p className="text-[10px] text-slate-500 uppercase font-black">Temps (s)</p>
+                                            <p className="text-2xl font-mono font-black">{time.toFixed(2)}</p>
+                                        </div>
+                                    </div>
+                                    <div className={`px-4 py-2 rounded-full font-black text-xs uppercase border-2 ${isPushing ? 'border-orange-500 text-orange-400 bg-orange-900/30' : 'border-emerald-500 text-emerald-400 bg-emerald-900/30'}`}>
+                                        {isPushing ? 'Fase 1: MRUA (Accelerant)' : time === 0 ? 'En Repòs' : 'Fase 2: MRU (Lliure)'}
+                                    </div>
+                                </div>
+
+                                {/* Pista Bloque 1 */}
+                                <div className="relative h-32 w-full border-b-2 border-slate-600 track-pattern">
+                                    <p className="absolute top-1 left-2 text-[10px] text-slate-400 font-bold uppercase">Carril 1 (Massa Petita = 2.1 kg)</p>
+                                    
+                                    {/* Marcador de inicio de MRU */}
+                                    <div className="absolute top-0 bottom-0 border-l-2 border-dashed border-emerald-500/50" style={{ left: `${(0.5 * a1 * tPush * tPush) * pxPerMeter + 40}px` }}>
+                                        <span className="absolute -top-4 text-[9px] text-emerald-500 whitespace-nowrap">Fi Empenta</span>
+                                    </div>
+
+                                    {/* Bloque 1 */}
+                                    <div 
+                                        className="absolute bottom-4 h-12 bg-emerald-500 border-2 border-emerald-300 rounded-lg flex items-center justify-center transition-all z-20 shadow-lg"
+                                        style={{ left: `${40 + d1 * pxPerMeter}px`, width: '40px' }}
+                                    >
+                                        <span className="font-black text-emerald-950 text-xs">m1</span>
+                                        {/* Vector Velocidad */}
+                                        {v1 > 0 && (
+                                            <div className="absolute top-1/2 left-full flex items-center pl-1" style={{ width: v1 * 5 }}>
+                                                <div className="h-0.5 bg-white w-full opacity-50"></div>
+                                                <div className="w-1.5 h-1.5 bg-white rotate-45 transform -translate-x-1 opacity-50"></div>
+                                            </div>
+                                        )}
+                                        {/* Vector Fuerza (Solo empujando) */}
+                                        {isPushing && (
+                                            <div className="absolute top-1/2 right-full flex items-center pr-1 text-orange-400">
+                                                <span className="text-[10px] font-bold mr-1">F</span>
+                                                {FastForwardIcon && <FastForwardIcon size={16} />}
+                                            </div>
+                                        )}
+                                    </div>
+                                </div>
+
+                                {/* Pista Bloque 2 */}
+                                <div className="relative h-32 w-full border-b-2 border-slate-600 track-pattern bg-slate-800/50">
+                                    <p className="absolute top-1 left-2 text-[10px] text-slate-400 font-bold uppercase">Carril 2 (Massa Gran = 6.3 kg)</p>
+                                    
+                                    {/* Bloque 2 */}
+                                    <div 
+                                        className="absolute bottom-4 h-16 bg-slate-500 border-2 border-slate-400 rounded-lg flex items-center justify-center transition-all z-20 shadow-lg"
+                                        style={{ left: `${40 + d2 * pxPerMeter}px`, width: '60px' }}
+                                    >
+                                        <span className="font-black text-slate-900 text-xs">m2</span>
+                                        {/* Vector Fuerza (Solo empujando) */}
+                                        {isPushing && (
+                                            <div className="absolute top-1/2 right-full flex items-center pr-1 text-orange-400">
+                                                <span className="text-[10px] font-bold mr-1">F</span>
+                                                {FastForwardIcon && <FastForwardIcon size={16} />}
+                                            </div>
+                                        )}
+                                    </div>
+                                </div>
+
+                                {/* Panel inferior de datos */}
+                                <div className="bg-slate-900/50 p-4 grid grid-cols-2 gap-4 h-full">
+                                    <div className="flex flex-col justify-center">
+                                        <span className="text-xs text-slate-400">Distància m1 (MRU):</span>
+                                        <span className={`text-xl font-mono font-black ${d1_mru > 17.9 && d1_mru < 18.1 ? 'text-emerald-400' : 'text-white'}`}>
+                                            {d1_mru.toFixed(2)} m
+                                        </span>
+                                        <span className="text-[9px] text-slate-500 mt-1">Objectiu: 18.00 m al final</span>
+                                    </div>
+                                    <div className="flex flex-col justify-center">
+                                        <span className="text-xs text-slate-400">Velocitat final m1:</span>
+                                        <span className="text-xl font-mono font-black text-indigo-400">{v1.toFixed(2)} m/s</span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* Controles y Resolución */}
+                            <div className="space-y-6">
+                                <div className="bg-slate-800 p-6 rounded-3xl border border-slate-700 shadow-xl">
+                                    <div className="flex justify-between items-center mb-6">
+                                        <h3 className="text-xl font-bold flex items-center gap-2">
+                                            {ActivityIcon && <ActivityIcon className="text-emerald-400" />} Missió Interactiva
+                                        </h3>
+                                    </div>
+                                    <p className="text-sm text-slate-400 mb-6">
+                                        Ajusta la Força (F) i reprodueix la simulació. Has d'aconseguir que en aturar-se el temps (5.3s), la "Distància m1 (MRU)" marque exactament <strong>18.00 m</strong>.
+                                    </p>
+
+                                    <div className="mb-8">
+                                        <div className="flex justify-between mb-4">
+                                            <span className="text-sm text-slate-400 font-bold uppercase tracking-widest">Força Aplicada</span>
+                                            <span className="text-2xl font-black text-emerald-400 font-mono">{force.toFixed(2)} N</span>
+                                        </div>
+                                        <input 
+                                            type="range" min="1" max="10" step="0.01" value={force}
+                                            onChange={(e) => { setForce(parseFloat(e.target.value)); reset(); }}
+                                            className="w-full h-3 bg-slate-700 rounded-lg appearance-none cursor-pointer mb-2"
+                                        />
+                                        <div className="flex justify-between text-[10px] text-slate-500 font-black">
+                                            <span>1 N</span>
+                                            <span>10 N</span>
+                                        </div>
+                                    </div>
+
+                                    <div className="flex gap-2">
+                                        <button 
+                                            onClick={() => setIsPlaying(true)} 
+                                            disabled={isPlaying || time >= tTotal} 
+                                            className="flex-1 bg-emerald-600 py-4 rounded-xl font-bold flex items-center justify-center gap-2 hover:bg-emerald-500 disabled:opacity-50 transition-all active:scale-95 shadow-lg"
+                                        >
+                                            {PlayIcon && <PlayIcon size={18}/>} INICIAR
+                                        </button>
+                                        <button 
+                                            onClick={reset} 
+                                            className="bg-slate-700 px-6 rounded-xl hover:bg-slate-600 transition-colors shadow-lg"
+                                        >
+                                            {RotateIcon && <RotateIcon size={18}/>}
+                                        </button>
+                                    </div>
+                                </div>
+
+                                <div className="bg-emerald-950/20 p-6 rounded-3xl border border-emerald-500/20">
+                                    <h4 className="font-bold text-emerald-300 mb-4 flex items-center gap-2">
+                                        {InfoIcon && <InfoIcon size={18} />} Resolució del Profe
+                                    </h4>
+                                    <div className="text-xs text-slate-300 space-y-4 leading-relaxed">
+                                        <p><strong>1. Càlcul de masses:</strong> L'impuls és el mateix, així que si <i>v<sub>1</sub> = 3·v<sub>2</sub></i>, llavors <i>m<sub>2</sub> = 3·m<sub>1</sub></i>.<br/> Com <i>m<sub>1</sub> + m<sub>2</sub> = 8.4</i>, tenim <i>m<sub>1</sub> = 2.1</i> kg i <i>m<sub>2</sub> = 6.3</i> kg.</p>
+                                        
+                                        <p><strong>2. Fase MRU (t &gt; 2.3s):</strong> Sense força, l'acceleració és 0. El bloc 1 recorre 18m en els següents 3s.<br/>
+                                        <i>v = d / t = 18 / 3 = 6 m/s</i>.</p>
+                                        
+                                        <p><strong>3. Fase MRUA (t &le; 2.3s):</strong> Sabem que en 2.3s va assolir els 6 m/s.<br/>
+                                        <i>a = v / t = 6 / 2.3 &asymp; 2.61 m/s&sup2;</i>.</p>
+
+                                        <div className="bg-slate-900 p-3 rounded-lg border-l-4 border-emerald-500 font-mono text-emerald-200 shadow-inner">
+                                            Segona Llei de Newton:<br/>
+                                            F = m1 &middot; a1<br/>
+                                            F = 2.1 &middot; (6 / 2.3) = 5.478 N
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </main>
+
+                        <footer className="max-w-5xl mx-auto mt-12 pt-6 border-t border-slate-800 text-center text-slate-500 text-[10px] font-bold uppercase tracking-widest">
+                            Profe Física | Combinació Dinàmica i Cinemàtica
+                        </footer>
+                    </div>
+                );
+            };
+
+            const container = document.getElementById('root');
+            const root = ReactDOM.createRoot(container);
+            root.render(<App />);
+        })();
+    </script>
+</body>
+</html>

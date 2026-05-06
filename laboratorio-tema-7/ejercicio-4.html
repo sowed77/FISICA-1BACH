@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ejercicio 4: Dinámica en el Ascensor</title>
+    <!-- Bibliotecas externas para diseño e interactividad -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <script src="https://unpkg.com/lucide-react@latest"></script>
+
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&family=Fira+Code&display=swap');
+        body { font-family: 'Inter', sans-serif; background-color: #0f172a; }
+        .font-mono { font-family: 'Fira Code', monospace; }
+        .elevator-shaft { background: linear-gradient(to bottom, #1e293b 0%, #0f172a 100%); }
+        /* Animación personalizada para el movimiento del ascensor */
+        .elevator-animate { transition: transform 0.5s cubic-bezier(0.4, 0, 0.2, 1); }
+    </style>
+</head>
+<body>
+    <div id="root"></div>
+
+    <script type="text/babel">
+        // Evitamos conflictos de re-declaración usando un bloque de código
+        (() => {
+            const { useState, useEffect, useMemo } = React;
+            
+            // Acceso seguro a los iconos de Lucide
+            const icons = window.LucideReact || {};
+            const { ArrowUp, ArrowDown, Info, Calculator, Weight } = icons;
+
+            const App = () => {
+                // Datos fijos del problema (Ejercicio 4)
+                const masa = 70; // kg
+                const g = 9.8; // m/s^2
+
+                // Estado de la interfaz
+                const [escenario, setEscenario] = useState('a');
+                const [isMoving, setIsMoving] = useState(false);
+                const [offset, setOffset] = useState(0);
+
+                // Configuración de los cuatro casos del enunciado
+                const casos = {
+                    a: { 
+                        titulo: "En reposo", 
+                        a: 0, 
+                        desc: "La aceleración es nula. La fuerza que ejerce el suelo (Normal) es igual al peso real del hombre." 
+                    },
+                    b: { 
+                        titulo: "Asciende con a = 1.0 m/s²", 
+                        a: 1.0, 
+                        desc: "El ascensor acelera hacia arriba. El suelo debe empujar con más fuerza para vencer la gravedad y generar la aceleración." 
+                    },
+                    c: { 
+                        titulo: "Asciende a v = 5.0 m/s", 
+                        a: 0, 
+                        desc: "Velocidad constante significa aceleración cero. Aunque se mueva rápido, la fuerza sobre el suelo es la misma que en reposo." 
+                    },
+                    d: { 
+                        titulo: "Desciende con a = 2.0 m/s²", 
+                        a: -2.0, 
+                        desc: "El ascensor acelera hacia abajo. El suelo 'cae' bajo los pies del hombre, reduciendo la fuerza de contacto (Normal)." 
+                    }
+                };
+
+                const actual = casos[escenario];
+                
+                // Cálculo de la fuerza Normal (N): N - P = m*a  => N = m * (g + a)
+                const pesoReal = masa * g;
+                const fuerzaSuelo = masa * (g + actual.a);
+
+                // Lógica de animación visual
+                useEffect(() => {
+                    let interval;
+                    if (isMoving) {
+                        interval = setInterval(() => {
+                            setOffset(prev => {
+                                if (escenario === 'd') return prev > 60 ? -60 : prev + 1.5;
+                                return prev < -60 ? 60 : prev - 1.5;
+                            });
+                        }, 30);
+                    } else {
+                        setOffset(0);
+                    }
+                    return () => clearInterval(interval);
+                }, [isMoving, escenario]);
+
+                return (
+                    <div className="min-h-screen bg-slate-900 text-slate-100 p-4 md:p-8">
+                        <header className="max-w-5xl mx-auto mb-8 border-b border-slate-700 pb-6">
+                            <div className="flex items-center gap-3 mb-2">
+                                <span className="bg-indigo-600 text-white px-3 py-1 rounded-full text-xs font-black uppercase">Problema 4</span>
+                                <h1 className="text-3xl font-black text-indigo-400 uppercase tracking-tight">El Hombre en el Ascensor</h1>
+                            </div>
+                            <p className="text-slate-400 text-sm leading-relaxed">
+                                <strong>Enunciado:</strong> Calcula la fuerza que ejerce sobre el suelo del ascensor un hombre de 70 kg de masa en diferentes estados de movimiento.
+                            </p>
+                        </header>
+
+                        <main className="max-w-5xl mx-auto grid md:grid-cols-2 gap-8">
+                            {/* Visualización del Ascensor */}
+                            <div className="elevator-shaft rounded-3xl border border-slate-700 h-[500px] relative overflow-hidden flex flex-col items-center justify-center shadow-2xl">
+                                <div className="absolute top-0 w-0.5 bg-slate-600 h-full left-1/2 -translate-x-1/2 opacity-30"></div>
+                                
+                                <div 
+                                    className="w-48 h-64 bg-slate-800 border-4 border-slate-600 rounded-xl relative z-10 flex flex-col justify-end p-4 shadow-inner"
+                                    style={{ transform: `translateY(${offset}px)` }}
+                                >
+                                    <div className="absolute -top-4 left-1/2 -translate-x-1/2 w-8 h-8 bg-slate-700 border-2 border-slate-500 rounded-full shadow-md"></div>
+
+                                    {/* Representación del Hombre */}
+                                    <div className="relative flex flex-col items-center mb-1">
+                                        <div className="w-8 h-8 bg-orange-200 rounded-full mb-1 border-2 border-orange-300 shadow-sm"></div>
+                                        <div className="w-10 h-20 bg-slate-500 rounded-t-2xl border border-slate-400"></div>
+                                        
+                                        {/* Vectores de Fuerza (Diagrama de Cuerpo Libre) */}
+                                        <div className="absolute top-1/2 -translate-y-1/2 flex flex-col items-center pointer-events-none">
+                                            {/* Normal (N) */}
+                                            <div className="flex flex-col items-center mb-4 transition-all" style={{ height: Math.max(20, fuerzaSuelo/6) }}>
+                                                <span className="text-[10px] font-black text-green-400 mb-1">N</span>
+                                                <div className="w-1 bg-green-400 h-full relative">
+                                                    <div className="absolute -top-2 left-1/2 -translate-x-1/2">
+                                                        {ArrowUp && <ArrowUp size={16} className="text-green-400" />}
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            {/* Peso (P) */}
+                                            <div className="flex flex-col items-center" style={{ height: pesoReal/6 }}>
+                                                <div className="w-1 bg-red-400 h-full relative">
+                                                    <div className="absolute -bottom-2 left-1/2 -translate-x-1/2">
+                                                        {ArrowDown && <ArrowDown size={16} className="text-red-400" />}
+                                                    </div>
+                                                </div>
+                                                <span className="text-[10px] font-black text-red-400 mt-2">P</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    
+                                    {/* Escala / Báscula */}
+                                    <div className="w-36 h-6 bg-slate-900 border-t-4 border-indigo-500 mx-auto rounded-b-lg flex items-center justify-center shadow-lg">
+                                        <span className="text-xs font-mono font-bold text-indigo-300 tracking-wider">
+                                            {fuerzaSuelo.toFixed(1)} N
+                                        </span>
+                                    </div>
+                                </div>
+
+                                {/* Pantalla de Datos Flotante */}
+                                <div className="absolute bottom-6 right-6 bg-slate-900/90 p-5 rounded-2xl border border-slate-700 shadow-2xl backdrop-blur-md">
+                                    <p className="text-[10px] text-slate-500 uppercase font-black mb-1 tracking-widest text-center">Fuerza Aparente</p>
+                                    <p className="text-4xl font-mono font-black text-indigo-400 text-center">
+                                        {fuerzaSuelo.toFixed(1)} <span className="text-sm">N</span>
+                                    </p>
+                                    <div className="mt-3 text-[10px] text-slate-400 border-t border-slate-800 pt-3 font-mono text-center">
+                                        F_suelo = m · (g + a)
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* Controles e Instrucciones */}
+                            <div className="space-y-6">
+                                <div className="bg-slate-800 p-6 rounded-3xl border border-slate-700 shadow-xl">
+                                    <h3 className="text-xl font-bold mb-5 flex items-center gap-2">
+                                        {Calculator && <Calculator className="text-indigo-400" />} Control del Movimiento
+                                    </h3>
+                                    <div className="grid grid-cols-2 gap-3 mb-6">
+                                        {Object.keys(casos).map(key => (
+                                            <button 
+                                                key={key}
+                                                onClick={() => { setEscenario(key); setIsMoving(key !== 'a'); }}
+                                                className={`py-3 px-4 rounded-xl text-xs font-black transition-all border-b-4 ${escenario === key ? 'bg-indigo-600 border-indigo-800 translate-y-1' : 'bg-slate-700 border-slate-900 text-slate-400 hover:bg-slate-600 active:translate-y-1'}`}
+                                            >
+                                                CASO {key.toUpperCase()}
+                                            </button>
+                                        ))}
+                                    </div>
+
+                                    <div className="bg-slate-900 p-5 rounded-2xl border-l-4 border-indigo-500 mb-6">
+                                        <h4 className="text-indigo-300 font-black mb-2 text-sm uppercase">{actual.titulo}</h4>
+                                        <p className="text-xs text-slate-400 leading-relaxed font-medium">{actual.desc}</p>
+                                    </div>
+
+                                    <div className="space-y-3">
+                                        <div className="flex justify-between items-center text-sm p-3 bg-slate-900/50 rounded-xl border border-slate-800">
+                                            <span className="text-slate-500 font-bold">Masa del hombre</span>
+                                            <span className="font-mono text-white">70 kg</span>
+                                        </div>
+                                        <div className="flex justify-between items-center text-sm p-3 bg-slate-900/50 rounded-xl border border-slate-800">
+                                            <span className="text-slate-500 font-bold">Aceleración (a)</span>
+                                            <span className="font-mono text-white">{actual.a.toFixed(1)} m/s²</span>
+                                        </div>
+                                        <div className="flex justify-between items-center p-4 bg-indigo-900/20 rounded-xl border border-indigo-500/30">
+                                            <span className="text-indigo-300 font-black text-xs uppercase">Resultado: Fuerza (N)</span>
+                                            <span className="font-mono font-black text-white text-xl">{fuerzaSuelo.toFixed(1)} N</span>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div className="bg-indigo-950/40 p-6 rounded-3xl border border-indigo-500/20">
+                                    <h4 className="font-bold text-indigo-300 mb-3 flex items-center gap-2">
+                                        {Info && <Info size={18} />} Nota del Profesor
+                                    </h4>
+                                    <div className="text-xs text-slate-300 space-y-3 leading-relaxed">
+                                        <p>Para la PAU, recuerda que la fuerza que siente el hombre es la <strong>Normal</strong> ($N$).</p>
+                                        <div className="bg-slate-900 p-3 rounded-lg font-mono text-center text-indigo-300 border border-indigo-500/20 shadow-inner">
+                                            Σ F_y = m · a  ⇒  N - P = m · a
+                                        </div>
+                                        <p>Si el ascensor sube y <strong>frena</strong>, la aceleración es negativa. Si baja y <strong>frena</strong>, la aceleración es positiva hacia arriba.</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </main>
+
+                        <footer className="max-w-5xl mx-auto mt-12 pt-6 border-t border-slate-800 text-center text-slate-500 text-[10px] font-black uppercase tracking-widest">
+                            Preparación PAU Física | Dinámica: Sistemas Acelerados
+                        </footer>
+                    </div>
+                );
+            };
+
+            const container = document.getElementById('root');
+            const root = ReactDOM.createRoot(container);
+            root.render(<App />);
+        })();
+    </script>
+</body>
+</html>

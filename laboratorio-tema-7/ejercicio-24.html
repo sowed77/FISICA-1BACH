@@ -1,0 +1,342 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Laboratorio: Curva Plana y Fuerza Centrípeta</title>
+    <!-- Bibliotecas externas -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <script src="https://unpkg.com/lucide-react@latest"></script>
+
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&family=Fira+Code&display=swap');
+        body { font-family: 'Inter', sans-serif; background-color: #0f172a; }
+        .font-mono { font-family: 'Fira Code', monospace; }
+        input[type=range]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            height: 20px;
+            width: 20px;
+            border-radius: 50%;
+            background: #f43f5e; /* Rose 500 */
+            cursor: pointer;
+            border: 2px solid #ffffff;
+            box-shadow: 0 0 10px rgba(244, 63, 94, 0.5);
+        }
+        .road-texture {
+            background-color: #334155;
+            background-image: repeating-linear-gradient(to right, #475569 0, #475569 10px, transparent 10px, transparent 20px);
+        }
+    </style>
+</head>
+<body>
+    <div id="root"></div>
+
+    <script type="text/babel">
+        (() => {
+            var { useState, useEffect } = React;
+            var icons = window.LucideReact || {};
+            
+            var CalculatorIcon = icons.Calculator || (({className}) => <span className={className}></span>);
+            var SettingsIcon = icons.Settings || (({className}) => <span className={className}></span>);
+            var InfoIcon = icons.Info || (({className}) => <span className={className}></span>);
+            var CarIcon = icons.Car || (({className}) => <span className={className}></span>);
+            var ArrowUpIcon = icons.ArrowUp || (({className}) => <span className={className}></span>);
+            var ArrowDownIcon = icons.ArrowDown || (({className}) => <span className={className}></span>);
+            var ArrowLeftIcon = icons.ArrowLeft || (({className}) => <span className={className}></span>);
+            var ImagePlusIcon = icons.ImagePlus || (({className}) => <span className={className}></span>);
+            var TargetIcon = icons.Target || (({className}) => <span className={className}></span>);
+
+            var App = () => {
+                // Parámetros físicos constantes
+                const g = 9.8; // m/s^2
+
+                // Estados interactivos
+                const [masa, setMasa] = useState(1500); // kg
+                const [vKmh, setVKmh] = useState(90); // km/h
+                const [radio, setRadio] = useState(60); // m
+
+                // Cálculos físicos
+                const vMs = vKmh / 3.6; // Conversión a m/s
+                const peso = masa * g; // N
+                const normal = peso; // N (superficie horizontal)
+                
+                // Fuerza Centrípeta necesaria (proporcionada por el rozamiento estático lateral)
+                const fr = masa * Math.pow(vMs, 2) / radio; // F_c = m * v^2 / R
+                
+                // Fuerza Total de la calzada sobre el auto (Suma vectorial de Normal y Fricción)
+                const fTotal = Math.sqrt(Math.pow(normal, 2) + Math.pow(fr, 2));
+                
+                // Ángulo de la fuerza total respecto a la horizontal (suelo)
+                const anguloRad = Math.atan(normal / fr);
+                const anguloDeg = anguloRad * (180 / Math.PI);
+
+                // Escala visual para los vectores (100 px = ~15000 N)
+                const vScale = 100 / 15000;
+                
+                // Generador de DCL con IA (Placeholder visual seguro)
+                const [imgUrl, setImgUrl] = useState(null);
+                const [imgLoading, setImgLoading] = useState(false);
+
+                const generarDiagrama = async () => {
+                    setImgLoading(true);
+                    const apiKey = ""; 
+                    try {
+                        const response = await fetch(
+                            `https://generativelanguage.googleapis.com/v1beta/models/imagen-4.0-generate-001:predict?key=${apiKey}`,
+                            {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({
+                                    instances: [{ prompt: "Diagrama técnico de física. Vista trasera de un coche en una curva. Vector Normal N hacia arriba, Vector Peso P hacia abajo, Vector Friccion Fr hacia el centro de la curva (izquierda). Un vector resultante Fr+N diagonal hacia arriba e izquierda. Fondo blanco, educativo" }],
+                                    parameters: { sampleCount: 1 }
+                                })
+                            }
+                        );
+                        if (!response.ok) throw new Error("Error en la red");
+                        const data = await response.json();
+                        setImgUrl(`data:image/png;base64,${data.predictions[0].bytesBase64Encoded}`);
+                    } catch (error) {
+                        console.error(error);
+                    } finally {
+                        setImgLoading(false);
+                    }
+                };
+
+                return (
+                    <div className="min-h-screen bg-slate-900 text-slate-100 p-4 md:p-8">
+                        <header className="max-w-5xl mx-auto mb-8 border-b border-slate-700 pb-6">
+                            <div className="flex items-center gap-3 mb-2">
+                                <span className="bg-rose-600 text-white px-3 py-1 rounded-full text-xs font-black uppercase tracking-widest">Dinámica Circular</span>
+                                <h1 className="text-3xl font-black text-rose-400 uppercase tracking-tight tracking-widest">Fuerzas en Curva Plana</h1>
+                            </div>
+                            <div className="bg-slate-800/50 p-4 rounded-xl border border-slate-700 mt-4">
+                                <p className="text-slate-300 text-sm leading-relaxed">
+                                    <strong>Enunciado:</strong> Automóvil de 1500 kg en un tramo curvo plano (R=60 m) a v=90 km/h. Determina dirección, sentido y valor de la fuerza que la calzada ejerce sobre el auto.
+                                </p>
+                            </div>
+                        </header>
+
+                        <main className="max-w-5xl mx-auto grid md:grid-cols-2 gap-8">
+                            {/* Panel Visual (Vista Trasera del Coche) */}
+                            <div className="bg-slate-800 rounded-3xl border border-slate-700 h-[500px] relative overflow-hidden shadow-2xl flex flex-col justify-end pt-12">
+                                
+                                {/* Marcadores Flotantes */}
+                                <div className="absolute top-4 w-full px-6 flex justify-between z-30 pointer-events-none">
+                                    <div className="bg-slate-900/90 p-3 rounded-lg border border-slate-700 backdrop-blur-md">
+                                        <p className="text-[10px] text-slate-500 uppercase font-black">Fuerza Centrípeta (Rozamiento)</p>
+                                        <p className="text-xl font-mono font-black text-emerald-400">{fr.toFixed(0)} N</p>
+                                    </div>
+                                    <div className="bg-slate-900/90 p-3 rounded-lg border border-rose-500 backdrop-blur-md text-right shadow-[0_0_15px_rgba(244,63,94,0.3)]">
+                                        <p className="text-[10px] text-rose-300 uppercase font-black">Reacción Total Calzada</p>
+                                        <p className="text-2xl font-mono font-black text-rose-500">{fTotal.toFixed(0)} N</p>
+                                    </div>
+                                </div>
+
+                                {/* Escenario - Vista Trasera */}
+                                <div className="relative w-full h-80 flex justify-center items-end pb-12">
+                                    
+                                    {/* Indicador del Centro de la Curva */}
+                                    <div className="absolute bottom-12 left-4 flex flex-col items-center opacity-60">
+                                        <TargetIcon size={32} className="text-emerald-500 animate-pulse" />
+                                        <span className="text-[10px] font-bold text-emerald-400 mt-1 uppercase text-center">Centro<br/>Curva</span>
+                                    </div>
+
+                                    {/* El Coche (Vista Trasera) */}
+                                    <div className="relative z-20 flex flex-col items-center">
+                                        {/* Chasis */}
+                                        <div className="w-32 h-20 bg-slate-400 border-4 border-slate-300 rounded-t-2xl rounded-b-md shadow-xl flex items-center justify-center relative">
+                                            <span className="font-black text-slate-800 text-xs">{masa} kg</span>
+                                            {/* Luces traseras */}
+                                            <div className="absolute bottom-2 left-2 w-4 h-2 bg-red-500 rounded-sm shadow-[0_0_5px_red]"></div>
+                                            <div className="absolute bottom-2 right-2 w-4 h-2 bg-red-500 rounded-sm shadow-[0_0_5px_red]"></div>
+                                        </div>
+                                        {/* Ruedas */}
+                                        <div className="flex gap-16 -mt-2">
+                                            <div className="w-6 h-10 bg-slate-900 rounded-md border border-slate-700"></div>
+                                            <div className="w-6 h-10 bg-slate-900 rounded-md border border-slate-700"></div>
+                                        </div>
+
+                                        {/* VECTORES DE FUERZA (Desde el centro del coche) */}
+                                        <div className="absolute top-1/2 left-1/2">
+                                            
+                                            {/* Vector Peso (Naranja, Abajo) */}
+                                            <div className="absolute top-0 left-0 flex flex-col items-center pointer-events-none" style={{ height: peso * vScale, transform: 'translateX(-50%)' }}>
+                                                <div className="w-1.5 bg-orange-500 h-full relative">
+                                                    <div className="absolute bottom-0 -translate-x-[6px]">{ArrowDownIcon && <ArrowDownIcon size={18} className="text-orange-500" />}</div>
+                                                </div>
+                                                <span className="mt-1 text-[10px] font-black text-orange-400 bg-slate-900/80 px-1 rounded shadow">P = {peso.toFixed(0)}N</span>
+                                            </div>
+
+                                            {/* Vector Normal (Azul, Arriba) */}
+                                            <div className="absolute bottom-0 left-0 flex flex-col items-center pb-1 pointer-events-none" style={{ height: normal * vScale, transform: 'translateX(-50%)' }}>
+                                                <span className="mb-1 text-[10px] font-black text-blue-400 bg-slate-900/80 px-1 rounded shadow whitespace-nowrap">N = {normal.toFixed(0)}N</span>
+                                                <div className="w-1.5 bg-blue-500 h-full relative">
+                                                    <div className="absolute top-0 -translate-x-[6px]">{ArrowUpIcon && <ArrowUpIcon size={18} className="text-blue-500" />}</div>
+                                                </div>
+                                            </div>
+
+                                            {/* Vector Rozamiento / F. Centrípeta (Verde, Izquierda hacia el centro) */}
+                                            <div className="absolute right-0 top-0 flex items-center pr-1 pointer-events-none" style={{ width: fr * vScale, transform: 'translateY(-50%)' }}>
+                                                <span className="mr-1 text-[10px] font-black text-emerald-400 bg-slate-900/80 px-1 rounded shadow whitespace-nowrap">Fr = {fr.toFixed(0)}N</span>
+                                                <div className="h-1.5 bg-emerald-500 w-full relative">
+                                                    <div className="absolute left-0 -top-[7px]">{ArrowLeftIcon && <ArrowLeftIcon size={18} className="text-emerald-500" />}</div>
+                                                </div>
+                                            </div>
+
+                                            {/* VECTOR RESULTANTE: CALZADA (Rosa, Diagonal Arriba-Izquierda) */}
+                                            {/* Usamos trigonometría para dibujar la flecha diagonal */}
+                                            <div 
+                                                className="absolute bottom-0 right-0 origin-bottom-right pointer-events-none z-30"
+                                                style={{ 
+                                                    width: fTotal * vScale, 
+                                                    height: '4px',
+                                                    backgroundColor: '#f43f5e',
+                                                    transform: `rotate(-${anguloDeg}deg)`,
+                                                    boxShadow: '0 0 10px rgba(244,63,94,0.8)'
+                                                }}
+                                            >
+                                                {/* Punta de la flecha manual */}
+                                                <div className="absolute -left-1 -top-1.5 w-0 h-0 border-t-[5px] border-t-transparent border-b-[5px] border-b-transparent border-r-[8px] border-r-rose-500"></div>
+                                            </div>
+                                            
+                                            {/* Etiqueta de la Resultante */}
+                                            <div 
+                                                className="absolute pointer-events-none z-30 flex items-center gap-1"
+                                                style={{ 
+                                                    bottom: `${(normal * vScale) + 10}px`, 
+                                                    right: `${(fr * vScale) + 10}px`,
+                                                }}
+                                            >
+                                                <span className="text-[12px] font-black text-white bg-rose-600 px-2 py-1 rounded shadow-lg border border-rose-400 whitespace-nowrap">
+                                                    F_calzada ({fTotal.toFixed(0)} N)
+                                                </span>
+                                            </div>
+
+                                            {/* Arco del Ángulo de la Resultante con la horizontal */}
+                                            <div 
+                                                className="absolute bottom-0 right-0 border-l-2 border-t-2 border-rose-500/50 rounded-tl-full pointer-events-none"
+                                                style={{ width: '40px', height: '40px' }}
+                                            >
+                                                <span className="absolute -top-4 -left-6 text-[9px] font-bold text-rose-300 bg-slate-900/80 px-1 rounded">{anguloDeg.toFixed(1)}º</span>
+                                            </div>
+
+                                        </div>
+                                    </div>
+
+                                    {/* Suelo (Asfalto) */}
+                                    <div className="absolute bottom-0 w-full h-12 road-texture border-t-4 border-slate-600"></div>
+                                </div>
+                            </div>
+
+                            {/* Controles y Resolución */}
+                            <div className="space-y-6">
+                                <div className="bg-slate-800 p-6 rounded-3xl border border-slate-700 shadow-xl">
+                                    <h3 className="text-xl font-bold mb-4 flex items-center gap-2 text-rose-400">
+                                        {SettingsIcon && <SettingsIcon size={20} />} Parámetros de la Curva
+                                    </h3>
+                                    
+                                    <div className="space-y-6">
+                                        <div>
+                                            <div className="flex justify-between text-xs mb-2">
+                                                <span className="text-slate-300 font-bold uppercase">Masa del Coche (m)</span>
+                                                <span className="font-mono bg-slate-900 px-2 py-0.5 rounded text-white">{masa} kg</span>
+                                            </div>
+                                            <input 
+                                                type="range" min="800" max="3000" step="50" value={masa} 
+                                                onChange={e => setMasa(Number(e.target.value))} 
+                                                className="w-full h-2 bg-slate-700 rounded-lg appearance-none cursor-pointer accent-slate-400" 
+                                            />
+                                        </div>
+
+                                        <div>
+                                            <div className="flex justify-between text-xs mb-2">
+                                                <span className="text-emerald-400 font-bold uppercase">Velocidad (v)</span>
+                                                <span className="font-mono bg-slate-900 px-2 py-0.5 rounded text-emerald-300">{vKmh} km/h ({(vKmh/3.6).toFixed(1)} m/s)</span>
+                                            </div>
+                                            <input 
+                                                type="range" min="30" max="150" step="5" value={vKmh} 
+                                                onChange={e => setVKmh(Number(e.target.value))} 
+                                                className="w-full h-2 bg-slate-700 rounded-lg appearance-none cursor-pointer accent-emerald-500" 
+                                            />
+                                            <p className="text-[10px] text-slate-500 mt-1 italic">Si aumentas la velocidad, necesitarás mucho más rozamiento lateral.</p>
+                                        </div>
+
+                                        <div>
+                                            <div className="flex justify-between text-xs mb-2">
+                                                <span className="text-blue-400 font-bold uppercase">Radio de Curva (R)</span>
+                                                <span className="font-mono bg-slate-900 px-2 py-0.5 rounded text-blue-300">{radio} m</span>
+                                            </div>
+                                            <input 
+                                                type="range" min="20" max="150" step="5" value={radio} 
+                                                onChange={e => setRadio(Number(e.target.value))} 
+                                                className="w-full h-2 bg-slate-700 rounded-lg appearance-none cursor-pointer accent-blue-500" 
+                                            />
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div className="bg-rose-950/20 p-6 rounded-3xl border border-rose-500/20">
+                                    <div className="flex justify-between items-center mb-4 border-b border-rose-500/30 pb-2">
+                                        <h4 className="font-bold text-rose-300 flex items-center gap-2">
+                                            {CalculatorIcon && <CalculatorIcon size={18} />} Resolución Paso a Paso
+                                        </h4>
+                                        <button onClick={generarDiagrama} className="text-[10px] uppercase font-bold bg-slate-800 hover:bg-slate-700 text-slate-300 px-3 py-1.5 rounded flex items-center gap-1 border border-slate-600">
+                                            {imgLoading ? <span className="animate-pulse">Cargando...</span> : <>{ImagePlusIcon && <ImagePlusIcon size={14}/>} Generar DCL</>}
+                                        </button>
+                                    </div>
+
+                                    {imgUrl && (
+                                        <div className="mb-4 bg-slate-900 p-2 rounded-xl border border-slate-700 text-center">
+                                            <img src={imgUrl} alt="Diagrama de Cuerpo Libre" className="mx-auto max-h-40 rounded-lg" />
+                                        </div>
+                                    )}
+
+                                    <div className="text-xs text-slate-300 space-y-3 leading-relaxed">
+                                        <p><strong>1. Unidades S.I.:</strong> v = 90 km/h = 90 / 3.6 = <strong>25 m/s</strong>.</p>
+                                        
+                                        <p><strong>2. Componente Vertical (Normal):</strong><br/>
+                                        Evita que el coche se hunda. Equilibra al peso.</p>
+                                        <div className="bg-slate-900/80 p-2 rounded-lg border-l-4 border-blue-500 font-mono text-blue-200">
+                                            N = P = m · g = {masa} · 9.8 = <strong>{normal.toFixed(0)} N</strong>
+                                        </div>
+
+                                        <p><strong>3. Componente Horizontal (Rozamiento):</strong><br/>
+                                        Es la que actúa como Fuerza Centrípeta evitando que el coche siga recto.</p>
+                                        <div className="bg-slate-900/80 p-2 rounded-lg border-l-4 border-emerald-500 font-mono text-emerald-200">
+                                            F<sub>r</sub> = m · v² / R<br/>
+                                            F<sub>r</sub> = {masa} · 25² / {radio} = <strong>{fr.toFixed(0)} N</strong>
+                                        </div>
+
+                                        <p><strong>4. Fuerza Total de la Calzada (Valor, Dirección y Sentido):</strong><br/>
+                                        Es la suma vectorial de las dos anteriores (Teorema de Pitágoras).</p>
+                                        <div className="bg-slate-900/80 p-3 rounded-lg border-l-4 border-rose-500 font-mono text-rose-200 shadow-inner">
+                                            F<sub>total</sub> = √(N² + F<sub>r</sub>²)<br/>
+                                            F<sub>total</sub> = √({normal.toFixed(0)}² + {fr.toFixed(0)}²) = <strong>{fTotal.toFixed(0)} N</strong><br/><br/>
+                                            <span className="text-[10px] text-slate-400 font-sans">
+                                                <strong>Sentido:</strong> Hacia arriba y hacia el centro de la curva.<br/>
+                                                <strong>Dirección (Ángulo):</strong> tan(θ) = N / F<sub>r</sub> ⇒ θ = <strong>{anguloDeg.toFixed(1)}º</strong> sobre la horizontal.
+                                            </span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </main>
+
+                        <footer className="max-w-5xl mx-auto mt-12 pt-6 border-t border-slate-800 text-center text-slate-500 text-[10px] font-bold uppercase tracking-widest">
+                            Profe Física | Dinámica Circular: Componentes de la Fuerza
+                        </footer>
+                    </div>
+                );
+            };
+
+            const container = document.getElementById('root');
+            const root = ReactDOM.createRoot(container);
+            root.render(<App />);
+        })();
+    </script>
+</body>
+</html>

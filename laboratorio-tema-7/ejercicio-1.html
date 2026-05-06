@@ -1,0 +1,300 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Laboratorio: Huevo Duro vs Huevo Crudo</title>
+    <!-- Bibliotecas externas -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <script src="https://unpkg.com/lucide-react@latest"></script>
+
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&family=Fira+Code&display=swap');
+        body { font-family: 'Inter', sans-serif; background-color: #0f172a; }
+        .font-mono { font-family: 'Fira Code', monospace; }
+        
+        /* Forma de huevo usando border-radius */
+        .egg-shape {
+            width: 100px;
+            height: 140px;
+            background-color: #fde047; /* yellow-300 */
+            border-radius: 50% 50% 50% 50% / 60% 60% 40% 40%;
+            border: 4px solid #ca8a04; /* yellow-600 */
+            position: relative;
+            overflow: hidden;
+            box-shadow: inset -10px -10px 20px rgba(0,0,0,0.2), 0 10px 15px rgba(0,0,0,0.3);
+        }
+        
+        /* Línea central para ver la rotación */
+        .egg-axis {
+            position: absolute;
+            top: 0;
+            bottom: 0;
+            left: 50%;
+            width: 4px;
+            background-color: #a16207; /* yellow-700 */
+            transform: translateX(-50%);
+            opacity: 0.5;
+        }
+
+        .egg-spots {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            background-image: radial-gradient(#a16207 2px, transparent 2px);
+            background-size: 20px 20px;
+            opacity: 0.3;
+        }
+    </style>
+</head>
+<body>
+    <div id="root"></div>
+
+    <script type="text/babel">
+        (() => {
+            var { useState, useEffect } = React;
+            var icons = window.LucideReact || {};
+            
+            var getIcon = (name) => icons[name] || (({className}) => <span className={className || ''}></span>);
+            var PlayIcon = getIcon('Play');
+            var HandIcon = getIcon('Hand');
+            var MousePointerClickIcon = getIcon('MousePointerClick');
+            var RotateCcwIcon = getIcon('RotateCcw');
+            var InfoIcon = getIcon('Info');
+            var BeakerIcon = getIcon('Beaker');
+
+            var App = () => {
+                // Estados de la simulación: 'idle', 'spinning', 'braking', 'released'
+                const [phase, setPhase] = useState('idle');
+                
+                // Ángulos de rotación visual (Cáscara)
+                const [angleBoiled, setAngleBoiled] = useState(0);
+                const [angleRaw, setAngleRaw] = useState(0);
+                
+                // Velocidad angular del interior líquido del huevo crudo
+                const [liquidVelocity, setLiquidVelocity] = useState(0);
+                // Velocidad residual de la cáscara del huevo crudo tras soltar
+                const [shellVelocity, setShellVelocity] = useState(0);
+
+                useEffect(() => {
+                    let interval = setInterval(() => {
+                        if (phase === 'spinning') {
+                            setAngleBoiled(a => a + 15);
+                            setAngleRaw(a => a + 15);
+                            setLiquidVelocity(15); // El líquido gira a la misma velocidad
+                        } 
+                        else if (phase === 'braking') {
+                            // La cáscara se detiene bruscamente (ángulos no cambian)
+                            // Pero el líquido del huevo crudo sigue girando por inercia, 
+                            // aunque se frena un poco por fricción interna
+                            setLiquidVelocity(v => Math.max(0, v * 0.99)); 
+                        } 
+                        else if (phase === 'released') {
+                            // Huevo duro: todo estaba parado, se queda en 0.
+                            
+                            // Huevo crudo: el líquido transfiere su momento a la cáscara
+                            setShellVelocity(v => {
+                                // La cáscara acelera impulsada por el líquido, luego se frena
+                                const newV = (v + liquidVelocity * 0.1) * 0.96;
+                                return newV > 0.1 ? newV : 0;
+                            });
+                            setLiquidVelocity(v => v * 0.96); // El líquido pierde energía al mover la cáscara
+                            
+                            setAngleRaw(a => a + shellVelocity);
+                        }
+                    }, 20); // 50 FPS
+
+                    return () => clearInterval(interval);
+                }, [phase, liquidVelocity, shellVelocity]);
+
+                const handleSpin = () => {
+                    setPhase('spinning');
+                };
+
+                const handleBrake = () => {
+                    if (phase === 'spinning') {
+                        setPhase('braking');
+                    }
+                };
+
+                const handleRelease = () => {
+                    if (phase === 'braking') {
+                        setPhase('released');
+                    }
+                };
+
+                const handleReset = () => {
+                    setPhase('idle');
+                    setAngleBoiled(0);
+                    setAngleRaw(0);
+                    setLiquidVelocity(0);
+                    setShellVelocity(0);
+                };
+
+                return (
+                    <div className="min-h-screen bg-slate-900 text-slate-100 p-4 md:p-8">
+                        <header className="max-w-5xl mx-auto mb-8 border-b border-slate-700 pb-6">
+                            <div className="flex items-center gap-3 mb-2">
+                                <span className="bg-yellow-600 text-slate-900 px-3 py-1 rounded-full text-xs font-black uppercase tracking-widest">Experimento Casero</span>
+                                <h1 className="text-3xl font-black text-yellow-400 uppercase tracking-tight tracking-widest">La Inercia del Huevo</h1>
+                            </div>
+                            <div className="bg-slate-800/50 p-4 rounded-xl border border-slate-700 mt-4">
+                                <p className="text-slate-300 text-sm leading-relaxed">
+                                    <strong>Ejercicio 1:</strong> ¿Cómo distinguirías un huevo duro de uno crudo usando la primera ley de Newton? Hazlos girar, detenlos un instante con el dedo y suéltalos.
+                                </p>
+                            </div>
+                        </header>
+
+                        <main className="max-w-5xl mx-auto grid md:grid-cols-2 gap-8">
+                            {/* Panel Visual */}
+                            <div className="bg-slate-800 rounded-3xl border border-slate-700 h-[450px] relative overflow-hidden shadow-2xl flex flex-col items-center pt-8">
+                                
+                                <div className="w-full flex justify-around px-12 mt-10">
+                                    {/* HUEVO DURO */}
+                                    <div className="flex flex-col items-center">
+                                        <div 
+                                            className="egg-shape transition-transform"
+                                            style={{ transform: `rotate(${angleBoiled}deg)` }}
+                                        >
+                                            <div className="egg-spots"></div>
+                                            <div className="egg-axis"></div>
+                                        </div>
+                                        <div className="mt-8 bg-slate-900 px-4 py-2 rounded-lg border border-slate-700 text-center">
+                                            <p className="font-black text-orange-400 uppercase">Huevo Duro</p>
+                                            <p className="text-[10px] text-slate-400 mt-1">Interior Sólido</p>
+                                        </div>
+                                        
+                                        {/* Indicador de interior */}
+                                        <div className="mt-4 w-16 h-16 rounded-full border-4 border-slate-600 bg-orange-200 flex items-center justify-center overflow-hidden">
+                                            <div className="w-8 h-8 rounded-full bg-yellow-500" style={{ transform: `rotate(${angleBoiled}deg)` }}></div>
+                                        </div>
+                                    </div>
+
+                                    {/* HUEVO CRUDO */}
+                                    <div className="flex flex-col items-center">
+                                        <div 
+                                            className="egg-shape transition-transform"
+                                            style={{ transform: `rotate(${angleRaw}deg)` }}
+                                        >
+                                            <div className="egg-spots"></div>
+                                            <div className="egg-axis"></div>
+                                        </div>
+                                        <div className="mt-8 bg-slate-900 px-4 py-2 rounded-lg border border-slate-700 text-center">
+                                            <p className="font-black text-emerald-400 uppercase">Huevo Crudo</p>
+                                            <p className="text-[10px] text-slate-400 mt-1">Interior Líquido</p>
+                                        </div>
+
+                                        {/* Indicador de interior */}
+                                        <div className="mt-4 w-16 h-16 rounded-full border-4 border-slate-600 bg-emerald-100 flex items-center justify-center overflow-hidden relative">
+                                            {/* El líquido girando visualmente */}
+                                            <div 
+                                                className="absolute w-10 h-10 rounded-full bg-yellow-400 opacity-80"
+                                                style={{ transform: `rotate(${angleRaw + (phase === 'braking' || phase === 'released' ? liquidVelocity * 20 : 0)}deg)` }}
+                                            >
+                                                <div className="w-2 h-2 bg-yellow-600 rounded-full absolute top-1 left-4"></div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                {/* Estado actual superpuesto */}
+                                <div className="absolute top-4 left-1/2 -translate-x-1/2">
+                                    <span className={`px-4 py-1 rounded-full text-xs font-black uppercase tracking-widest ${
+                                        phase === 'idle' ? 'bg-slate-700 text-slate-300' :
+                                        phase === 'spinning' ? 'bg-blue-600 text-white' :
+                                        phase === 'braking' ? 'bg-red-600 text-white animate-pulse' :
+                                        'bg-green-600 text-white'
+                                    }`}>
+                                        {phase === 'idle' && 'En Reposo'}
+                                        {phase === 'spinning' && 'Girando...'}
+                                        {phase === 'braking' && '¡Frenados con el dedo!'}
+                                        {phase === 'released' && 'Soltados'}
+                                    </span>
+                                </div>
+                            </div>
+
+                            {/* Panel de Control y Explicación */}
+                            <div className="space-y-6">
+                                <div className="bg-slate-800 p-6 rounded-3xl border border-slate-700 shadow-xl">
+                                    <h3 className="text-xl font-bold mb-4 flex items-center gap-2 text-yellow-400">
+                                        {BeakerIcon && <BeakerIcon size={20} />} Laboratorio
+                                    </h3>
+                                    
+                                    <div className="grid grid-cols-1 gap-3">
+                                        <button 
+                                            onClick={handleSpin}
+                                            disabled={phase !== 'idle' && phase !== 'released'}
+                                            className="bg-blue-600 hover:bg-blue-500 text-white font-bold py-3 px-4 rounded-xl flex items-center gap-3 disabled:opacity-50 transition-all active:scale-95"
+                                        >
+                                            <div className="bg-blue-800 p-1.5 rounded-lg">{PlayIcon && <PlayIcon size={16} />}</div>
+                                            1. Hacer girar los huevos
+                                        </button>
+                                        
+                                        <button 
+                                            onClick={handleBrake}
+                                            disabled={phase !== 'spinning'}
+                                            onMouseDown={handleBrake}
+                                            onTouchStart={handleBrake}
+                                            className="bg-red-600 hover:bg-red-500 text-white font-bold py-3 px-4 rounded-xl flex items-center gap-3 disabled:opacity-50 transition-all active:scale-95"
+                                        >
+                                            <div className="bg-red-800 p-1.5 rounded-lg">{HandIcon && <HandIcon size={16} />}</div>
+                                            2. Pararlos con el dedo (Mantener pulsado idealmente)
+                                        </button>
+
+                                        <button 
+                                            onClick={handleRelease}
+                                            disabled={phase !== 'braking'}
+                                            onMouseUp={handleRelease}
+                                            onTouchEnd={handleRelease}
+                                            className="bg-emerald-600 hover:bg-emerald-500 text-white font-bold py-3 px-4 rounded-xl flex items-center gap-3 disabled:opacity-50 transition-all active:scale-95"
+                                        >
+                                            <div className="bg-emerald-800 p-1.5 rounded-lg">{MousePointerClickIcon && <MousePointerClickIcon size={16} />}</div>
+                                            3. Soltar el dedo
+                                        </button>
+
+                                        <button 
+                                            onClick={handleReset}
+                                            className="bg-slate-700 hover:bg-slate-600 text-slate-300 font-bold py-3 px-4 rounded-xl flex items-center justify-center gap-2 transition-all mt-4"
+                                        >
+                                            {RotateCcwIcon && <RotateCcwIcon size={16} />} Reiniciar
+                                        </button>
+                                    </div>
+                                </div>
+
+                                <div className="bg-yellow-950/20 p-6 rounded-3xl border border-yellow-500/20">
+                                    <h4 className="font-bold text-yellow-300 mb-3 flex items-center gap-2">
+                                        {InfoIcon && <InfoIcon size={18} />} Resolución del Profe
+                                    </h4>
+                                    <div className="text-sm text-slate-300 space-y-4 leading-relaxed">
+                                        <p>
+                                            La clave está en el estado interior del huevo y la <strong>Primera Ley de Newton (Inercia)</strong>.
+                                        </p>
+                                        <div className="bg-slate-900/80 p-4 rounded-xl border-l-4 border-orange-500">
+                                            <strong className="text-orange-400">Huevo Duro:</strong> Al estar hervido, su interior es un bloque sólido pegado a la cáscara. Si detienes la cáscara con el dedo, detienes todo el huevo. Al soltarlo, permanece en reposo.
+                                        </div>
+                                        <div className="bg-slate-900/80 p-4 rounded-xl border-l-4 border-emerald-500">
+                                            <strong className="text-emerald-400">Huevo Crudo:</strong> Su interior es líquido (clara y yema). Al poner el dedo, solo detienes la cáscara exterior. El líquido interior <strong>continúa girando por inercia</strong>. Al soltar el dedo, la fricción del líquido en movimiento arrastra a la cáscara desde dentro, ¡haciendo que el huevo vuelva a girar solo!
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </main>
+
+                        <footer className="max-w-5xl mx-auto mt-12 pt-6 border-t border-slate-800 text-center text-slate-500 text-[10px] font-bold uppercase tracking-widest">
+                            Profe Física | Dinámica: Primera Ley de Newton (Inercia)
+                        </footer>
+                    </div>
+                );
+            };
+
+            const container = document.getElementById('root');
+            const root = ReactDOM.createRoot(container);
+            root.render(<App />);
+        })();
+    </script>
+</body>
+</html>

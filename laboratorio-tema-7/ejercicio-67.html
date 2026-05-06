@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ejercicio 67: Dinámica del Peralte</title>
+    <!-- Bibliotecas -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <script src="https://unpkg.com/lucide-react@latest"></script>
+
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&family=Fira+Code&display=swap');
+        body { font-family: 'Inter', sans-serif; background-color: #0f172a; }
+        .font-mono { font-family: 'Fira Code', monospace; }
+        input[type=range]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            height: 24px;
+            width: 24px;
+            border-radius: 50%;
+            background: #6366f1;
+            cursor: pointer;
+            border: 3px solid #ffffff;
+            box-shadow: 0 0 10px rgba(99, 102, 241, 0.5);
+        }
+    </style>
+</head>
+<body>
+    <div id="root"></div>
+
+    <script type="text/babel">
+        (() => {
+            var { useState, useEffect } = React;
+            var icons = window.LucideReact || {};
+            var CarIcon = icons.Car;
+            var ArrowRightIcon = icons.ArrowRight;
+            var ArrowLeftIcon = icons.ArrowLeft;
+            var InfoIcon = icons.Info;
+            var SettingsIcon = icons.Settings;
+            var AlertTriangleIcon = icons.AlertTriangle;
+
+            var App = () => {
+                // Datos del problema
+                const mu = 0.5; // Coeficiente de rozamiento estático
+                const m = 1000; // kg (Masa de ejemplo del coche)
+                const g = 9.8; // m/s^2
+
+                // Estados
+                const [angulo, setAngulo] = useState(15); // Grados
+                const [slideOffset, setSlideOffset] = useState(0);
+
+                // Cálculos físicos
+                const anguloRad = angulo * (Math.PI / 180);
+                const peso = m * g;
+                const px = peso * Math.sin(anguloRad);
+                const py = peso * Math.cos(anguloRad);
+                const normal = py;
+                const fr_max = mu * normal;
+
+                // Condición de deslizamiento
+                const isSliding = px > fr_max;
+
+                // Fuerza de rozamiento real
+                const fr_real = isSliding ? fr_max : px;
+
+                // Animación de deslizamiento
+                useEffect(() => {
+                    let interval;
+                    if (isSliding) {
+                        interval = setInterval(() => {
+                            setSlideOffset(prev => prev > -150 ? prev - 2 : -150);
+                        }, 20);
+                    } else {
+                        setSlideOffset(0);
+                    }
+                    return () => clearInterval(interval);
+                }, [isSliding, angulo]);
+
+                return (
+                    <div className="min-h-screen bg-slate-900 text-slate-100 p-4 md:p-8">
+                        <header className="max-w-5xl mx-auto mb-8 border-b border-slate-700 pb-6">
+                            <div className="flex items-center gap-3 mb-2">
+                                <span className="bg-indigo-600 text-white px-3 py-1 rounded-full text-xs font-black uppercase tracking-widest">Ejercicio 67</span>
+                                <h1 className="text-3xl font-black text-indigo-400 uppercase tracking-tight tracking-widest">El Peralte Seguro</h1>
+                            </div>
+                            <div className="bg-slate-800/50 p-4 rounded-xl border border-slate-700">
+                                <p className="text-slate-300 text-sm leading-relaxed">
+                                    <strong>Enunciado:</strong> Queremos construir una curva de radio 30 m lo más segura posible. El coeficiente de rozamiento lateral neumáticos-asfalto es 0,5. Sabiendo que a veces los coches deben permanecer parados en la curva, ¿qué ángulo de peralte nos permite más margen de velocidad sin que deslicen hacia el interior?
+                                </p>
+                            </div>
+                        </header>
+
+                        <main className="max-w-5xl mx-auto grid md:grid-cols-2 gap-8">
+                            {/* Visualización */}
+                            <div className="bg-slate-800 rounded-3xl border border-slate-700 h-[450px] relative overflow-hidden shadow-2xl flex flex-col justify-end pb-12">
+                                
+                                <div className="absolute top-6 right-6">
+                                    <div className={`p-3 rounded-xl border font-black uppercase text-xs flex items-center gap-2 backdrop-blur-md ${isSliding ? 'bg-red-900/80 border-red-500 text-red-200' : 'bg-green-900/80 border-green-500 text-green-200'}`}>
+                                        {isSliding ? (
+                                            <>{AlertTriangleIcon && <AlertTriangleIcon size={16} />} ¡Coche Deslizando!</>
+                                        ) : (
+                                            <>Coche Seguro y Parado</>
+                                        )}
+                                    </div>
+                                </div>
+
+                                {/* Escena del plano inclinado */}
+                                <div className="relative w-full flex justify-center items-end h-64 mt-20">
+                                    {/* Suelo base (horizontal visual) */}
+                                    <div className="absolute bottom-0 w-full border-b border-slate-600 border-dashed"></div>
+                                    
+                                    {/* Plano Inclinado */}
+                                    <div 
+                                        className="w-80 h-4 bg-slate-500 origin-bottom-left transition-transform duration-300 shadow-lg z-10 rounded-full"
+                                        style={{ transform: `rotate(-${angulo}deg)` }}
+                                    >
+                                        {/* El Coche */}
+                                        <div 
+                                            className="absolute bottom-4 w-16 h-10 bg-indigo-500 border-2 border-indigo-300 rounded-lg flex items-center justify-center transition-all z-20 shadow-xl"
+                                            style={{ left: `${120 + slideOffset}px` }}
+                                        >
+                                            {CarIcon && <CarIcon size={24} className="text-white" />}
+                                            
+                                            {/* Vector Px (Rojo, hacia abajo del plano) */}
+                                            <div className="absolute top-1/2 right-full flex items-center opacity-80" style={{ width: px / 80 }}>
+                                                <span className="mr-1 text-[10px] font-black text-red-300 whitespace-nowrap">Px</span>
+                                                <div className="h-1 bg-red-400 w-full relative">
+                                                    <div className="absolute left-0 -top-1.5">{ArrowLeftIcon && <ArrowLeftIcon className="text-red-400" size={16} />}</div>
+                                                </div>
+                                            </div>
+
+                                            {/* Vector Rozamiento (Verde, hacia arriba del plano) */}
+                                            <div className="absolute top-1/2 left-full flex items-center opacity-80" style={{ width: fr_real / 80 }}>
+                                                <div className="h-1 bg-green-400 w-full relative">
+                                                    <div className="absolute right-0 -top-1.5">{ArrowRightIcon && <ArrowRightIcon className="text-green-400" size={16} />}</div>
+                                                </div>
+                                                <span className="ml-1 text-[10px] font-black text-green-300 whitespace-nowrap">Fr</span>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    {/* Indicador de Ángulo */}
+                                    <div className="absolute bottom-0 left-1/2 -translate-x-32 flex items-end">
+                                        <div className="w-16 h-16 border-t-2 border-r-2 border-indigo-400 rounded-tr-full opacity-50"></div>
+                                        <span className="absolute bottom-2 left-6 text-indigo-300 font-mono font-bold">{angulo}º</span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* Controles y Resolución */}
+                            <div className="space-y-6">
+                                <div className="bg-slate-800 p-6 rounded-3xl border border-slate-700 shadow-xl">
+                                    <div className="flex justify-between items-center mb-6">
+                                        <h3 className="text-xl font-bold flex items-center gap-2">
+                                            {SettingsIcon && <SettingsIcon className="text-indigo-400" />} Ajuste de la Curva
+                                        </h3>
+                                    </div>
+
+                                    <div className="mb-8">
+                                        <div className="flex justify-between mb-4">
+                                            <span className="text-sm text-slate-400 font-bold uppercase tracking-widest">Ángulo de Peralte (α)</span>
+                                            <span className="text-2xl font-black text-indigo-400 font-mono">{angulo}º</span>
+                                        </div>
+                                        <input 
+                                            type="range" min="0" max="45" step="0.5" value={angulo}
+                                            onChange={(e) => setAngulo(parseFloat(e.target.value))}
+                                            className="w-full h-3 bg-slate-700 rounded-lg appearance-none cursor-pointer accent-indigo-500 mb-2"
+                                        />
+                                        <div className="flex justify-between text-[10px] text-slate-500 font-black">
+                                            <span>Plano (0º)</span>
+                                            <span>Extremo (45º)</span>
+                                        </div>
+                                    </div>
+
+                                    <div className="space-y-3 pt-4 border-t border-slate-700">
+                                        <div className="flex justify-between text-sm">
+                                            <span className="text-slate-500">Peso en X (Componente de caída)</span>
+                                            <span className="font-mono text-red-400">{px.toFixed(0)} N</span>
+                                        </div>
+                                        <div className="flex justify-between text-sm">
+                                            <span className="text-slate-500">Fricción Máxima Disponible</span>
+                                            <span className="font-mono text-green-400">{fr_max.toFixed(0)} N</span>
+                                        </div>
+                                        <div className={`flex justify-between text-sm font-bold p-3 rounded-lg border ${isSliding ? 'bg-red-900/20 border-red-500/20 text-red-300' : 'bg-green-900/20 border-green-500/20 text-green-300'}`}>
+                                            <span>Estado del Neumático</span>
+                                            <span>{isSliding ? '¡Límite superado!' : 'Agarre suficiente'}</span>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div className="bg-indigo-950/40 p-6 rounded-3xl border border-indigo-500/20">
+                                    <h4 className="font-bold text-indigo-300 mb-4 flex items-center gap-2">
+                                        {InfoIcon && <InfoIcon size={18} />} Resolución Paso a Paso
+                                    </h4>
+                                    <div className="text-xs text-slate-300 space-y-4 leading-relaxed">
+                                        <p><strong>1. Contexto:</strong> Al estar el coche parado (v=0), analizamos la dinámica de un plano inclinado donde la tendencia es caer hacia el centro de la curva.</p>
+                                        <p><strong>2. Fórmulas:</strong><br/>
+                                            El peso se descompone: P<sub>x</sub> = P · sin(α), P<sub>y</sub> = P · cos(α).<br/>
+                                            Normal: N = P<sub>y</sub> = m · g · cos(α).<br/>
+                                            Fricción máxima hacia arriba: F<sub>r</sub> = μ · N.
+                                        </p>
+                                        <p><strong>3. Condición de Equilibrio:</strong> Para no deslizar, P<sub>x</sub> ≤ F<sub>r</sub>.</p>
+                                        <div className="bg-slate-900 p-3 rounded-lg border-l-4 border-indigo-500 font-mono text-indigo-200 shadow-inner">
+                                            m·g·sin(α) ≤ μ · m·g·cos(α)<br/>
+                                            tan(α) ≤ μ<br/>
+                                            tan(α) ≤ 0.5  ⇒  α ≤ 26.56º
+                                        </div>
+                                        <p><strong>Análisis:</strong> Si construimos un peralte mayor de 26,5º, los coches deslizarán irremediablemente al interior si hay un atasco.</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </main>
+
+                        <footer className="max-w-5xl mx-auto mt-12 pt-6 border-t border-slate-800 text-center text-slate-500 text-[10px] font-bold uppercase tracking-widest">
+                            Profe Física | Ejercicio 67: Dinámica Circular y Estática
+                        </footer>
+                    </div>
+                );
+            };
+
+            const container = document.getElementById('root');
+            const root = ReactDOM.createRoot(container);
+            root.render(<App />);
+        })();
+    </script>
+</body>
+</html>

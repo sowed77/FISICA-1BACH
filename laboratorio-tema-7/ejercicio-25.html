@@ -1,0 +1,306 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Laboratorio: El Peralte del Ciclista</title>
+    <!-- Bibliotecas externas -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <script src="https://unpkg.com/lucide-react@latest"></script>
+
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&family=Fira+Code&display=swap');
+        body { font-family: 'Inter', sans-serif; background-color: #0f172a; }
+        .font-mono { font-family: 'Fira Code', monospace; }
+        input[type=range]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            height: 24px;
+            width: 24px;
+            border-radius: 50%;
+            background: #3b82f6; /* Blue 500 */
+            cursor: pointer;
+            border: 3px solid #ffffff;
+            box-shadow: 0 0 10px rgba(59, 130, 246, 0.5);
+        }
+        .asphalt-pattern {
+            background-color: #334155;
+            background-image: repeating-linear-gradient(45deg, #1e293b 0, #1e293b 2px, transparent 2px, transparent 8px);
+        }
+    </style>
+</head>
+<body>
+    <div id="root"></div>
+
+    <script type="text/babel">
+        (() => {
+            var { useState, useEffect } = React;
+            var icons = window.LucideReact || {};
+            
+            var CalculatorIcon = icons.Calculator || (({className}) => <span className={className}></span>);
+            var SettingsIcon = icons.Settings || (({className}) => <span className={className}></span>);
+            var InfoIcon = icons.Info || (({className}) => <span className={className}></span>);
+            var BikeIcon = icons.Bike || icons.Bicycle || (({className}) => <span className={className}>🚲</span>);
+            var ArrowRightIcon = icons.ArrowRight || (({className}) => <span className={className}></span>);
+            var ArrowLeftIcon = icons.ArrowLeft || (({className}) => <span className={className}></span>);
+            var ArrowUpIcon = icons.ArrowUp || (({className}) => <span className={className}></span>);
+            var ArrowDownIcon = icons.ArrowDown || (({className}) => <span className={className}></span>);
+            var ImagePlusIcon = icons.ImagePlus || (({className}) => <span className={className}></span>);
+
+            var App = () => {
+                // Parámetros fijos
+                const g = 9.8; // m/s^2
+                const m = 80; // kg (Masa de ejemplo para pintar los vectores, aunque matemáticamente se anula)
+
+                // Estados interactivos (Iniciamos con los datos del problema)
+                const [diametro, setDiametro] = useState(40); // m
+                const [vKmh, setVKmh] = useState(40); // km/h
+
+                // Cálculos Físicos
+                const radio = diametro / 2; // m
+                const vMs = vKmh / 3.6; // m/s
+                
+                // Cálculo del ángulo de peralte ideal sin rozamiento: tan(theta) = v^2 / (R*g)
+                const tanTheta = (vMs * vMs) / (radio * g);
+                const anguloRad = Math.atan(tanTheta);
+                const anguloDeg = anguloRad * (180 / Math.PI);
+
+                // Componentes de fuerza (para visualización)
+                const peso = m * g;
+                // En peralte ideal: N_y = P  => N * cos(theta) = m*g  => N = m*g / cos(theta)
+                const normal = peso / Math.cos(anguloRad);
+                // La fuerza centrípeta es N_x
+                const nx = normal * Math.sin(anguloRad);
+                const ny = normal * Math.cos(anguloRad); // Debería ser igual al peso
+
+                // Escala visual para vectores
+                const vScale = 0.15; 
+
+                // Generador de Diagrama de Cuerpo Libre
+                const [imgUrl, setImgUrl] = useState(null);
+                const [imgLoading, setImgLoading] = useState(false);
+
+                const generarDiagrama = async () => {
+                    setImgLoading(true);
+                    const apiKey = ""; 
+                    try {
+                        const response = await fetch(
+                            `https://generativelanguage.googleapis.com/v1beta/models/imagen-4.0-generate-001:predict?key=${apiKey}`,
+                            {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({
+                                    instances: [{ prompt: "Diagrama técnico de física. Vista trasera de un ciclista en una curva peraltada (inclinada). Vector Peso P apuntando hacia abajo, Vector Normal N perpendicular a la pista inclinada. Componentes Nx (hacia el centro de la curva) y Ny (hacia arriba) marcados con líneas punteadas. Fondo blanco, estilo educativo minimalista" }],
+                                    parameters: { sampleCount: 1 }
+                                })
+                            }
+                        );
+                        if (!response.ok) throw new Error("Error en la red");
+                        const data = await response.json();
+                        setImgUrl(`data:image/png;base64,${data.predictions[0].bytesBase64Encoded}`);
+                    } catch (error) {
+                        console.error(error);
+                    } finally {
+                        setImgLoading(false);
+                    }
+                };
+
+                return (
+                    <div className="min-h-screen bg-slate-900 text-slate-100 p-4 md:p-8">
+                        <header className="max-w-5xl mx-auto mb-8 border-b border-slate-700 pb-6">
+                            <div className="flex items-center gap-3 mb-2">
+                                <span className="bg-blue-600 text-white px-3 py-1 rounded-full text-xs font-black uppercase tracking-widest">Dinámica Circular</span>
+                                <h1 className="text-3xl font-black text-blue-400 uppercase tracking-tight tracking-widest">Peralte Sin Rozamiento</h1>
+                            </div>
+                            <div className="bg-slate-800/50 p-4 rounded-xl border border-slate-700 mt-4">
+                                <p className="text-slate-300 text-sm leading-relaxed">
+                                    <strong>Enunciado:</strong> Un ciclista toma una curva de 40 m de diámetro a una velocidad de 40 km/h. Suponiendo que no hay rozamiento, calcula el ángulo de peralte necesario para no salirse de la curva.
+                                </p>
+                            </div>
+                        </header>
+
+                        <main className="max-w-5xl mx-auto grid md:grid-cols-2 gap-8">
+                            {/* Panel Visual */}
+                            <div className="bg-slate-800 rounded-3xl border border-slate-700 h-[500px] relative overflow-hidden shadow-2xl flex flex-col justify-end pb-8">
+                                
+                                {/* Marcadores Flotantes */}
+                                <div className="absolute top-4 w-full px-6 flex justify-between z-30 pointer-events-none">
+                                    <div className="bg-slate-900/90 p-3 rounded-lg border border-slate-700 backdrop-blur-md">
+                                        <p className="text-[10px] text-slate-500 uppercase font-black">F. Centrípeta Necesaria</p>
+                                        <p className="text-xl font-mono font-black text-emerald-400">
+                                            {nx.toFixed(0)} N
+                                        </p>
+                                    </div>
+                                    <div className="bg-slate-900/90 p-3 rounded-lg border border-slate-700 backdrop-blur-md text-right border-b-4 border-b-blue-500">
+                                        <p className="text-[10px] text-slate-500 uppercase font-black">Ángulo del Peralte</p>
+                                        <p className="text-2xl font-mono font-black text-blue-400">
+                                            {anguloDeg.toFixed(1)}º
+                                        </p>
+                                    </div>
+                                </div>
+
+                                {/* Escena del Ciclista en Peralte */}
+                                <div className="relative w-full flex justify-center items-end h-72 mt-10">
+                                    {/* Suelo horizontal de referencia */}
+                                    <div className="absolute bottom-0 w-full border-b-2 border-slate-600 border-dashed"></div>
+                                    
+                                    {/* Superficie Peraltada */}
+                                    <div 
+                                        className="w-[80%] h-4 bg-slate-500 asphalt-pattern origin-bottom-left transition-transform duration-300 shadow-xl z-10 rounded-full"
+                                        style={{ transform: `rotate(-${anguloDeg}deg)` }}
+                                    >
+                                        {/* El Ciclista */}
+                                        <div 
+                                            className="absolute bottom-4 w-12 h-20 bg-transparent flex items-center justify-center transition-all z-20"
+                                            style={{ left: '50%', transform: 'translateX(-50%)' }}
+                                        >
+                                            {/* Ícono ciclista */}
+                                            <div className="bg-blue-600 border-2 border-blue-400 rounded-lg p-2 shadow-lg">
+                                                {BikeIcon && <BikeIcon size={32} className="text-white" />}
+                                            </div>
+
+                                            {/* --- VECTORES DE FUERZA --- */}
+                                            
+                                            {/* Vector Normal (N) - Perpendicular al plano */}
+                                            <div className="absolute bottom-1/2 left-1/2 flex flex-col items-center pb-1 pointer-events-none" style={{ height: normal * vScale }}>
+                                                <span className="mb-1 text-[10px] font-black text-indigo-300 bg-slate-900/80 px-1 rounded">N</span>
+                                                <div className="w-1 bg-indigo-400 h-full relative shadow-[0_0_8px_rgba(129,140,248,0.8)]">
+                                                    <div className="absolute top-0 -translate-x-[6px]">{ArrowUpIcon && <ArrowUpIcon size={16} className="text-indigo-400" />}</div>
+                                                </div>
+                                            </div>
+
+                                            {/* Para dibujar P, Nx y Ny rotamos inversamente al peralte para que queden alineados con la pantalla (mundo real) */}
+                                            <div className="absolute top-1/2 left-1/2" style={{ transform: `rotate(${anguloDeg}deg)` }}>
+                                                
+                                                {/* Vector Peso (P) - Siempre hacia abajo */}
+                                                <div className="absolute top-0 flex flex-col items-center pt-1 pointer-events-none" style={{ height: peso * vScale }}>
+                                                    <div className="w-1.5 bg-orange-400 h-full relative">
+                                                        <div className="absolute bottom-0 -translate-x-[7px]">{ArrowDownIcon && <ArrowDownIcon size={18} className="text-orange-400" />}</div>
+                                                    </div>
+                                                    <span className="mt-1 text-[10px] font-black text-orange-300 bg-slate-900/80 px-1 rounded shadow">P</span>
+                                                </div>
+
+                                                {/* Componente Ny de la Normal (Equilibra el peso) */}
+                                                <div className="absolute bottom-0 flex flex-col items-center pb-1 pointer-events-none opacity-60" style={{ height: ny * vScale }}>
+                                                    <div className="w-1 border-r-2 border-dashed border-indigo-300 h-full relative"></div>
+                                                    <span className="absolute -top-4 text-[9px] font-black text-indigo-300">N_y</span>
+                                                </div>
+
+                                                {/* Componente Nx de la Normal (Fuerza Centrípeta hacia el centro de la curva) */}
+                                                <div className="absolute top-0 right-0 flex items-center pr-1 pointer-events-none z-30" style={{ width: nx * vScale }}>
+                                                    <span className="mr-1 text-[10px] font-black text-emerald-300 bg-slate-900/80 px-1 rounded">N_x (F_c)</span>
+                                                    <div className="h-1 bg-emerald-400 w-full relative shadow-[0_0_8px_rgba(52,211,153,0.8)]">
+                                                        <div className="absolute left-0 -top-[7px]">{ArrowLeftIcon && <ArrowLeftIcon size={18} className="text-emerald-400" />}</div>
+                                                    </div>
+                                                </div>
+                                                <div className="absolute top-0 right-0 border-t-2 border-dashed border-indigo-300 opacity-60" style={{ width: nx * vScale, height: normal*vScale, transform: 'translateY(-100%)' }}></div>
+
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    {/* Arco del Ángulo de peralte */}
+                                    <div className="absolute bottom-0 left-10 flex items-end">
+                                        <div className="w-24 h-24 border-t-2 border-r-2 border-blue-400 rounded-tr-full opacity-50"></div>
+                                        <span className="absolute bottom-4 left-8 text-blue-300 font-mono font-bold text-lg bg-slate-900/80 px-2 rounded-lg border border-slate-600">{anguloDeg.toFixed(1)}º</span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* Controles y Resolución */}
+                            <div className="space-y-6">
+                                <div className="bg-slate-800 p-6 rounded-3xl border border-slate-700 shadow-xl">
+                                    <h3 className="text-xl font-bold mb-4 flex items-center gap-2 text-blue-400">
+                                        {SettingsIcon && <SettingsIcon size={20} />} Variables del Circuito
+                                    </h3>
+                                    
+                                    <div className="space-y-6 mb-2">
+                                        <div>
+                                            <div className="flex justify-between text-xs mb-2">
+                                                <span className="text-orange-400 font-bold uppercase">Diámetro de la curva (D)</span>
+                                                <span className="font-mono bg-slate-900 px-2 py-0.5 rounded text-orange-200">{diametro} m</span>
+                                            </div>
+                                            <input 
+                                                type="range" min="10" max="150" step="2" value={diametro} 
+                                                onChange={e => setDiametro(Number(e.target.value))} 
+                                                className="w-full h-3 bg-slate-700 rounded-lg appearance-none cursor-pointer accent-orange-500" 
+                                            />
+                                            <p className="text-[10px] text-slate-500 mt-1 italic">
+                                                * El enunciado da el diámetro. Usaremos el Radio R = {radio.toFixed(1)} m.
+                                            </p>
+                                        </div>
+
+                                        <div className="pt-4 border-t border-slate-700">
+                                            <div className="flex justify-between text-xs mb-2">
+                                                <span className="text-emerald-400 font-bold uppercase">Velocidad del Ciclista (v)</span>
+                                                <span className="font-mono bg-slate-900 px-2 py-0.5 rounded text-emerald-200">{vKmh} km/h ({(vKmh/3.6).toFixed(2)} m/s)</span>
+                                            </div>
+                                            <input 
+                                                type="range" min="10" max="100" step="1" value={vKmh} 
+                                                onChange={e => setVKmh(Number(e.target.value))} 
+                                                className="w-full h-3 bg-slate-700 rounded-lg appearance-none cursor-pointer accent-emerald-500" 
+                                            />
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div className="bg-blue-950/20 p-6 rounded-3xl border border-blue-500/20">
+                                    <div className="flex justify-between items-center mb-4 border-b border-blue-500/30 pb-2">
+                                        <h4 className="font-bold text-blue-300 flex items-center gap-2">
+                                            {CalculatorIcon && <CalculatorIcon size={18} />} Resolución Paso a Paso
+                                        </h4>
+                                        <button onClick={generarDiagrama} className="text-[10px] uppercase font-bold bg-slate-800 hover:bg-slate-700 text-slate-300 px-3 py-1.5 rounded flex items-center gap-1 border border-slate-600">
+                                            {imgLoading ? <span className="animate-pulse">Cargando...</span> : <>{ImagePlusIcon && <ImagePlusIcon size={14}/>} Generar DCL</>}
+                                        </button>
+                                    </div>
+
+                                    {imgUrl && (
+                                        <div className="mb-4 bg-slate-900 p-2 rounded-xl border border-slate-700 text-center">
+                                            <img src={imgUrl} alt="Diagrama de Cuerpo Libre" className="mx-auto max-h-40 rounded-lg" />
+                                        </div>
+                                    )}
+
+                                    <div className="text-xs text-slate-300 space-y-3 leading-relaxed">
+                                        <p><strong>1. Unidades al S.I. (¡Trampas del enunciado!):</strong></p>
+                                        <div className="bg-slate-900/80 p-2 rounded-lg border-l-4 border-slate-500 font-mono text-slate-300">
+                                            Radio (R) = Diámetro / 2 = 40 / 2 = <strong>20 m</strong><br/>
+                                            Velocidad (v) = 40 km/h = 40 / 3.6 = <strong>11.11 m/s</strong>
+                                        </div>
+                                        
+                                        <p className="mt-3"><strong>2. Ecuaciones Dinámicas:</strong><br/>
+                                        Sin rozamiento, la <strong>Normal (N)</strong> tiene que hacer todo el trabajo. Su componente vertical anula al peso, y su componente horizontal aporta la aceleración centrípeta.</p>
+                                        <div className="bg-slate-900/80 p-2 rounded-lg border-l-4 border-orange-500 font-mono text-orange-200">
+                                            Eje Y: N_y = P  ⇒  N · cos(θ) = m · g<br/>
+                                            Eje X: N_x = F_c  ⇒  N · sin(θ) = m · v² / R
+                                        </div>
+
+                                        <p className="mt-3"><strong>3. El truco de la Tangente:</strong><br/>
+                                        Si dividimos la ecuación X entre la ecuación Y, la Masa (m) y la Normal (N) se cancelan mágicamente.</p>
+                                        <div className="bg-slate-900/80 p-3 rounded-lg border-l-4 border-blue-500 font-mono text-blue-200 shadow-inner">
+                                            tan(θ) = v² / (R · g)<br/>
+                                            tan(θ) = (11.11)² / (20 · 9.8)<br/>
+                                            tan(θ) = 123.45 / 196 = 0.6298<br/>
+                                            θ = arctan(0.6298) = <strong>{anguloDeg.toFixed(2)}º</strong>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </main>
+
+                        <footer className="max-w-5xl mx-auto mt-12 pt-6 border-t border-slate-800 text-center text-slate-500 text-[10px] font-bold uppercase tracking-widest">
+                            Profe Física | Dinámica Circular: El Peralte Ideal
+                        </footer>
+                    </div>
+                );
+            };
+
+            const container = document.getElementById('root');
+            const root = ReactDOM.createRoot(container);
+            root.render(<App />);
+        })();
+    </script>
+</body>
+</html>

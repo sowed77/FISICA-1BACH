@@ -1,0 +1,359 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Laboratorio: Rozamiento Estático vs Cinético</title>
+    <!-- Bibliotecas externas -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <script src="https://unpkg.com/lucide-react@latest"></script>
+
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&family=Fira+Code&display=swap');
+        body { font-family: 'Inter', sans-serif; background-color: #0f172a; }
+        .font-mono { font-family: 'Fira Code', monospace; }
+        input[type=range]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            height: 24px;
+            width: 24px;
+            border-radius: 50%;
+            background: #10b981; /* Emerald 500 */
+            cursor: pointer;
+            border: 3px solid #ffffff;
+            box-shadow: 0 0 10px rgba(16, 185, 129, 0.5);
+        }
+        .floor-pattern {
+            background-color: #334155;
+            background-image: repeating-linear-gradient(90deg, #1e293b 0, #1e293b 20px, transparent 20px, transparent 40px);
+            background-position: bottom;
+            background-size: 40px 6px;
+            background-repeat: repeat-x;
+        }
+    </style>
+</head>
+<body>
+    <div id="root"></div>
+
+    <script type="text/babel">
+        (() => {
+            var { useState, useEffect } = React;
+            var icons = window.LucideReact || {};
+            
+            var PlayIcon = icons.Play || (({className}) => <span className={className}></span>);
+            var RotateCcwIcon = icons.RotateCcw || (({className}) => <span className={className}></span>);
+            var InfoIcon = icons.Info || (({className}) => <span className={className}></span>);
+            var CalculatorIcon = icons.Calculator || (({className}) => <span className={className}></span>);
+            var ArrowRightIcon = icons.ArrowRight || (({className}) => <span className={className}></span>);
+            var ArrowLeftIcon = icons.ArrowLeft || (({className}) => <span className={className}></span>);
+            var MoveIcon = icons.Move || (({className}) => <span className={className}></span>);
+            var ImagePlusIcon = icons.ImagePlus || (({className}) => <span className={className}></span>);
+
+            var App = () => {
+                // Parámetros fijos del problema
+                const m = 50; // kg
+                const g = 9.8; // m/s^2
+                const mu_e = 0.50; // Coef. estático
+                const mu_c = 0.20; // Coef. cinético
+
+                // Cálculos Físicos Base
+                const peso = m * g; // 490 N
+                const normal = peso; // 490 N
+                const fr_max_estatica = mu_e * normal; // 245 N
+                const fr_cinetica = mu_c * normal; // 98 N
+
+                // Estados
+                const [fApli, setFApli] = useState(0); // Fuerza aplicada (N)
+                const [pos, setPos] = useState(0); 
+                const [vel, setVel] = useState(0);
+                const [isMoving, setIsMoving] = useState(false);
+
+                // Lógica Dinámica en Tiempo Real
+                let fr = 0;
+                let aceleracion = 0;
+                let estadoFisico = "REPOSO";
+                let colorEstado = "text-slate-400";
+
+                if (!isMoving) {
+                    if (fApli === 0) {
+                        fr = 0;
+                        estadoFisico = "REPOSO (Sin fuerza)";
+                        colorEstado = "text-slate-400";
+                    } else if (fApli <= fr_max_estatica) {
+                        fr = fApli; // La fricción iguala a la fuerza aplicada
+                        aceleracion = 0;
+                        estadoFisico = fApli === fr_max_estatica ? "LÍMITE DE RUPTURA" : "FRICCIÓN ESTÁTICA";
+                        colorEstado = fApli === fr_max_estatica ? "text-orange-400" : "text-yellow-400";
+                    } else {
+                        // Debería moverse
+                        fr = fr_cinetica; // Cae bruscamente al valor cinético
+                        aceleracion = (fApli - fr) / m;
+                        estadoFisico = "LISTO PARA DESLIZAR";
+                        colorEstado = "text-green-400";
+                    }
+                } else {
+                    fr = fr_cinetica;
+                    aceleracion = (fApli - fr) / m;
+                    estadoFisico = "FRICCIÓN CINÉTICA";
+                    colorEstado = "text-emerald-400";
+                }
+
+                // Animación
+                useEffect(() => {
+                    let interval;
+                    if (isMoving) {
+                        interval = setInterval(() => {
+                            setVel(v => {
+                                const newV = v + aceleracion * 0.05;
+                                if (newV <= 0 && aceleracion < 0) {
+                                    setIsMoving(false);
+                                    return 0;
+                                }
+                                return newV;
+                            });
+                            
+                            setPos(p => {
+                                const newP = p + vel;
+                                return newP > 400 ? -100 : newP; // Bucle visual
+                            });
+                        }, 20); // 50fps
+                    } else {
+                        setVel(0);
+                    }
+                    return () => clearInterval(interval);
+                }, [isMoving, vel, aceleracion]);
+
+                const handlePlay = () => {
+                    if (fApli > fr_max_estatica) setIsMoving(true);
+                };
+
+                const handleReset = () => {
+                    setPos(0);
+                    setVel(0);
+                    setIsMoving(false);
+                };
+
+                // Si cambiamos la fuerza mientras se mueve, verificamos si se detiene
+                useEffect(() => {
+                    if (isMoving && fApli <= fr_max_estatica) {
+                        // Si reducimos la fuerza y la aceleración se vuelve negativa, frenará.
+                        // La simulación ya lo maneja en el setInterval.
+                    }
+                    if (isMoving && fApli === 0) {
+                        // Freno total rápido
+                    }
+                }, [fApli, isMoving]);
+
+                // Generador DCL
+                const [imgUrl, setImgUrl] = useState(null);
+                const [imgLoading, setImgLoading] = useState(false);
+
+                const generarDiagrama = async () => {
+                    setImgLoading(true);
+                    const apiKey = ""; 
+                    try {
+                        const response = await fetch(
+                            `https://generativelanguage.googleapis.com/v1beta/models/imagen-4.0-generate-001:predict?key=${apiKey}`,
+                            {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({
+                                    instances: [{ prompt: "Diagrama técnico de física. Un bloque en horizontal. Un vector gigante Fuerza F a la derecha. Un vector pequeño Fuerza Rozamiento Fr a la izquierda. Vector Normal N hacia arriba, Peso P hacia abajo. Se denota Fr cinético. Fondo blanco, minimalista, educativo" }],
+                                    parameters: { sampleCount: 1 }
+                                })
+                            }
+                        );
+                        if (!response.ok) throw new Error("Error en red");
+                        const data = await response.json();
+                        setImgUrl(`data:image/png;base64,${data.predictions[0].bytesBase64Encoded}`);
+                    } catch (error) {
+                        console.error(error);
+                    } finally {
+                        setImgLoading(false);
+                    }
+                };
+
+                // Escala visual de los vectores
+                const vScale = 0.3; // px por Newton
+
+                return (
+                    <div className="min-h-screen bg-slate-900 text-slate-100 p-4 md:p-8">
+                        <header className="max-w-5xl mx-auto mb-8 border-b border-slate-700 pb-6">
+                            <div className="flex items-center gap-3 mb-2">
+                                <span className="bg-emerald-600 text-white px-3 py-1 rounded-full text-xs font-black uppercase tracking-widest">Dinámica de Fricción</span>
+                                <h1 className="text-3xl font-black text-emerald-400 uppercase tracking-tight tracking-widest">El Salto Cinético</h1>
+                            </div>
+                            <div className="bg-slate-800/50 p-4 rounded-xl border border-slate-700 mt-4">
+                                <p className="text-slate-300 text-sm leading-relaxed">
+                                    <strong>Enunciado:</strong> Un cuerpo de 50 kg está en reposo sobre una superficie horizontal. Coeficientes: μ_c = 0,20 y μ_e = 0,50. Calcula: a) F. rozamiento sin fuerza aplicada, b) Fuerza mínima para moverlo, c) F. rozamiento y aceleración si aplicamos 40 kp (392 N).
+                                </p>
+                            </div>
+                        </header>
+
+                        <main className="max-w-5xl mx-auto grid md:grid-cols-2 gap-8">
+                            {/* Panel Visual */}
+                            <div className="bg-slate-800 rounded-3xl border border-slate-700 h-[450px] relative overflow-hidden shadow-2xl flex flex-col justify-end pb-8">
+                                
+                                {/* Marcadores Superiores */}
+                                <div className="absolute top-4 w-full px-6 flex justify-between z-30 pointer-events-none">
+                                    <div className="bg-slate-900/90 p-3 rounded-lg border border-slate-700 backdrop-blur-md">
+                                        <p className="text-[10px] text-slate-500 uppercase font-black">Estado del Rozamiento</p>
+                                        <p className={`text-sm font-mono font-black ${colorEstado}`}>{estadoFisico}</p>
+                                    </div>
+                                    <div className="bg-slate-900/90 p-3 rounded-lg border border-slate-700 backdrop-blur-md text-right">
+                                        <p className="text-[10px] text-slate-500 uppercase font-black">Aceleración (a)</p>
+                                        <p className="text-xl font-mono font-black text-emerald-400">{aceleracion.toFixed(2)} m/s²</p>
+                                    </div>
+                                </div>
+
+                                {/* Escena del Bloque */}
+                                <div className="relative w-full h-64 flex justify-center items-end">
+                                    {/* Suelo */}
+                                    <div className="absolute bottom-0 w-full h-8 floor-pattern border-t-4 border-slate-600"></div>
+                                    
+                                    {/* El Bloque */}
+                                    <div 
+                                        className="absolute bottom-8 w-24 h-20 bg-slate-400 border-4 border-slate-300 rounded-lg flex items-center justify-center shadow-lg transition-transform z-20"
+                                        style={{ transform: `translateX(${pos}px)` }}
+                                    >
+                                        <span className="font-black text-slate-900">{m} kg</span>
+
+                                        {/* Vector Fuerza Aplicada (Verde, Derecha) */}
+                                        {fApli > 0 && (
+                                            <div className="absolute left-full top-1/2 -translate-y-1/2 flex items-center pl-1" style={{ width: fApli * vScale }}>
+                                                <div className="h-1.5 bg-emerald-400 w-full relative shadow-[0_0_8px_rgba(52,211,153,0.8)]">
+                                                    <div className="absolute right-0 -top-2">{ArrowRightIcon && <ArrowRightIcon className="text-emerald-400" size={20} />}</div>
+                                                </div>
+                                                <span className="ml-1 text-[10px] font-black text-emerald-300 bg-slate-900/80 px-1 rounded whitespace-nowrap">Fa = {fApli} N</span>
+                                            </div>
+                                        )}
+
+                                        {/* Vector Fuerza Rozamiento (Rojo, Izquierda) */}
+                                        {fr > 0 && (
+                                            <div className="absolute right-full top-1/2 -translate-y-1/2 flex items-center pr-1" style={{ width: fr * vScale }}>
+                                                <span className="mr-1 text-[10px] font-black text-red-400 bg-slate-900/80 px-1 rounded whitespace-nowrap">Fr = {fr} N</span>
+                                                <div className="h-1.5 bg-red-500 w-full relative shadow-[0_0_8px_rgba(239,68,68,0.8)]">
+                                                    <div className="absolute left-0 -top-2">{ArrowLeftIcon && <ArrowLeftIcon className="text-red-500" size={20} />}</div>
+                                                </div>
+                                            </div>
+                                        )}
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* Controles y Resolución */}
+                            <div className="space-y-6">
+                                <div className="bg-slate-800 p-6 rounded-3xl border border-slate-700 shadow-xl">
+                                    <h3 className="text-xl font-bold mb-4 flex items-center gap-2 text-emerald-400">
+                                        {MoveIcon && <MoveIcon size={20} />} Control de Empuje
+                                    </h3>
+                                    
+                                    {/* Botones de atajo a los apartados */}
+                                    <div className="grid grid-cols-3 gap-2 mb-6">
+                                        <button onClick={() => {setFApli(0); handleReset();}} className="bg-slate-700 hover:bg-slate-600 text-[10px] font-bold py-2 rounded border border-slate-600 text-slate-300">
+                                            A) Sin empujar
+                                        </button>
+                                        <button onClick={() => {setFApli(245); handleReset();}} className="bg-orange-900/50 hover:bg-orange-800/50 text-[10px] font-bold py-2 rounded border border-orange-500/50 text-orange-300">
+                                            B) Fuerza Mínima
+                                        </button>
+                                        <button onClick={() => {setFApli(392); handleReset();}} className="bg-emerald-900/50 hover:bg-emerald-800/50 text-[10px] font-bold py-2 rounded border border-emerald-500/50 text-emerald-300">
+                                            C) Aplicar 40 kp
+                                        </button>
+                                    </div>
+
+                                    <div className="mb-6">
+                                        <div className="flex justify-between text-xs mb-2">
+                                            <span className="text-emerald-400 font-bold uppercase">Fuerza Aplicada (F_a)</span>
+                                            <span className="font-mono bg-slate-900 px-2 py-0.5 rounded text-emerald-300">{fApli} N</span>
+                                        </div>
+                                        <input 
+                                            type="range" min="0" max="500" step="1" value={fApli} 
+                                            onChange={e => {
+                                                setFApli(Number(e.target.value)); 
+                                                if(Number(e.target.value) <= fr_max_estatica) handleReset();
+                                            }} 
+                                            className="w-full h-3 bg-slate-700 rounded-lg appearance-none cursor-pointer accent-emerald-500" 
+                                        />
+                                        <div className="flex justify-between text-[9px] text-slate-500 mt-2 font-bold uppercase">
+                                            <span>0 N</span>
+                                            <span className="text-orange-500 ml-10">Ruptura: {fr_max_estatica} N</span>
+                                            <span>500 N</span>
+                                        </div>
+                                    </div>
+
+                                    <div className="flex gap-2">
+                                        <button 
+                                            onClick={handlePlay} 
+                                            disabled={isMoving || fApli <= fr_max_estatica}
+                                            className={`flex-1 font-black py-3 rounded-xl shadow-lg flex justify-center items-center gap-2 disabled:opacity-50 transition-all active:scale-95 ${fApli <= fr_max_estatica ? 'bg-slate-600 text-slate-400' : 'bg-emerald-600 hover:bg-emerald-500 text-white'}`}
+                                        >
+                                            {PlayIcon && <PlayIcon size={18} />} {fApli <= fr_max_estatica ? 'BLOQUEADO POR FRICCIÓN' : 'DESLIZAR BLOQUE'}
+                                        </button>
+                                        <button onClick={handleReset} className="bg-slate-700 hover:bg-slate-600 text-white font-bold px-4 rounded-xl transition-all shadow-md">
+                                            {RotateCcwIcon && <RotateCcwIcon size={18} />}
+                                        </button>
+                                    </div>
+                                </div>
+
+                                <div className="bg-emerald-950/20 p-6 rounded-3xl border border-emerald-500/20">
+                                    <div className="flex justify-between items-center mb-4 border-b border-emerald-500/30 pb-2">
+                                        <h4 className="font-bold text-emerald-300 flex items-center gap-2">
+                                            {CalculatorIcon && <CalculatorIcon size={18} />} Resolución Paso a Paso
+                                        </h4>
+                                        <button onClick={generarDiagrama} className="text-[10px] uppercase font-bold bg-slate-800 hover:bg-slate-700 text-slate-300 px-3 py-1.5 rounded flex items-center gap-1 border border-slate-600">
+                                            {imgLoading ? <span className="animate-pulse">Cargando...</span> : <>{ImagePlusIcon && <ImagePlusIcon size={14}/>} Generar DCL</>}
+                                        </button>
+                                    </div>
+
+                                    {imgUrl && (
+                                        <div className="mb-4 bg-slate-900 p-2 rounded-xl border border-slate-700 text-center">
+                                            <img src={imgUrl} alt="Diagrama de Cuerpo Libre" className="mx-auto max-h-40 rounded-lg" />
+                                        </div>
+                                    )}
+
+                                    <div className="text-xs text-slate-300 space-y-4 leading-relaxed">
+                                        <p><strong>Paso Previo:</strong> N = P = m · g = 50 · 9.8 = <strong>490 N</strong>.</p>
+                                        
+                                        <p><strong>a) Rozamiento sin fuerza aplicada:</strong><br/>
+                                        Si nadie empuja el bloque, el rozamiento no necesita oponerse a nada.</p>
+                                        <div className="bg-slate-900/80 p-2 rounded-lg border-l-4 border-slate-500 font-mono text-slate-300">
+                                            F_r = <strong>0 N</strong>
+                                        </div>
+
+                                        <p><strong>b) Fuerza mínima para iniciar movimiento:</strong><br/>
+                                        Es el valor máximo del rozamiento estático (el "agarre" antes de romper).</p>
+                                        <div className="bg-slate-900/80 p-2 rounded-lg border-l-4 border-orange-500 font-mono text-orange-200">
+                                            F_min = μ_e · N = 0.50 · 490 = <strong>245 N</strong>
+                                        </div>
+
+                                        <p><strong>c) Si aplicamos 40 kp (392 N):</strong><br/>
+                                        <span className="text-slate-400">Nota: 1 kp = 9.8 N, por lo que 40 kp = 392 N.</span><br/>
+                                        Como 392 N &gt; 245 N, el bloque se mueve. Al moverse, la fricción cae a su valor cinético (μ_c).</p>
+                                        <div className="bg-slate-900/80 p-2 rounded-lg border-l-4 border-emerald-500 font-mono text-emerald-200">
+                                            F_r = μ_c · N = 0.20 · 490 = <strong>98 N</strong><br/>
+                                            Σ F_x = m · a<br/>
+                                            392 - 98 = 50 · a<br/>
+                                            294 = 50 · a  ⇒  a = 294 / 50 = <strong>5.88 m/s²</strong>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </main>
+
+                        <footer className="max-w-5xl mx-auto mt-12 pt-6 border-t border-slate-800 text-center text-slate-500 text-[10px] font-bold uppercase tracking-widest">
+                            Profe Física | Dinámica: Fricción Estática vs Cinética
+                        </footer>
+                    </div>
+                );
+            };
+
+            const container = document.getElementById('root');
+            const root = ReactDOM.createRoot(container);
+            root.render(<App />);
+        })();
+    </script>
+</body>
+</html>

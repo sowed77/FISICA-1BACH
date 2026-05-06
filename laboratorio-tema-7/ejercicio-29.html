@@ -1,0 +1,362 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Laboratorio: Impulso y Cantidad de Movimiento</title>
+    <!-- Bibliotecas externas -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <script src="https://unpkg.com/lucide-react@latest"></script>
+
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&family=Fira+Code&display=swap');
+        body { font-family: 'Inter', sans-serif; background-color: #0f172a; }
+        .font-mono { font-family: 'Fira Code', monospace; }
+        input[type=range]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            height: 24px;
+            width: 24px;
+            border-radius: 50%;
+            background: #10b981; /* Emerald 500 */
+            cursor: pointer;
+            border: 3px solid #ffffff;
+            box-shadow: 0 0 10px rgba(16, 185, 129, 0.5);
+        }
+        .grass-pattern {
+            background-color: #064e3b;
+            background-image: repeating-linear-gradient(90deg, #065f46 0, #065f46 20px, transparent 20px, transparent 40px);
+            background-position: bottom;
+            background-size: 40px 10px;
+            background-repeat: repeat-x;
+        }
+    </style>
+</head>
+<body>
+    <div id="root"></div>
+
+    <script type="text/babel">
+        (() => {
+            var { useState, useEffect } = React;
+            var icons = window.LucideReact || {};
+            
+            // Asignación segura de iconos
+            var PlayIcon = icons.Play || (({className}) => <span className={className}></span>);
+            var RotateCcwIcon = icons.RotateCcw || (({className}) => <span className={className}></span>);
+            var InfoIcon = icons.Info || (({className}) => <span className={className}></span>);
+            var CalculatorIcon = icons.Calculator || (({className}) => <span className={className}></span>);
+            var ArrowRightIcon = icons.ArrowRight || (({className}) => <span className={className}></span>);
+            var ImagePlusIcon = icons.ImagePlus || (({className}) => <span className={className}></span>);
+            var TimerIcon = icons.Timer || (({className}) => <span className={className}></span>);
+
+            var App = () => {
+                // Estados interactivos
+                const [masa, setMasa] = useState(1.0); // kg
+                const [dt, setDt] = useState(0.5); // s (tiempo de contacto)
+                const [vf, setVf] = useState(5.0); // m/s (velocidad final)
+
+                // Cálculos Físicos
+                const p0 = 0; // El balón parte del reposo
+                const pf = masa * vf; // Cantidad de movimiento final (p = m*v)
+                const impulso = pf - p0; // Teorema del impulso (I = Δp)
+                const fuerzaMedia = impulso / dt; // Fuerza media (F = I / Δt)
+
+                // Estados de animación
+                // time irá de -0.2 (acercamiento) hasta 1.5 (vuelo)
+                const [time, setTime] = useState(-0.2); 
+                const [isKicking, setIsKicking] = useState(false);
+
+                // Variables para la animación visual
+                const a = vf / dt; // Aceleración durante el impacto
+                
+                // Posición del balón
+                let ballX = 0;
+                let ballV = 0;
+                let phase = "Reposo";
+
+                if (time < 0) {
+                    ballX = 0;
+                    ballV = 0;
+                    phase = "Aproximación";
+                } else if (time >= 0 && time <= dt) {
+                    // MRUA durante el impacto
+                    ballX = 0.5 * a * Math.pow(time, 2);
+                    ballV = a * time;
+                    phase = "Impacto (Acumulando Impulso)";
+                } else {
+                    // MRU después del impacto
+                    const x_contacto = 0.5 * a * Math.pow(dt, 2);
+                    ballX = x_contacto + vf * (time - dt);
+                    ballV = vf;
+                    phase = "Vuelo Libre (MRU)";
+                }
+
+                // Posición de la bota
+                let bootX = 0;
+                if (time < 0) {
+                    bootX = time * 2; // Se acerca rápido
+                } else if (time >= 0 && time <= dt) {
+                    bootX = ballX; // Acompaña al balón
+                } else {
+                    const x_contacto = 0.5 * a * Math.pow(dt, 2);
+                    bootX = x_contacto; // Se detiene donde suelta el balón
+                }
+
+                // Escala visual (1 metro = 80 píxeles)
+                const scale = 80;
+
+                useEffect(() => {
+                    let interval;
+                    if (isKicking && time < 1.5) {
+                        interval = setInterval(() => {
+                            setTime(prev => prev + 0.02); // 50 FPS
+                        }, 20); // Tiempo real
+                    } else if (time >= 1.5) {
+                        setIsKicking(false);
+                    }
+                    return () => clearInterval(interval);
+                }, [isKicking, time]);
+
+                const handlePlay = () => {
+                    setTime(-0.2);
+                    setIsKicking(true);
+                };
+
+                const reset = () => {
+                    setTime(-0.2);
+                    setIsKicking(false);
+                };
+
+                // IA DCL Gen
+                const [imgUrl, setImgUrl] = useState(null);
+                const [imgLoading, setImgLoading] = useState(false);
+
+                const generarDiagrama = async () => {
+                    setImgLoading(true);
+                    const apiKey = ""; 
+                    try {
+                        const response = await fetch(
+                            `https://generativelanguage.googleapis.com/v1beta/models/imagen-4.0-generate-001:predict?key=${apiKey}`,
+                            {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({
+                                    instances: [{ prompt: "Diagrama técnico de física de una bota de fútbol golpeando un balón. Vector Fuerza F apuntando hacia la derecha desde la bota. Vector Cantidad de Movimiento p hacia la derecha en el balón. Estilo educativo, minimalista, fondo blanco" }],
+                                    parameters: { sampleCount: 1 }
+                                })
+                            }
+                        );
+                        if (!response.ok) throw new Error("Error en red");
+                        const data = await response.json();
+                        setImgUrl(`data:image/png;base64,${data.predictions[0].bytesBase64Encoded}`);
+                    } catch (error) {
+                        console.error(error);
+                    } finally {
+                        setImgLoading(false);
+                    }
+                };
+
+                return (
+                    <div className="min-h-screen bg-slate-900 text-slate-100 p-4 md:p-8">
+                        <header className="max-w-5xl mx-auto mb-8 border-b border-slate-700 pb-6">
+                            <div className="flex items-center gap-3 mb-2">
+                                <span className="bg-emerald-600 text-white px-3 py-1 rounded-full text-xs font-black uppercase tracking-widest">Choques e Impactos</span>
+                                <h1 className="text-3xl font-black text-emerald-400 uppercase tracking-tight tracking-widest">El Laboratorio del Chut</h1>
+                            </div>
+                            <div className="bg-slate-800/50 p-4 rounded-xl border border-slate-700 mt-4">
+                                <p className="text-slate-300 text-sm leading-relaxed">
+                                    <strong>Enunciado:</strong> Un futbolista golpea un balón de 1 kg en reposo durante 0,5 s, imprimiéndole una velocidad de 5 m/s. Calcula la cantidad de movimiento antes y después del impacto, y el impulso mecánico.
+                                </p>
+                            </div>
+                        </header>
+
+                        <main className="max-w-5xl mx-auto grid md:grid-cols-2 gap-8">
+                            {/* Panel Visual */}
+                            <div className="bg-slate-800 rounded-3xl border border-slate-700 h-[450px] relative overflow-hidden shadow-2xl flex flex-col justify-end pb-12">
+                                
+                                {/* Marcadores superiores en vivo */}
+                                <div className="absolute top-4 w-full px-6 flex justify-between z-30 pointer-events-none">
+                                    <div className="bg-slate-900/90 p-3 rounded-lg border border-slate-700 backdrop-blur-md">
+                                        <p className="text-[10px] text-slate-500 uppercase font-black mb-1">Fase Actual</p>
+                                        <div className={`px-2 py-1 rounded text-xs font-bold ${time >= 0 && time <= dt ? 'bg-orange-500/20 text-orange-400 border border-orange-500' : 'bg-slate-800 text-emerald-400 border border-slate-600'}`}>
+                                            {phase}
+                                        </div>
+                                    </div>
+                                    <div className="bg-slate-900/90 p-3 rounded-lg border border-slate-700 backdrop-blur-md text-right">
+                                        <p className="text-[10px] text-slate-500 uppercase font-black">Momento Lineal (p)</p>
+                                        <p className="text-xl font-mono font-black text-emerald-400">{(masa * ballV).toFixed(1)} kg·m/s</p>
+                                    </div>
+                                </div>
+
+                                {/* Cronómetro central */}
+                                <div className="absolute top-4 left-1/2 -translate-x-1/2 z-30">
+                                    <div className="bg-slate-900/90 p-2 px-4 rounded-full border border-slate-700 backdrop-blur-md flex items-center gap-2">
+                                        <TimerIcon size={16} className={time >= 0 && time <= dt ? "text-orange-400" : "text-slate-400"} />
+                                        <span className="font-mono font-black text-lg text-white">{Math.max(0, time).toFixed(2)} s</span>
+                                    </div>
+                                </div>
+
+                                {/* Campo de fútbol visual */}
+                                <div className="relative w-full h-64 flex items-end justify-start pl-16">
+                                    
+                                    {/* Bota de fútbol (emoji para simplificar) */}
+                                    <div 
+                                        className="absolute bottom-6 text-6xl z-20 transition-transform"
+                                        style={{ transform: `translateX(${bootX * scale - 60}px) rotate(${time >= 0 && time <= dt ? '15deg' : '0deg'})` }}
+                                    >
+                                        🥾
+                                    </div>
+
+                                    {/* Balón de fútbol */}
+                                    <div 
+                                        className="absolute bottom-6 w-12 h-12 bg-white rounded-full flex items-center justify-center text-3xl shadow-lg z-20"
+                                        style={{ transform: `translateX(${ballX * scale}px) rotate(${ballX * scale * 2}deg)` }}
+                                    >
+                                        ⚽
+                                        
+                                        {/* Vector Fuerza (Solo visible durante el impacto) */}
+                                        {time >= 0 && time <= dt && (
+                                            <div className="absolute left-full top-1/2 -translate-y-1/2 flex items-center pl-2" style={{ width: fuerzaMedia * 3 }}>
+                                                <div className="h-2 bg-orange-500 w-full relative shadow-[0_0_10px_rgba(249,115,22,0.8)]">
+                                                    <div className="absolute right-0 -top-1.5">{ArrowRightIcon && <ArrowRightIcon size={20} className="text-orange-500" />}</div>
+                                                </div>
+                                                <span className="ml-1 text-[10px] font-black text-orange-300 bg-slate-900/80 px-1 rounded shadow">F = {fuerzaMedia.toFixed(0)}N</span>
+                                            </div>
+                                        )}
+
+                                        {/* Vector Momento Lineal (Visible cuando tiene velocidad) */}
+                                        {ballV > 0 && time > dt && (
+                                            <div className="absolute left-full top-1/2 -translate-y-1/2 flex items-center pl-2" style={{ width: pf * 6 }}>
+                                                <div className="h-1.5 bg-emerald-400 w-full relative">
+                                                    <div className="absolute right-0 -top-1.5">{ArrowRightIcon && <ArrowRightIcon size={16} className="text-emerald-400" />}</div>
+                                                </div>
+                                                <span className="ml-1 text-[10px] font-black text-emerald-300 bg-slate-900/80 px-1 rounded shadow whitespace-nowrap">p = {pf.toFixed(1)}</span>
+                                            </div>
+                                        )}
+                                    </div>
+
+                                    {/* Suelo de césped */}
+                                    <div className="absolute -bottom-8 w-full h-8 grass-pattern border-t-4 border-green-700"></div>
+                                </div>
+                            </div>
+
+                            {/* Controles y Resolución */}
+                            <div className="space-y-6">
+                                <div className="bg-slate-800 p-6 rounded-3xl border border-slate-700 shadow-xl">
+                                    <h3 className="text-xl font-bold mb-4 flex items-center gap-2 text-emerald-400">
+                                        {CalculatorIcon && <CalculatorIcon size={20} />} Configurar Chut
+                                    </h3>
+                                    
+                                    <div className="space-y-6 mb-6">
+                                        <div>
+                                            <div className="flex justify-between text-xs mb-2">
+                                                <span className="text-slate-300 font-bold uppercase">Masa del Balón (m)</span>
+                                                <span className="font-mono bg-slate-900 px-2 py-0.5 rounded text-white">{masa.toFixed(1)} kg</span>
+                                            </div>
+                                            <input 
+                                                type="range" min="0.1" max="2.0" step="0.1" value={masa} 
+                                                onChange={e => {setMasa(Number(e.target.value)); reset();}} 
+                                                className="w-full h-2 bg-slate-700 rounded-lg appearance-none cursor-pointer accent-slate-400" 
+                                            />
+                                        </div>
+
+                                        <div>
+                                            <div className="flex justify-between text-xs mb-2">
+                                                <span className="text-orange-400 font-bold uppercase">Tiempo de Contacto (Δt)</span>
+                                                <span className="font-mono bg-slate-900 px-2 py-0.5 rounded text-orange-200">{dt.toFixed(2)} s</span>
+                                            </div>
+                                            <input 
+                                                type="range" min="0.1" max="1.0" step="0.05" value={dt} 
+                                                onChange={e => {setDt(Number(e.target.value)); reset();}} 
+                                                className="w-full h-2 bg-slate-700 rounded-lg appearance-none cursor-pointer accent-orange-500" 
+                                            />
+                                        </div>
+
+                                        <div>
+                                            <div className="flex justify-between text-xs mb-2">
+                                                <span className="text-emerald-400 font-bold uppercase">Velocidad Final (v_f)</span>
+                                                <span className="font-mono bg-slate-900 px-2 py-0.5 rounded text-emerald-200">{vf.toFixed(1)} m/s</span>
+                                            </div>
+                                            <input 
+                                                type="range" min="1" max="15" step="0.5" value={vf} 
+                                                onChange={e => {setVf(Number(e.target.value)); reset();}} 
+                                                className="w-full h-2 bg-slate-700 rounded-lg appearance-none cursor-pointer accent-emerald-500" 
+                                            />
+                                        </div>
+                                    </div>
+
+                                    <div className="flex gap-2">
+                                        <button 
+                                            onClick={handlePlay} 
+                                            disabled={isKicking}
+                                            className="flex-1 bg-emerald-600 hover:bg-emerald-500 text-white font-black py-3 rounded-xl shadow-lg flex justify-center items-center gap-2 disabled:opacity-50 transition-all active:scale-95"
+                                        >
+                                            {PlayIcon && <PlayIcon size={18} />} GOLPEAR BALÓN
+                                        </button>
+                                        <button onClick={reset} className="bg-slate-700 hover:bg-slate-600 text-white font-bold px-4 rounded-xl transition-all shadow-md">
+                                            {RotateCcwIcon && <RotateCcwIcon size={18} />}
+                                        </button>
+                                    </div>
+                                </div>
+
+                                <div className="bg-emerald-950/20 p-6 rounded-3xl border border-emerald-500/20">
+                                    <div className="flex justify-between items-center mb-4 border-b border-emerald-500/30 pb-2">
+                                        <h4 className="font-bold text-emerald-300 flex items-center gap-2">
+                                            {InfoIcon && <InfoIcon size={18} />} Resolución Paso a Paso
+                                        </h4>
+                                        <button onClick={generarDiagrama} className="text-[10px] uppercase font-bold bg-slate-800 hover:bg-slate-700 text-slate-300 px-3 py-1.5 rounded flex items-center gap-1 border border-slate-600">
+                                            {imgLoading ? <span className="animate-pulse">Cargando...</span> : <>{ImagePlusIcon && <ImagePlusIcon size={14}/>} Generar DCL</>}
+                                        </button>
+                                    </div>
+
+                                    {imgUrl && (
+                                        <div className="mb-4 bg-slate-900 p-2 rounded-xl border border-slate-700 text-center">
+                                            <img src={imgUrl} alt="Diagrama Técnico" className="mx-auto max-h-40 rounded-lg" />
+                                        </div>
+                                    )}
+
+                                    <div className="text-xs text-slate-300 space-y-3 leading-relaxed">
+                                        <p><strong>1. Momento Lineal Antes (p₀):</strong><br/>
+                                        Como el balón está en reposo, su velocidad inicial ($v_0$) es 0 m/s.</p>
+                                        <div className="bg-slate-900/80 p-2 rounded-lg border-l-4 border-slate-500 font-mono text-slate-300">
+                                            p₀ = m · v₀ = {masa.toFixed(1)} · 0 = <strong>{p0} kg·m/s</strong>
+                                        </div>
+
+                                        <p className="mt-3"><strong>2. Momento Lineal Después (p_f):</strong><br/>
+                                        El balón sale con una velocidad final de {vf.toFixed(1)} m/s.</p>
+                                        <div className="bg-slate-900/80 p-2 rounded-lg border-l-4 border-emerald-500 font-mono text-emerald-200">
+                                            p_f = m · v_f = {masa.toFixed(1)} · {vf.toFixed(1)} = <strong>{pf.toFixed(1)} kg·m/s</strong>
+                                        </div>
+                                        
+                                        <p className="mt-3"><strong>3. Impulso Mecánico (I):</strong><br/>
+                                        Por el teorema del impulso, este es igual a la variación de la cantidad de movimiento ($\Delta p$).</p>
+                                        <div className="bg-slate-900/80 p-3 rounded-lg border-l-4 border-orange-500 font-mono text-orange-200 shadow-inner">
+                                            I = Δp = p_f - p₀<br/>
+                                            I = {pf.toFixed(1)} - {p0} = <strong>{impulso.toFixed(1)} N·s</strong>
+                                        </div>
+                                        
+                                        <p className="mt-3 text-[10px] text-slate-400 italic">
+                                            *Nota extra: Sabiendo que el impacto duró {dt} s, podemos deducir que la fuerza media del pie fue de <strong>F = I / Δt = {fuerzaMedia.toFixed(1)} N</strong>.
+                                        </p>
+                                    </div>
+                                </div>
+                            </div>
+                        </main>
+
+                        <footer className="max-w-5xl mx-auto mt-12 pt-6 border-t border-slate-800 text-center text-slate-500 text-[10px] font-bold uppercase tracking-widest">
+                            Profe Física | Dinámica: Impulso y Cantidad de Movimiento
+                        </footer>
+                    </div>
+                );
+            };
+
+            const container = document.getElementById('root');
+            const root = ReactDOM.createRoot(container);
+            root.render(<App />);
+        })();
+    </script>
+</body>
+</html>

@@ -1,0 +1,383 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Laboratorio: Masas Enlazadas en Rampa</title>
+    <!-- Bibliotecas externas -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <script src="https://unpkg.com/lucide-react@latest"></script>
+
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&family=Fira+Code&display=swap');
+        body { font-family: 'Inter', sans-serif; background-color: #0f172a; }
+        .font-mono { font-family: 'Fira Code', monospace; }
+        input[type=range]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            height: 20px;
+            width: 20px;
+            border-radius: 50%;
+            background: #14b8a6; /* Teal 500 */
+            cursor: pointer;
+            border: 2px solid #ffffff;
+            box-shadow: 0 0 10px rgba(20, 184, 166, 0.5);
+        }
+        .ramp-pattern {
+            background-color: #334155;
+            background-image: linear-gradient(45deg, #1e293b 25%, transparent 25%, transparent 75%, #1e293b 75%, #1e293b), 
+                              linear-gradient(45deg, #1e293b 25%, transparent 25%, transparent 75%, #1e293b 75%, #1e293b);
+            background-size: 20px 20px;
+            background-position: 0 0, 10px 10px;
+        }
+    </style>
+</head>
+<body>
+    <div id="root"></div>
+
+    <script type="text/babel">
+        (() => {
+            var { useState, useEffect } = React;
+            var icons = window.LucideReact || {};
+            
+            var PlayIcon = icons.Play || (({className}) => <span className={className}></span>);
+            var RotateCcwIcon = icons.RotateCcw || (({className}) => <span className={className}></span>);
+            var InfoIcon = icons.Info || (({className}) => <span className={className}></span>);
+            var CalculatorIcon = icons.Calculator || (({className}) => <span className={className}></span>);
+            var ArrowRightIcon = icons.ArrowRight || (({className}) => <span className={className}></span>);
+            var ArrowLeftIcon = icons.ArrowLeft || (({className}) => <span className={className}></span>);
+            var LinkIcon = icons.Link || (({className}) => <span className={className}></span>);
+            var ImagePlusIcon = icons.ImagePlus || (({className}) => <span className={className}></span>);
+            var AlertTriangleIcon = icons.AlertTriangle || (({className}) => <span className={className}></span>);
+
+            var App = () => {
+                // Parámetros iniciales del problema
+                const g = 9.8; // m/s^2
+                
+                // Estados interactivos
+                const [m1, setM1] = useState(2.0); // Masa 1 (Delante)
+                const [mu1, setMu1] = useState(0.20); 
+                const [m2, setM2] = useState(3.0); // Masa 2 (Atrás)
+                const [mu2, setMu2] = useState(0.40);
+                const [angulo, setAngulo] = useState(30);
+
+                // Estados de animación
+                const [pos, setPos] = useState(0); 
+                const [vel, setVel] = useState(0);
+                const [isMoving, setIsMoving] = useState(false);
+
+                // Cálculos Físicos
+                const anguloRad = angulo * (Math.PI / 180);
+                const senA = Math.sin(anguloRad);
+                const cosA = Math.cos(anguloRad);
+
+                // Componentes X (Cuesta abajo)
+                const p1x = m1 * g * senA;
+                const p2x = m2 * g * senA;
+                
+                // Fuerza de rozamiento
+                const fr1 = mu1 * m1 * g * cosA;
+                const fr2 = mu2 * m2 * g * cosA;
+
+                // Verificamos si la suma de fuerzas a favor supera a la fricción total
+                const fNeta = (p1x + p2x) - (fr1 + fr2);
+                const canMove = fNeta > 0;
+
+                // Aceleración del sistema
+                const a = canMove ? fNeta / (m1 + m2) : 0;
+
+                // Tensión (Aislamos el cuerpo 2, el de arriba: P2x + T - Fr2 = m2 * a  =>  T = m2*a - P2x + Fr2)
+                const tension = (m2 * a) - p2x + fr2;
+                
+                // Advertencia si la cuerda se afloja (Tensión negativa implica que m2 empuja a m1)
+                const cuerdaFloja = tension < -0.01;
+
+                // Constantes visuales
+                const rampLength = 300; 
+
+                useEffect(() => {
+                    let interval;
+                    if (isMoving && pos < rampLength) {
+                        interval = setInterval(() => {
+                            setVel(v => v + a * 0.05);
+                            setPos(p => {
+                                const newP = p + vel;
+                                if (newP >= rampLength) {
+                                    setIsMoving(false);
+                                    return rampLength;
+                                }
+                                return newP;
+                            });
+                        }, 20); // 50 fps
+                    }
+                    return () => clearInterval(interval);
+                }, [isMoving, pos, vel, a]);
+
+                const handlePlay = () => {
+                    if (pos < rampLength && canMove) setIsMoving(true);
+                };
+
+                const reset = () => {
+                    setPos(0);
+                    setVel(0);
+                    setIsMoving(false);
+                };
+
+                // Si cambiamos parámetros, reiniciamos la animación
+                useEffect(() => {
+                    reset();
+                }, [m1, m2, mu1, mu2, angulo]);
+
+                // Generador de Diagrama de Cuerpo Libre
+                const [imgUrl, setImgUrl] = useState(null);
+                const [imgLoading, setImgLoading] = useState(false);
+
+                const generarDiagrama = async () => {
+                    setImgLoading(true);
+                    const apiKey = ""; 
+                    try {
+                        const response = await fetch(
+                            `https://generativelanguage.googleapis.com/v1beta/models/imagen-4.0-generate-001:predict?key=${apiKey}`,
+                            {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({
+                                    instances: [{ prompt: "Diagrama técnico de física. Dos bloques m1 y m2 conectados por una cuerda sobre un plano inclinado. Vectores P1x y P2x hacia abajo del plano. Vectores Fr1 y Fr2 hacia arriba del plano. Vectores de Tensión T opuestos en la cuerda entre ellos. Fondo blanco, minimalista, educativo" }],
+                                    parameters: { sampleCount: 1 }
+                                })
+                            }
+                        );
+                        if (!response.ok) throw new Error("Error de red");
+                        const data = await response.json();
+                        setImgUrl(`data:image/png;base64,${data.predictions[0].bytesBase64Encoded}`);
+                    } catch (error) {
+                        console.error(error);
+                    } finally {
+                        setImgLoading(false);
+                    }
+                };
+
+                return (
+                    <div className="min-h-screen bg-slate-900 text-slate-100 p-4 md:p-8">
+                        <header className="max-w-5xl mx-auto mb-8 border-b border-slate-700 pb-6">
+                            <div className="flex items-center gap-3 mb-2">
+                                <span className="bg-teal-600 text-white px-3 py-1 rounded-full text-xs font-black uppercase tracking-widest">Sistemas Múltiples</span>
+                                <h1 className="text-3xl font-black text-teal-400 uppercase tracking-tight tracking-widest">Dos Cuerpos en Rampa</h1>
+                            </div>
+                            <div className="bg-slate-800/50 p-4 rounded-xl border border-slate-700 mt-4">
+                                <p className="text-slate-300 text-sm leading-relaxed">
+                                    <strong>Enunciado:</strong> Dos cuerpos de masas m₁ = 2,0 kg y m₂ = 3,0 kg, unidos por una cuerda, están sobre un plano inclinado de 30°. Los coeficientes de rozamiento son 0,20 y 0,40 respectivamente. Calcula la aceleración del sistema y la tensión de la cuerda.
+                                </p>
+                            </div>
+                        </header>
+
+                        <main className="max-w-5xl mx-auto grid md:grid-cols-2 gap-8">
+                            {/* Panel Visual */}
+                            <div className="bg-slate-800 rounded-3xl border border-slate-700 h-[500px] relative overflow-hidden shadow-2xl flex flex-col justify-end">
+                                
+                                {/* Marcadores Flotantes */}
+                                <div className="absolute top-4 w-full px-6 flex justify-between z-30 pointer-events-none">
+                                    <div className="bg-slate-900/90 p-3 rounded-lg border border-slate-700 backdrop-blur-md">
+                                        <p className="text-[10px] text-slate-500 uppercase font-black">Aceleración (a)</p>
+                                        <p className={`text-xl font-mono font-black ${canMove ? 'text-teal-400' : 'text-red-400'}`}>
+                                            {canMove ? `${a.toFixed(2)} m/s²` : '0.00 m/s²'}
+                                        </p>
+                                    </div>
+                                    
+                                    <div className={`bg-slate-900/90 p-3 rounded-lg border backdrop-blur-md text-right ${cuerdaFloja ? 'border-red-500' : 'border-slate-700'}`}>
+                                        <p className="text-[10px] text-slate-500 uppercase font-black">Tensión (T)</p>
+                                        <p className={`text-xl font-mono font-black ${cuerdaFloja ? 'text-red-400' : 'text-indigo-400'}`}>
+                                            {cuerdaFloja ? 'CUERDA FLOJA (0 N)' : `${Math.abs(tension).toFixed(2)} N`}
+                                        </p>
+                                    </div>
+                                </div>
+
+                                {/* Escena de la Rampa */}
+                                <div className="relative w-full h-80">
+                                    <div className="absolute bottom-10 left-10 w-[450px] h-full pointer-events-none">
+                                        
+                                        {/* Grupo Rotado (Rampa + Bloques juntos). Origin a la derecha para que se eleve la izquierda */}
+                                        <div 
+                                            className="absolute bottom-0 left-0 w-full h-full origin-bottom-right transition-transform duration-300 z-20"
+                                            style={{ transform: `rotate(${angulo}deg)` }}
+                                        >
+                                            {/* La Rampa */}
+                                            <div className="absolute bottom-0 left-0 w-full h-3 ramp-pattern shadow-xl rounded-l-full"></div>
+
+                                            {/* --- CUERPO 2 (ATRÁS / ARRIBA) --- */}
+                                            <div 
+                                                className="absolute bottom-3 h-14 bg-orange-600 border-2 border-orange-400 rounded-lg flex flex-col items-center justify-center shadow-lg transition-transform"
+                                                style={{ left: `${pos + 40}px`, width: '50px' }}
+                                            >
+                                                <span className="font-black text-orange-200 text-xs">m₂</span>
+                                                <span className="text-[9px] text-orange-300">μ={mu2}</span>
+
+                                                {/* Vectores visuales simplificados (Tensión hacia abajo) */}
+                                                {!cuerdaFloja && canMove && (
+                                                    <div className="absolute left-full top-1/2 -translate-y-1/2 flex items-center pl-1" style={{ width: tension * 5 }}>
+                                                        <div className="h-0.5 bg-indigo-400 w-full relative">
+                                                            <div className="absolute right-0 -top-1.5">{ArrowRightIcon && <ArrowRightIcon className="text-indigo-400" size={14} />}</div>
+                                                        </div>
+                                                        <span className="ml-1 text-[8px] font-black text-indigo-300 absolute left-4">T</span>
+                                                    </div>
+                                                )}
+                                            </div>
+
+                                            {/* LA CUERDA */}
+                                            <div 
+                                                className={`absolute bottom-8 h-1 origin-left transition-all ${cuerdaFloja ? 'bg-slate-600 rounded-full h-1.5 border-dashed border border-slate-900' : 'bg-indigo-300 shadow-[0_0_5px_rgba(165,180,252,0.8)]'}`}
+                                                style={{ 
+                                                    left: `${pos + 90}px`, 
+                                                    width: cuerdaFloja ? '60px' : '70px',
+                                                    transform: cuerdaFloja ? 'translateY(10px) rotate(5deg)' : 'none'
+                                                }}
+                                            ></div>
+
+                                            {/* --- CUERPO 1 (DELANTE / ABAJO) --- */}
+                                            <div 
+                                                className="absolute bottom-3 h-12 bg-emerald-600 border-2 border-emerald-400 rounded-lg flex flex-col items-center justify-center shadow-lg transition-transform"
+                                                style={{ left: `${pos + 160}px`, width: '45px' }}
+                                            >
+                                                <span className="font-black text-emerald-200 text-xs">m₁</span>
+                                                <span className="text-[9px] text-emerald-300">μ={mu1}</span>
+
+                                                {/* Vectores visuales simplificados (Tensión hacia arriba) */}
+                                                {!cuerdaFloja && canMove && (
+                                                    <div className="absolute right-full top-1/2 -translate-y-1/2 flex items-center pr-1" style={{ width: tension * 5 }}>
+                                                        <span className="mr-1 text-[8px] font-black text-indigo-300 absolute right-4">T</span>
+                                                        <div className="h-0.5 bg-indigo-400 w-full relative">
+                                                            <div className="absolute left-0 -top-1.5">{ArrowLeftIcon && <ArrowLeftIcon className="text-indigo-400" size={14} />}</div>
+                                                        </div>
+                                                    </div>
+                                                )}
+                                            </div>
+
+                                        </div>
+
+                                        {/* Suelo Base Decorativo */}
+                                        <div className="absolute bottom-0 left-0 w-full border-b-2 border-slate-600 border-dashed"></div>
+                                        
+                                        {/* Arco del Ángulo */}
+                                        {angulo > 0 && (
+                                            <div className="absolute bottom-0 right-0 w-24 h-24 border-l-2 border-t-2 border-teal-500/50 rounded-tl-full flex items-end justify-start pb-2 pl-2">
+                                                <span className="text-teal-300 font-mono text-sm font-bold">{angulo}º</span>
+                                            </div>
+                                        )}
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* Controles y Resolución */}
+                            <div className="space-y-6">
+                                <div className="bg-slate-800 p-6 rounded-3xl border border-slate-700 shadow-xl">
+                                    <h3 className="text-xl font-bold mb-4 flex items-center gap-2 text-teal-400">
+                                        {LinkIcon && <LinkIcon size={20} />} Configurar Sistema
+                                    </h3>
+                                    
+                                    <div className="space-y-4 mb-6">
+                                        <div className="grid grid-cols-2 gap-4">
+                                            {/* Configuración M1 */}
+                                            <div className="bg-emerald-900/20 p-3 rounded-xl border border-emerald-500/20">
+                                                <div className="flex justify-between text-xs mb-1"><span className="text-emerald-400 font-bold">m₁ (Delante)</span><span className="font-mono text-white">{m1} kg</span></div>
+                                                <input type="range" min="1" max="10" step="0.5" value={m1} onChange={e => setM1(Number(e.target.value))} className="w-full h-1.5 bg-slate-700 rounded-lg appearance-none cursor-pointer accent-emerald-500 mb-3" />
+                                                
+                                                <div className="flex justify-between text-xs mb-1"><span className="text-emerald-400 font-bold">μ₁</span><span className="font-mono text-white">{mu1.toFixed(2)}</span></div>
+                                                <input type="range" min="0" max="0.8" step="0.05" value={mu1} onChange={e => setMu1(Number(e.target.value))} className="w-full h-1.5 bg-slate-700 rounded-lg appearance-none cursor-pointer accent-emerald-500" />
+                                            </div>
+                                            
+                                            {/* Configuración M2 */}
+                                            <div className="bg-orange-900/20 p-3 rounded-xl border border-orange-500/20">
+                                                <div className="flex justify-between text-xs mb-1"><span className="text-orange-400 font-bold">m₂ (Atrás)</span><span className="font-mono text-white">{m2} kg</span></div>
+                                                <input type="range" min="1" max="10" step="0.5" value={m2} onChange={e => setM2(Number(e.target.value))} className="w-full h-1.5 bg-slate-700 rounded-lg appearance-none cursor-pointer accent-orange-500 mb-3" />
+                                                
+                                                <div className="flex justify-between text-xs mb-1"><span className="text-orange-400 font-bold">μ₂</span><span className="font-mono text-white">{mu2.toFixed(2)}</span></div>
+                                                <input type="range" min="0" max="0.8" step="0.05" value={mu2} onChange={e => setMu2(Number(e.target.value))} className="w-full h-1.5 bg-slate-700 rounded-lg appearance-none cursor-pointer accent-orange-500" />
+                                            </div>
+                                        </div>
+
+                                        <div>
+                                            <div className="flex justify-between text-xs mb-1">
+                                                <span className="text-teal-400 font-bold uppercase">Inclinación (α)</span>
+                                                <span className="font-mono bg-slate-900 px-2 py-0.5 rounded text-teal-300">{angulo}º</span>
+                                            </div>
+                                            <input type="range" min="0" max="80" step="1" value={angulo} onChange={e => setAngulo(Number(e.target.value))} className="w-full h-2 bg-slate-700 rounded-lg appearance-none cursor-pointer accent-teal-500" />
+                                        </div>
+                                    </div>
+
+                                    {cuerdaFloja && (
+                                        <div className="mb-4 bg-red-900/50 p-3 rounded-lg border border-red-500/50 flex items-start gap-3">
+                                            <AlertTriangleIcon className="text-red-400 shrink-0" size={20} />
+                                            <p className="text-xs text-red-200"><strong>¡Atención!</strong> La masa de atrás (m₂) intenta caer más rápido que la de delante (m₁). La cuerda se afloja y las masas chocarán. No comparten aceleración.</p>
+                                        </div>
+                                    )}
+
+                                    <div className="flex gap-2">
+                                        <button 
+                                            onClick={handlePlay} 
+                                            disabled={isMoving || pos >= rampLength || !canMove || cuerdaFloja}
+                                            className={`flex-1 font-black py-3 rounded-xl shadow-lg flex justify-center items-center gap-2 disabled:opacity-50 transition-all active:scale-95 ${(!canMove || cuerdaFloja) ? 'bg-slate-600 text-slate-400' : 'bg-teal-600 hover:bg-teal-500 text-white'}`}
+                                        >
+                                            {PlayIcon && <PlayIcon size={18} />} {(!canMove) ? 'NO HAY DESLIZAMIENTO' : cuerdaFloja ? 'SISTEMA INVÁLIDO' : 'DEJAR CAER'}
+                                        </button>
+                                        <button onClick={reset} className="bg-slate-700 hover:bg-slate-600 text-white font-bold px-4 rounded-xl transition-all shadow-md">
+                                            {RotateCcwIcon && <RotateCcwIcon size={18} />}
+                                        </button>
+                                    </div>
+                                </div>
+
+                                <div className="bg-teal-950/20 p-6 rounded-3xl border border-teal-500/20">
+                                    <div className="flex justify-between items-center mb-4 border-b border-teal-500/30 pb-2">
+                                        <h4 className="font-bold text-teal-300 flex items-center gap-2">
+                                            {CalculatorIcon && <CalculatorIcon size={18} />} Resolución Matemática
+                                        </h4>
+                                        <button onClick={generarDiagrama} className="text-[10px] uppercase font-bold bg-slate-800 hover:bg-slate-700 text-slate-300 px-3 py-1.5 rounded flex items-center gap-1 border border-slate-600">
+                                            {imgLoading ? <span className="animate-pulse">Cargando...</span> : <>{ImagePlusIcon && <ImagePlusIcon size={14}/>} Generar DCL</>}
+                                        </button>
+                                    </div>
+
+                                    {imgUrl && (
+                                        <div className="mb-4 bg-slate-900 p-2 rounded-xl border border-slate-700 text-center">
+                                            <img src={imgUrl} alt="Diagrama de Cuerpo Libre" className="mx-auto max-h-40 rounded-lg" />
+                                        </div>
+                                    )}
+
+                                    <div className="text-xs text-slate-300 space-y-3 leading-relaxed">
+                                        <p><strong>1. Aceleración (Bloque como un todo):</strong><br/>
+                                        Sumamos las fuerzas a favor (P<sub>x</sub>) y restamos las fuerzas en contra (Fricciones). La Tensión, al ser interna, se anula en este paso.</p>
+                                        
+                                        <div className="bg-slate-900/80 p-3 rounded-lg border-l-4 border-teal-500 font-mono">
+                                            Σ F<sub>x</sub> = (P<sub>1x</sub> + P<sub>2x</sub>) - (F<sub>r1</sub> + F<sub>r2</sub>)<br/>
+                                            P<sub>tx</sub> = (2+3) · 9.8 · sin(30º) = 24.5 N<br/>
+                                            F<sub>rt</sub> = (0.2·2 + 0.4·3) · 9.8 · cos(30º) = 13.58 N<br/>
+                                            a = (24.5 - 13.58) / 5.0 = <strong>2.18 m/s²</strong>
+                                        </div>
+
+                                        <p className="mt-3"><strong>2. Tensión (Aislamos m₂):</strong><br/>
+                                        Miramos solo el bloque de atrás. Las fuerzas que actúan sobre él son P<sub>2x</sub> (abajo), T (abajo, tirada por m₁) y F<sub>r2</sub> (arriba).</p>
+                                        <div className="bg-slate-900/80 p-3 rounded-lg border-l-4 border-indigo-500 font-mono">
+                                            Σ F<sub>2x</sub> = m₂ · a<br/>
+                                            P<sub>2x</sub> + T - F<sub>r2</sub> = m₂ · a  ⇒  T = m₂ · a - P<sub>2x</sub> + F<sub>r2</sub><br/>
+                                            T = 3 · 2.18 - 14.7 + 10.18 = <strong>2.02 N</strong>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </main>
+
+                        <footer className="max-w-5xl mx-auto mt-12 pt-6 border-t border-slate-800 text-center text-slate-500 text-[10px] font-bold uppercase tracking-widest">
+                            Profe Física | Dinámica: Sistemas Conectados en Planos
+                        </footer>
+                    </div>
+                );
+            };
+
+            const container = document.getElementById('root');
+            const root = ReactDOM.createRoot(container);
+            root.render(<App />);
+        })();
+    </script>
+</body>
+</html>

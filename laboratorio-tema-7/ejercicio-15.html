@@ -1,0 +1,360 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Laboratorio: Lanzamiento en Rampa</title>
+    <!-- Bibliotecas externas -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <script src="https://unpkg.com/lucide-react@latest"></script>
+
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&family=Fira+Code&display=swap');
+        body { font-family: 'Inter', sans-serif; background-color: #0f172a; }
+        .font-mono { font-family: 'Fira Code', monospace; }
+        input[type=range]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            height: 24px;
+            width: 24px;
+            border-radius: 50%;
+            background: #3b82f6; /* Blue 500 */
+            cursor: pointer;
+            border: 3px solid #ffffff;
+            box-shadow: 0 0 10px rgba(59, 130, 246, 0.5);
+        }
+        .snow-pattern {
+            background-color: #cbd5e1;
+            background-image: radial-gradient(#ffffff 2px, transparent 2px), radial-gradient(#ffffff 2px, transparent 2px);
+            background-size: 20px 20px;
+            background-position: 0 0, 10px 10px;
+        }
+    </style>
+</head>
+<body>
+    <div id="root"></div>
+
+    <script type="text/babel">
+        (() => {
+            var { useState, useEffect } = React;
+            var icons = window.LucideReact || {};
+            
+            var PlayIcon = icons.Play || (({className}) => <span className={className}></span>);
+            var RotateCcwIcon = icons.RotateCcw || (({className}) => <span className={className}></span>);
+            var InfoIcon = icons.Info || (({className}) => <span className={className}></span>);
+            var CalculatorIcon = icons.Calculator || (({className}) => <span className={className}></span>);
+            var ArrowRightIcon = icons.ArrowRight || (({className}) => <span className={className}></span>);
+            var ArrowLeftIcon = icons.ArrowLeft || (({className}) => <span className={className}></span>);
+            var TargetIcon = icons.Target || (({className}) => <span className={className}></span>);
+            var ImagePlusIcon = icons.ImagePlus || (({className}) => <span className={className}></span>);
+
+            var App = () => {
+                // Parámetros fijos del problema
+                const m = 2.0; // kg
+                const dTarget = 4.0; // m
+                const g = 9.8; // m/s^2
+
+                // Estados interactivos
+                const [v0, setV0] = useState(7.03); // Velocidad inicial (Solución: ~7.03)
+                const [angulo, setAngulo] = useState(30); // Grados
+                const [mu, setMu] = useState(0.15); // Rozamiento cinético
+
+                // Cálculos Físicos
+                const anguloRad = angulo * (Math.PI / 180);
+                const peso = m * g;
+                
+                // Componentes de la fuerza (Eje X de la rampa es positivo hacia ARRIBA)
+                const px = peso * Math.sin(anguloRad); // Tira hacia ABAJO
+                const normal = peso * Math.cos(anguloRad);
+                const fr = mu * normal; // Tira hacia ABAJO (opuesto al movimiento)
+
+                // La aceleración frena al trineo (negativa)
+                const a = -(px + fr) / m;
+
+                // Cinemática (Tiempo y distancia hasta detenerse)
+                const tStop = -v0 / a; // t = (vf - v0)/a -> (0 - v0)/a
+                const maxDist = (v0 * v0) / (2 * Math.abs(a)); // d = v0^2 / 2|a|
+
+                // Animación
+                const [time, setTime] = useState(0);
+                const [isMoving, setIsMoving] = useState(false);
+
+                // Escala visual (1 metro = 60 px)
+                const pxPerMeter = 60;
+                
+                // Cinemática instantánea
+                const currentV = Math.max(0, v0 + a * time);
+                const currentPos = (v0 * time) + (0.5 * a * time * time);
+
+                useEffect(() => {
+                    let interval;
+                    if (isMoving && time < tStop) {
+                        interval = setInterval(() => {
+                            setTime(prev => {
+                                const nextTime = prev + 0.05;
+                                if (nextTime >= tStop) {
+                                    setIsMoving(false);
+                                    return tStop; // Nos detenemos exactamente en el punto más alto
+                                }
+                                return nextTime;
+                            });
+                        }, 25); // Velocidad visual 2x
+                    }
+                    return () => clearInterval(interval);
+                }, [isMoving, time, tStop]);
+
+                const handlePlay = () => {
+                    if (time < tStop) setIsMoving(true);
+                };
+
+                const reset = () => {
+                    setTime(0);
+                    setIsMoving(false);
+                };
+
+                // Si cambiamos los parámetros, reiniciamos el lanzamiento
+                useEffect(() => {
+                    reset();
+                }, [v0, angulo, mu]);
+
+                // Generador DCL
+                const [imgUrl, setImgUrl] = useState(null);
+                const [imgLoading, setImgLoading] = useState(false);
+
+                const generarDiagrama = async () => {
+                    setImgLoading(true);
+                    const apiKey = ""; 
+                    try {
+                        const response = await fetch(
+                            `https://generativelanguage.googleapis.com/v1beta/models/imagen-4.0-generate-001:predict?key=${apiKey}`,
+                            {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({
+                                    instances: [{ prompt: "Diagrama técnico de física. Un trineo subiendo por un plano inclinado. Vectores: Vector Velocidad v hacia arriba de la rampa. Vectores Px y Fuerza de Fricción Fr apuntando ambos hacia ABAJO de la rampa (frenando). Vector Normal N hacia arriba perpendicular, Vector Peso P hacia abajo. Fondo blanco, minimalista, educativo" }],
+                                    parameters: { sampleCount: 1 }
+                                })
+                            }
+                        );
+                        if (!response.ok) throw new Error("Error en red");
+                        const data = await response.json();
+                        setImgUrl(`data:image/png;base64,${data.predictions[0].bytesBase64Encoded}`);
+                    } catch (error) {
+                        console.error(error);
+                    } finally {
+                        setImgLoading(false);
+                    }
+                };
+
+                return (
+                    <div className="min-h-screen bg-slate-900 text-slate-100 p-4 md:p-8">
+                        <header className="max-w-5xl mx-auto mb-8 border-b border-slate-700 pb-6">
+                            <div className="flex items-center gap-3 mb-2">
+                                <span className="bg-blue-600 text-white px-3 py-1 rounded-full text-xs font-black uppercase tracking-widest">Dinámica y Cinemática</span>
+                                <h1 className="text-3xl font-black text-blue-400 uppercase tracking-tight tracking-widest">Lanzamiento del Trineo</h1>
+                            </div>
+                            <div className="bg-slate-800/50 p-4 rounded-xl border border-slate-700 mt-4">
+                                <p className="text-slate-300 text-sm leading-relaxed">
+                                    <strong>Enunciado:</strong> Un trineo de 2,0 kg debe ser lanzado por una rampa de 30° hacia arriba para que recorra exactamente 4,0 m. El coeficiente de rozamiento es 0,15. ¿Con qué velocidad inicial debe lanzarse?
+                                </p>
+                            </div>
+                        </header>
+
+                        <main className="max-w-5xl mx-auto grid md:grid-cols-2 gap-8">
+                            {/* Panel Visual */}
+                            <div className="bg-slate-800 rounded-3xl border border-slate-700 h-[500px] relative overflow-hidden shadow-2xl flex flex-col justify-end pb-4">
+                                
+                                {/* Marcadores Flotantes */}
+                                <div className="absolute top-4 w-full px-6 flex justify-between z-30 pointer-events-none">
+                                    <div className="bg-slate-900/90 p-3 rounded-lg border border-slate-700 backdrop-blur-md">
+                                        <p className="text-[10px] text-slate-500 uppercase font-black">Distancia actual (d)</p>
+                                        <p className={`text-xl font-mono font-black ${currentPos >= dTarget ? 'text-green-400' : 'text-blue-400'}`}>
+                                            {currentPos.toFixed(2)} m
+                                        </p>
+                                    </div>
+                                    <div className="bg-slate-900/90 p-3 rounded-lg border border-slate-700 backdrop-blur-md text-right">
+                                        <p className="text-[10px] text-slate-500 uppercase font-black">Velocidad (v)</p>
+                                        <p className="text-xl font-mono font-black text-emerald-400">{currentV.toFixed(2)} m/s</p>
+                                    </div>
+                                </div>
+
+                                {/* Escena de la Rampa */}
+                                <div className="relative w-full h-80">
+                                    <div className="absolute bottom-10 left-10 w-[450px] h-full pointer-events-none">
+                                        
+                                        {/* Grupo Rotado (Rampa + Trineo juntos). 
+                                            ATENCIÓN: Rotamos desde bottom-left hacia la izquierda para que suba a la derecha */}
+                                        <div 
+                                            className="absolute bottom-0 left-0 w-full h-full origin-bottom-left transition-transform duration-300 z-20"
+                                            style={{ transform: `rotate(${-angulo}deg)` }}
+                                        >
+                                            {/* La Rampa de Nieve */}
+                                            <div className="absolute bottom-0 left-0 w-full h-4 snow-pattern shadow-xl rounded-r-full"></div>
+
+                                            {/* Marca del Objetivo (4.0 m) */}
+                                            <div className="absolute bottom-4 border-l-4 border-dashed border-green-500 h-24 z-10" style={{ left: `${dTarget * pxPerMeter + 40}px` }}>
+                                                <div className="bg-green-900/80 text-green-300 text-[10px] font-black px-2 py-1 absolute top-0 -left-6 rounded">OBJETIVO: 4m</div>
+                                            </div>
+
+                                            {/* El Trineo */}
+                                            <div 
+                                                className="absolute bottom-4 w-16 h-10 bg-orange-600 border-t-4 border-l-4 border-orange-400 rounded-lg flex items-center justify-center shadow-lg transition-transform z-30"
+                                                style={{ transform: `translateX(${40 + currentPos * pxPerMeter}px)` }}
+                                            >
+                                                <span className="font-black text-orange-100 text-[10px]">2.0 kg</span>
+
+                                                {/* Vector Velocidad (Verde, hacia la derecha local = arriba) */}
+                                                {currentV > 0.1 && (
+                                                    <div className="absolute bottom-full mb-2 left-1/2 flex items-center" style={{ width: currentV * 10 }}>
+                                                        <div className="h-1 bg-emerald-400 w-full relative">
+                                                            <div className="absolute right-0 -top-1.5">{ArrowRightIcon && <ArrowRightIcon className="text-emerald-400" size={16} />}</div>
+                                                        </div>
+                                                        <span className="ml-1 text-[10px] font-black text-emerald-300 bg-slate-900/80 px-1 rounded">v</span>
+                                                    </div>
+                                                )}
+
+                                                {/* Vector Px (Rojo, frena hacia atrás) */}
+                                                <div className="absolute top-1/3 right-full flex items-center pr-1" style={{ width: px * 4 }}>
+                                                    <span className="mr-1 text-[10px] font-black text-red-300 bg-slate-900/80 px-1 rounded">P_x</span>
+                                                    <div className="h-1 bg-red-400 w-full relative shadow-[0_0_8px_rgba(239,68,68,0.8)]">
+                                                        <div className="absolute left-0 -top-1.5">{ArrowLeftIcon && <ArrowLeftIcon className="text-red-400" size={16} />}</div>
+                                                    </div>
+                                                </div>
+
+                                                {/* Vector Fricción (Naranja, también frena hacia atrás) */}
+                                                <div className="absolute bottom-1/3 right-full flex items-center pr-1" style={{ width: fr * 4 }}>
+                                                    <span className="mr-1 text-[10px] font-black text-orange-300 bg-slate-900/80 px-1 rounded">F_r</span>
+                                                    <div className="h-1 bg-orange-400 w-full relative shadow-[0_0_8px_rgba(249,115,22,0.8)]">
+                                                        <div className="absolute left-0 -top-1.5">{ArrowLeftIcon && <ArrowLeftIcon className="text-orange-400" size={16} />}</div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        {/* Suelo Base Decorativo */}
+                                        <div className="absolute bottom-0 left-0 w-full border-b-2 border-slate-600 border-dashed"></div>
+                                        
+                                        {/* Arco del Ángulo */}
+                                        {angulo > 0 && (
+                                            <div className="absolute bottom-0 left-0 w-24 h-24 border-r-2 border-t-2 border-blue-500/50 rounded-tr-full flex items-end justify-end pb-2 pr-2">
+                                                <span className="text-blue-300 font-mono text-sm font-bold">{angulo}º</span>
+                                            </div>
+                                        )}
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* Controles y Resolución */}
+                            <div className="space-y-6">
+                                <div className="bg-slate-800 p-6 rounded-3xl border border-slate-700 shadow-xl">
+                                    <h3 className="text-xl font-bold mb-4 flex items-center gap-2 text-blue-400">
+                                        {TargetIcon && <TargetIcon size={20} />} Ajustar Lanzamiento
+                                    </h3>
+                                    
+                                    <p className="text-xs text-slate-400 mb-6">Encuentra la velocidad inicial (v₀) exacta para que el trineo se detenga justo en la marca de los 4.0 metros.</p>
+
+                                    <div className="space-y-6 mb-6">
+                                        <div>
+                                            <div className="flex justify-between text-xs mb-2">
+                                                <span className="text-emerald-400 font-bold uppercase">Velocidad de Lanzamiento (v₀)</span>
+                                                <span className="font-mono bg-slate-900 px-2 py-0.5 rounded text-emerald-300">{v0.toFixed(2)} m/s</span>
+                                            </div>
+                                            <input 
+                                                type="range" min="3" max="10" step="0.01" value={v0} 
+                                                onChange={e => setV0(Number(e.target.value))} 
+                                                className="w-full h-3 bg-slate-700 rounded-lg appearance-none cursor-pointer accent-emerald-500" 
+                                            />
+                                            <div className="flex justify-between text-[10px] text-slate-500 mt-2 font-bold">
+                                                <span>Falla seguro</span>
+                                                <span>Se pasa de largo</span>
+                                            </div>
+                                        </div>
+
+                                        <div className="grid grid-cols-2 gap-4">
+                                            <div className="bg-slate-900 p-3 rounded-lg border border-slate-700">
+                                                <span className="block text-[10px] text-slate-500 uppercase font-black">Ángulo</span>
+                                                <span className="font-mono text-white">{angulo}º</span>
+                                            </div>
+                                            <div className="bg-slate-900 p-3 rounded-lg border border-slate-700">
+                                                <span className="block text-[10px] text-slate-500 uppercase font-black">Rozamiento (μ)</span>
+                                                <span className="font-mono text-white">{mu}</span>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div className="flex gap-2">
+                                        <button 
+                                            onClick={handlePlay} 
+                                            disabled={isMoving || time >= tStop}
+                                            className={`flex-1 font-black py-4 rounded-xl shadow-lg flex justify-center items-center gap-2 disabled:opacity-50 transition-all active:scale-95 ${time >= tStop ? 'bg-slate-600 text-slate-400' : 'bg-blue-600 hover:bg-blue-500 text-white'}`}
+                                        >
+                                            {PlayIcon && <PlayIcon size={18} />} {time >= tStop ? 'DETENIDO' : 'LANZAR TRINEO'}
+                                        </button>
+                                        <button onClick={reset} className="bg-slate-700 hover:bg-slate-600 text-white font-bold px-6 rounded-xl transition-all shadow-md">
+                                            {RotateCcwIcon && <RotateCcwIcon size={18} />}
+                                        </button>
+                                    </div>
+                                </div>
+
+                                <div className="bg-blue-950/20 p-6 rounded-3xl border border-blue-500/20">
+                                    <div className="flex justify-between items-center mb-4 border-b border-blue-500/30 pb-2">
+                                        <h4 className="font-bold text-blue-300 flex items-center gap-2">
+                                            {CalculatorIcon && <CalculatorIcon size={18} />} Resolución Paso a Paso
+                                        </h4>
+                                        <button onClick={generarDiagrama} className="text-[10px] uppercase font-bold bg-slate-800 hover:bg-slate-700 text-slate-300 px-3 py-1.5 rounded flex items-center gap-1 border border-slate-600">
+                                            {imgLoading ? <span className="animate-pulse">Cargando...</span> : <>{ImagePlusIcon && <ImagePlusIcon size={14}/>} Generar DCL</>}
+                                        </button>
+                                    </div>
+
+                                    {imgUrl && (
+                                        <div className="mb-4 bg-slate-900 p-2 rounded-xl border border-slate-700 text-center">
+                                            <img src={imgUrl} alt="Diagrama de Cuerpo Libre" className="mx-auto max-h-40 rounded-lg" />
+                                        </div>
+                                    )}
+
+                                    <div className="text-xs text-slate-300 space-y-3 leading-relaxed">
+                                        <p><strong>1. Dinámica (Eje X):</strong><br/>
+                                        ¡Atención! Como el trineo va hacia arriba, <strong>ambas fuerzas (peso y rozamiento) apuntan hacia ABAJO</strong> de la rampa frenándolo.</p>
+                                        
+                                        <div className="bg-slate-900/80 p-3 rounded-lg border-l-4 border-red-500 font-mono">
+                                            Σ F_x = m · a<br/>
+                                            - P_x - F_r = m · a<br/>
+                                            - m·g·sin(30º) - μ·m·g·cos(30º) = m · a
+                                        </div>
+
+                                        <p>Cancelamos la masa (m) en todos los términos:</p>
+                                        <div className="bg-slate-900/80 p-3 rounded-lg border-l-4 border-orange-500 font-mono text-orange-200">
+                                            a = - g·sin(30º) - μ·g·cos(30º)<br/>
+                                            a = - (9.8 · 0.5) - (0.15 · 9.8 · 0.866)<br/>
+                                            a = - 4.9 - 1.273 = <strong>-6.173 m/s²</strong>
+                                        </div>
+
+                                        <p className="mt-3"><strong>2. Cinemática (MRUA):</strong><br/>
+                                        Sabemos que debe frenar (v<sub>f</sub> = 0) en d = 4.0 m.</p>
+                                        <div className="bg-slate-900/80 p-3 rounded-lg border-l-4 border-emerald-500 font-mono text-emerald-200">
+                                            v_f² = v₀² + 2·a·d<br/>
+                                            0 = v₀² + 2 · (-6.173) · 4.0<br/>
+                                            v₀² = 49.384  ⇒  v₀ = <strong>7.03 m/s</strong>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </main>
+
+                        <footer className="max-w-5xl mx-auto mt-12 pt-6 border-t border-slate-800 text-center text-slate-500 text-[10px] font-bold uppercase tracking-widest">
+                            Profe Física | Dinámica y Cinemática (Movimiento de subida)
+                        </footer>
+                    </div>
+                );
+            };
+
+            const container = document.getElementById('root');
+            const root = ReactDOM.createRoot(container);
+            root.render(<App />);
+        })();
+    </script>
+</body>
+</html>

@@ -1,0 +1,336 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Laboratorio: Movimiento Circular Vertical</title>
+    <!-- Bibliotecas externas -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <script src="https://unpkg.com/lucide-react@latest"></script>
+
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&family=Fira+Code&display=swap');
+        body { font-family: 'Inter', sans-serif; background-color: #0f172a; }
+        .font-mono { font-family: 'Fira Code', monospace; }
+        input[type=range]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            height: 20px;
+            width: 20px;
+            border-radius: 50%;
+            background: #ef4444; /* Red 500 */
+            cursor: pointer;
+            border: 2px solid #ffffff;
+            box-shadow: 0 0 10px rgba(239, 68, 68, 0.5);
+        }
+        .grid-bg {
+            background-image: linear-gradient(rgba(255,255,255,0.05) 1px, transparent 1px),
+                              linear-gradient(90deg, rgba(255,255,255,0.05) 1px, transparent 1px);
+            background-size: 20px 20px;
+        }
+    </style>
+</head>
+<body>
+    <div id="root"></div>
+
+    <script type="text/babel">
+        (() => {
+            var { useState, useEffect } = React;
+            var icons = window.LucideReact || {};
+            
+            // Asignación segura de iconos
+            var getIcon = (name) => icons[name] || (({className}) => <span className={className || ''}></span>);
+            var PlayIcon = getIcon('Play');
+            var RotateCcwIcon = getIcon('RotateCcw');
+            var ScissorsIcon = getIcon('Scissors');
+            var ArrowUpIcon = getIcon('ArrowUp');
+            var ArrowDownIcon = getIcon('ArrowDown');
+            var ArrowRightIcon = getIcon('ArrowRight');
+            var InfoIcon = getIcon('Info');
+            var ImagePlusIcon = getIcon('ImagePlus');
+            var CalculatorIcon = getIcon('Calculator');
+
+            var App = () => {
+                const g = 9.8; // Gravedad (m/s^2)
+                
+                // Estados iniciales del problema
+                const [masa, setMasa] = useState(2.0); // kg
+                const [radio_cm, setRadioCm] = useState(100); // cm
+                const [tension, setTension] = useState(100); // N
+
+                // Animación
+                const [time, setTime] = useState(0);
+                const [isBroken, setIsBroken] = useState(false);
+
+                // Cálculos Físicos
+                const radio = radio_cm / 100; // a metros
+                const peso = masa * g; // P = m*g
+                
+                // Fuerzas centrípetas en el punto más bajo: Fc = T - P
+                // Aseguramos que la tensión es al menos el peso (si no, la cuerda no estaría tensa)
+                const tension_real = Math.max(tension, peso + 0.1); 
+                const fc = tension_real - peso;
+                
+                // Velocidad: Fc = m * v^2 / r  =>  v = sqrt(Fc * r / m)
+                const v = Math.sqrt((fc * radio) / masa);
+
+                // Posición visual (escala 1m = 100px)
+                const scale = 100;
+                
+                // Si se rompe, tiro parabólico: x = v*t, y = 0.5*g*t^2
+                const posX = isBroken ? v * time : 0;
+                const posY = isBroken ? 0.5 * g * Math.pow(time, 2) : 0;
+
+                useEffect(() => {
+                    let interval;
+                    if (isBroken && time < 1.5) { // Simular 1.5 segundos
+                        interval = setInterval(() => {
+                            setTime(prev => prev + 0.05);
+                        }, 50);
+                    }
+                    return () => clearInterval(interval);
+                }, [isBroken, time]);
+
+                const handleBreak = () => {
+                    setTime(0);
+                    setIsBroken(true);
+                };
+
+                const reset = () => {
+                    setTime(0);
+                    setIsBroken(false);
+                };
+
+                // Generador de diagrama DCL técnico con IA
+                const [imgUrl, setImgUrl] = useState(null);
+                const [imgLoading, setImgLoading] = useState(false);
+
+                const generarDiagrama = async () => {
+                    setImgLoading(true);
+                    const apiKey = ""; // API Key insertada por entorno
+                    try {
+                        const response = await fetch(
+                            `https://generativelanguage.googleapis.com/v1beta/models/imagen-4.0-generate-001:predict?key=${apiKey}`,
+                            {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({
+                                    instances: [{ prompt: "Diagrama técnico de física de una masa girando en un círculo vertical en su punto más bajo. Vectores de Tensión hacia el centro y Peso hacia abajo, fondo blanco, minimalista" }],
+                                    parameters: { sampleCount: 1 }
+                                })
+                            }
+                        );
+                        if (!response.ok) throw new Error("Error en red");
+                        const data = await response.json();
+                        setImgUrl(`data:image/png;base64,${data.predictions[0].bytesBase64Encoded}`);
+                    } catch (error) {
+                        console.error(error);
+                    } finally {
+                        setImgLoading(false);
+                    }
+                };
+
+                return (
+                    <div className="min-h-screen bg-slate-900 text-slate-100 p-4 md:p-8">
+                        <header className="max-w-5xl mx-auto mb-8 border-b border-slate-700 pb-6">
+                            <div className="flex items-center gap-3 mb-2">
+                                <span className="bg-red-600 text-white px-3 py-1 rounded-full text-xs font-black uppercase tracking-widest">Fuerzas Centrípeta</span>
+                                <h1 className="text-3xl font-black text-red-400 uppercase tracking-tight tracking-widest">Rotura en el Punto Más Bajo</h1>
+                            </div>
+                            <div className="bg-slate-800/50 p-4 rounded-xl border border-slate-700 mt-4">
+                                <p className="text-slate-300 text-sm leading-relaxed">
+                                    <strong>Enunciado:</strong> Un cuerpo de 2,0 kg gira verticalmente con una cuerda de 100 cm. En el punto más bajo la tensión es de 100 N. Si se rompe ahí, ¿con qué velocidad sale?
+                                </p>
+                            </div>
+                        </header>
+
+                        <main className="max-w-5xl mx-auto grid md:grid-cols-2 gap-8">
+                            {/* Panel Visual */}
+                            <div className="bg-slate-800 rounded-3xl border border-slate-700 h-[500px] relative overflow-hidden shadow-2xl flex flex-col grid-bg">
+                                
+                                {/* Marcadores en vivo */}
+                                <div className="absolute top-4 left-4 z-30 flex gap-2">
+                                    <div className="bg-slate-900/90 p-2 rounded-lg border border-slate-700 backdrop-blur-md">
+                                        <p className="text-[10px] text-slate-500 uppercase font-black">Velocidad (v)</p>
+                                        <p className="text-sm font-mono font-black text-emerald-400">{v.toFixed(2)} m/s</p>
+                                    </div>
+                                    <div className="bg-slate-900/90 p-2 rounded-lg border border-slate-700 backdrop-blur-md">
+                                        <p className="text-[10px] text-slate-500 uppercase font-black">Fuerza Neta (F_c)</p>
+                                        <p className="text-sm font-mono font-black text-indigo-400">{fc.toFixed(1)} N</p>
+                                    </div>
+                                </div>
+
+                                {/* Sistema de péndulo/rotación */}
+                                <div className="absolute w-full h-full">
+                                    {/* Pivote (Centro del círculo) */}
+                                    <div className="absolute top-[20%] left-1/2 -translate-x-1/2 -translate-y-1/2 w-4 h-4 bg-slate-400 rounded-full z-20 shadow-[0_0_10px_rgba(255,255,255,0.5)]"></div>
+                                    
+                                    {/* Guía de trayectoria (solo si no está roto) */}
+                                    {!isBroken && (
+                                        <div 
+                                            className="absolute top-[20%] left-1/2 -translate-x-1/2 -translate-y-1/2 rounded-full border border-slate-600/30 border-dashed"
+                                            style={{ width: `${radio * scale * 2}px`, height: `${radio * scale * 2}px` }}
+                                        ></div>
+                                    )}
+
+                                    {/* Cuerda */}
+                                    {!isBroken && (
+                                        <div 
+                                            className="absolute top-[20%] left-1/2 -translate-x-1/2 bg-slate-500 w-1"
+                                            style={{ height: `${radio * scale}px` }}
+                                        ></div>
+                                    )}
+
+                                    {/* La Masa (Cuerpo) */}
+                                    <div 
+                                        className="absolute bg-red-500 rounded-full border-4 border-red-300 shadow-[0_0_20px_rgba(239,68,68,0.5)] z-30 transition-all duration-75 flex items-center justify-center"
+                                        style={{ 
+                                            width: `${Math.min(60, masa * 15 + 20)}px`, 
+                                            height: `${Math.min(60, masa * 15 + 20)}px`,
+                                            top: `calc(20% + ${radio * scale + posY * scale}px)`,
+                                            left: `calc(50% + ${posX * scale}px)`,
+                                            transform: 'translate(-50%, -50%)'
+                                        }}
+                                    >
+                                        <span className="font-black text-red-950 text-[10px]">{masa.toFixed(1)}kg</span>
+
+                                        {/* Vectores (Sólo en el instante previo a la rotura) */}
+                                        {!isBroken && (
+                                            <>
+                                                {/* Tensión (Hacia arriba) */}
+                                                <div className="absolute bottom-full left-1/2 -translate-x-1/2 flex flex-col items-center pb-1 pointer-events-none" style={{ height: Math.min(150, tension_real) }}>
+                                                    <span className="mb-1 text-[10px] font-black text-indigo-300">T = {tension_real.toFixed(0)}N</span>
+                                                    <div className="w-1 bg-indigo-400 h-full relative">
+                                                        <div className="absolute top-0 -translate-x-1.5">{ArrowUpIcon && <ArrowUpIcon size={16} className="text-indigo-400" />}</div>
+                                                    </div>
+                                                </div>
+                                                
+                                                {/* Peso (Hacia abajo) */}
+                                                <div className="absolute top-full left-1/2 -translate-x-1/2 flex flex-col items-center pt-1 pointer-events-none" style={{ height: Math.min(100, peso) }}>
+                                                    <div className="w-1 bg-orange-400 h-full relative">
+                                                        <div className="absolute bottom-0 -translate-x-1.5">{ArrowDownIcon && <ArrowDownIcon size={16} className="text-orange-400" />}</div>
+                                                    </div>
+                                                    <span className="mt-1 text-[10px] font-black text-orange-300">P = {peso.toFixed(1)}N</span>
+                                                </div>
+
+                                                {/* Velocidad (Tangencial) */}
+                                                <div className="absolute left-full top-1/2 -translate-y-1/2 flex items-center pl-2 pointer-events-none" style={{ width: v * 20 }}>
+                                                    <div className="h-1 bg-emerald-400 w-full relative">
+                                                        <div className="absolute right-0 -top-1.5">{ArrowRightIcon && <ArrowRightIcon size={16} className="text-emerald-400" />}</div>
+                                                    </div>
+                                                    <span className="ml-1 text-[10px] font-black text-emerald-300 whitespace-nowrap">v</span>
+                                                </div>
+                                            </>
+                                        )}
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* Controles y Resolución */}
+                            <div className="space-y-6">
+                                <div className="bg-slate-800 p-6 rounded-3xl border border-slate-700 shadow-xl">
+                                    <h3 className="text-xl font-bold mb-6 flex items-center gap-2 text-red-400">
+                                        {CalculatorIcon && <CalculatorIcon size={20} />} Parámetros del Sistema
+                                    </h3>
+                                    
+                                    <div className="space-y-5 mb-6">
+                                        <div>
+                                            <div className="flex justify-between text-xs mb-1">
+                                                <span className="text-slate-300 font-bold uppercase">Masa del cuerpo (m)</span>
+                                                <span className="font-mono">{masa.toFixed(1)} kg</span>
+                                            </div>
+                                            <input type="range" min="0.5" max="5.0" step="0.5" value={masa} onChange={e => {setMasa(Number(e.target.value)); reset();}} className="w-full h-2 bg-slate-700 rounded-lg appearance-none cursor-pointer" />
+                                        </div>
+                                        
+                                        <div>
+                                            <div className="flex justify-between text-xs mb-1">
+                                                <span className="text-slate-300 font-bold uppercase">Radio / Cuerda (R)</span>
+                                                <span className="font-mono">{radio_cm} cm ({(radio_cm/100).toFixed(1)} m)</span>
+                                            </div>
+                                            <input type="range" min="50" max="200" step="10" value={radio_cm} onChange={e => {setRadioCm(Number(e.target.value)); reset();}} className="w-full h-2 bg-slate-700 rounded-lg appearance-none cursor-pointer" />
+                                        </div>
+
+                                        <div>
+                                            <div className="flex justify-between text-xs mb-1">
+                                                <span className="text-indigo-400 font-bold uppercase">Tensión en el punto bajo (T)</span>
+                                                <span className="font-mono">{tension_real.toFixed(0)} N</span>
+                                            </div>
+                                            <input type="range" min="20" max="250" step="5" value={tension} onChange={e => {setTension(Number(e.target.value)); reset();}} className="w-full h-2 bg-slate-700 rounded-lg appearance-none cursor-pointer accent-indigo-500" />
+                                            <p className="text-[9px] text-slate-500 mt-1 italic">*La Tensión debe ser mayor que el peso ({peso.toFixed(1)} N) para que haya curva.</p>
+                                        </div>
+                                    </div>
+
+                                    <div className="flex gap-2">
+                                        <button 
+                                            onClick={handleBreak} 
+                                            disabled={isBroken}
+                                            className="flex-1 bg-red-600 hover:bg-red-500 text-white font-black py-4 rounded-xl shadow-[0_0_15px_rgba(220,38,38,0.4)] flex justify-center items-center gap-2 disabled:opacity-50 transition-all active:scale-95"
+                                        >
+                                            {ScissorsIcon && <ScissorsIcon size={18} />} ROMPER CUERDA
+                                        </button>
+                                        <button onClick={reset} className="bg-slate-700 hover:bg-slate-600 text-white font-bold px-5 rounded-xl shadow-lg transition-all">
+                                            {RotateCcwIcon && <RotateCcwIcon size={18} />}
+                                        </button>
+                                    </div>
+                                </div>
+
+                                <div className="bg-red-950/20 p-6 rounded-3xl border border-red-500/20">
+                                    <div className="flex justify-between items-center mb-4 border-b border-red-500/30 pb-2">
+                                        <h4 className="font-bold text-red-300 flex items-center gap-2">
+                                            {InfoIcon && <InfoIcon size={18} />} Resolución Paso a Paso
+                                        </h4>
+                                        <button onClick={generarDiagrama} className="text-xs bg-slate-800 hover:bg-slate-700 text-slate-300 px-3 py-1 rounded flex items-center gap-1 border border-slate-600">
+                                            {imgLoading ? <span className="animate-pulse">Cargando...</span> : <>{ImagePlusIcon && <ImagePlusIcon size={14}/>} Generar DCL</>}
+                                        </button>
+                                    </div>
+
+                                    {/* Contenedor condicional para la imagen DCL */}
+                                    {imgUrl && (
+                                        <div className="mb-4 bg-slate-900 p-2 rounded-xl border border-slate-700 text-center">
+                                            <img src={imgUrl} alt="DCL Generado" className="mx-auto max-h-40 rounded-lg" />
+                                            <p className="text-[9px] text-slate-400 mt-1">DCL generado por I.A.</p>
+                                        </div>
+                                    )}
+
+                                    <div className="text-xs text-slate-300 space-y-3 leading-relaxed">
+                                        <p><strong>1. Conversión al S.I.:</strong> R = 100 cm = 1.0 m</p>
+                                        <p><strong>2. Análisis Dinámico (Eje Radial):</strong><br/>
+                                        En el punto más bajo, la Tensión apunta hacia el centro del círculo (positiva) y el Peso apunta hacia afuera (negativo). Su suma da la Fuerza Centrípeta ($F_c$).</p>
+                                        
+                                        <div className="bg-slate-900/80 p-3 rounded-lg border-l-4 border-indigo-500 font-mono text-indigo-200 shadow-inner">
+                                            Σ F_c = m · a_c  ⇒  T - P = m · (v² / R)
+                                        </div>
+
+                                        <p><strong>3. Sustitución y Cálculo:</strong></p>
+                                        <div className="bg-slate-900/80 p-3 rounded-lg border-l-4 border-emerald-500 font-mono text-emerald-200">
+                                            {tension_real.toFixed(0)} - ({masa.toFixed(1)} · 9.8) = {masa.toFixed(1)} · (v² / {(radio_cm/100).toFixed(1)})<br/>
+                                            {tension_real.toFixed(0)} - {peso.toFixed(1)} = {masa.toFixed(1)} · v²<br/>
+                                            {fc.toFixed(1)} = {masa.toFixed(1)} · v²<br/>
+                                            v² = {(fc / masa).toFixed(2)}<br/>
+                                            <strong>v = {v.toFixed(2)} m/s</strong>
+                                        </div>
+                                        <p className="italic text-slate-400 mt-2">
+                                            Cuando se rompe, la masa ya no tiene fuerza centrípeta y sale despedida tangencialmente (en horizontal) debido a la inercia (1ª Ley de Newton).
+                                        </p>
+                                    </div>
+                                </div>
+                            </div>
+                        </main>
+
+                        <footer className="max-w-5xl mx-auto mt-12 pt-6 border-t border-slate-800 text-center text-slate-500 text-[10px] font-bold uppercase tracking-widest">
+                            Profe Física | Dinámica del Movimiento Circular No Uniforme
+                        </footer>
+                    </div>
+                );
+            };
+
+            const container = document.getElementById('root');
+            const root = ReactDOM.createRoot(container);
+            root.render(<App />);
+        })();
+    </script>
+</body>
+</html>

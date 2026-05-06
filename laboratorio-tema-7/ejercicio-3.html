@@ -1,0 +1,275 @@
+<!DOCTYPE html>
+<html lang="ca">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Laboratori de Física - Lleis de Newton</title>
+    <!-- Bibliotecas externas para el funcionamiento de la aplicación -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <script src="https://unpkg.com/lucide-react@latest"></script>
+
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&family=Fira+Code&display=swap');
+        body { font-family: 'Inter', sans-serif; background-color: #0f172a; }
+        .font-mono { font-family: 'Fira Code', monospace; }
+        input[type=range]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            height: 20px;
+            width: 20px;
+            border-radius: 50%;
+            background: #6366f1;
+            cursor: pointer;
+            box-shadow: 0 0 2px 0 rgba(0,0,0,0.5);
+        }
+    </style>
+</head>
+<body>
+    <div id="root"></div>
+
+    <script type="text/babel">
+        // Se utilizan 'var' para evitar errores de re-declaración en ciertos entornos de ejecución
+        var { useState, useEffect, useMemo } = React;
+
+        var App = () => {
+            const [activeTab, setActiveTab] = useState('boxejador');
+            
+            // Acceso seguro a los iconos de Lucide
+            const icons = window.LucideReact || {};
+            const PlayIcon = icons.Play;
+            const RotateIcon = icons.RotateCcw;
+            const BoxIcon = icons.Box;
+            const UserIcon = icons.User;
+            const UpIcon = icons.MoveUp;
+            const DownIcon = icons.MoveDown;
+            const InfoIcon = icons.Info;
+            const WindIcon = icons.Wind;
+            const MagnetIcon = icons.Magnet;
+
+            // Estados para el experimento de Boxeo
+            const [massaBoxa, setMassaBoxa] = useState(50);
+            const [isPunching, setIsPunching] = useState(false);
+            const [posObjecte, setPosObjecte] = useState(0);
+            const [velBoxa, setVelBoxa] = useState(0);
+
+            // Estados para el experimento de Imanes
+            const [massa1, setMassa1] = useState(10);
+            const [massa2, setMassa2] = useState(80);
+            const [isSimulatingMag, setIsSimulatingMag] = useState(false);
+            const [pos1, setPos1] = useState(0);
+            const [pos2, setPos2] = useState(0);
+            const [vel1, setVel1] = useState(0);
+            const [vel2, setVel2] = useState(0);
+
+            // Estado para el experimento de Cabellos
+            const [isPulling, setIsPulling] = useState(false);
+
+            // Efecto de animación para Boxeo
+            useEffect(() => {
+                let interval;
+                if (isPunching) {
+                    interval = setInterval(() => {
+                        setPosObjecte(prev => prev + velBoxa);
+                        setVelBoxa(v => Math.max(0, v * 0.98));
+                    }, 20);
+                }
+                if (posObjecte > 400 || velBoxa < 0.1) setIsPunching(false);
+                return () => clearInterval(interval);
+            }, [isPunching, velBoxa, posObjecte]);
+
+            // Efecto de animación para Imanes
+            useEffect(() => {
+                let interval;
+                if (isSimulatingMag) {
+                    interval = setInterval(() => {
+                        setPos1(p => p - vel1);
+                        setPos2(p => p + vel2);
+                        setVel1(v => Math.max(0, v * 0.97));
+                        setVel2(v => Math.max(0, v * 0.97));
+                    }, 20);
+                }
+                return () => clearInterval(interval);
+            }, [isSimulatingMag, vel1, vel2]);
+
+            const handlePunch = () => {
+                const impuls = 100 / (massaBoxa + 0.1);
+                setVelBoxa(impuls * 10);
+                setIsPunching(true);
+            };
+
+            const resetBoxa = () => {
+                setPosObjecte(0);
+                setVelBoxa(0);
+                setIsPunching(false);
+            };
+
+            const handleRepulsio = () => {
+                const forcaConstant = 200;
+                setVel1(forcaConstant / massa1);
+                setVel2(forcaConstant / massa2);
+                setIsSimulatingMag(true);
+            };
+
+            const resetMagnets = () => {
+                setPos1(0); setPos2(0);
+                setVel1(0); setVel2(0);
+                setIsSimulatingMag(false);
+            };
+
+            return (
+                <div className="min-h-screen bg-slate-900 text-slate-100 p-4 md:p-8">
+                    <header className="max-w-5xl mx-auto text-center mb-8">
+                        <h1 className="text-4xl font-extrabold text-indigo-400 mb-2">Laboratori Virtual de Dinàmica</h1>
+                        <p className="text-slate-400 italic">Profe Física - 1r Batxillerat</p>
+                    </header>
+
+                    <nav className="max-w-xl mx-auto flex gap-2 mb-8 bg-slate-800 p-1 rounded-xl shadow-inner overflow-x-auto">
+                        <button onClick={() => setActiveTab('boxejador')} className={`flex-1 px-4 py-2 rounded-lg transition-all font-bold ${activeTab === 'boxejador' ? 'bg-indigo-600 text-white' : 'text-slate-400 hover:bg-slate-700'}`}>Boxa</button>
+                        <button onClick={() => setActiveTab('imants')} className={`flex-1 px-4 py-2 rounded-lg transition-all font-bold ${activeTab === 'imants' ? 'bg-indigo-600 text-white' : 'text-slate-400 hover:bg-slate-700'}`}>Imants</button>
+                        <button onClick={() => setActiveTab('cabells')} className={`flex-1 px-4 py-2 rounded-lg transition-all font-bold ${activeTab === 'cabells' ? 'bg-indigo-600 text-white' : 'text-slate-400 hover:bg-slate-700'}`}>Cabells</button>
+                    </nav>
+
+                    <main className="max-w-5xl mx-auto">
+                        {activeTab === 'boxejador' && (
+                            <div className="grid md:grid-cols-2 gap-8">
+                                <div className="bg-slate-800 p-6 rounded-3xl border border-slate-700 h-96 relative overflow-hidden flex flex-col justify-end shadow-2xl">
+                                    <div className="absolute top-4 left-6 bg-slate-900/80 p-3 rounded-xl border border-slate-700 z-10">
+                                        <p className="text-xs text-indigo-400 font-bold uppercase">Anàlisi d'Impacte</p>
+                                        <p className="text-lg font-mono">Accel: <span className="text-white">{(100 / massaBoxa).toFixed(2)} m/s²</span></p>
+                                        <p className="text-lg font-mono">Vel: <span className="text-white">{velBoxa.toFixed(2)} m/s</span></p>
+                                    </div>
+                                    <div className="relative h-32 w-full border-b-2 border-slate-600">
+                                        <div className={`absolute bottom-0 left-0 transition-transform ${isPunching ? 'translate-x-10' : ''}`}>
+                                            <div className="w-16 h-8 bg-orange-300 rounded-full relative"><div className="absolute right-0 w-8 h-8 bg-red-600 rounded-full border-2 border-red-800"></div></div>
+                                        </div>
+                                        <div className="absolute bottom-0" style={{ left: `${80 + posObjecte}px`, width: massaBoxa < 1 ? 20 : 50, height: massaBoxa < 1 ? 20 : 70 }}>
+                                            {massaBoxa < 1 ? <div className="animate-pulse">{WindIcon && <WindIcon size={24} />}</div> : <div className="bg-orange-700 rounded-t-lg h-full w-full border-x-4 border-orange-900 flex items-center justify-center">{BoxIcon && <BoxIcon size={24} />}</div>}
+                                        </div>
+                                    </div>
+                                </div>
+                                <div className="space-y-6">
+                                    <div className="bg-slate-800 p-6 rounded-3xl border border-slate-700 shadow-lg">
+                                        <h3 className="text-xl font-bold mb-4">Configuració de Massa</h3>
+                                        <input type="range" min="0.1" max="100" step="0.1" value={massaBoxa} onChange={e => {setMassaBoxa(parseFloat(e.target.value)); resetBoxa();}} className="w-full h-2 bg-slate-700 rounded-lg appearance-none cursor-pointer accent-indigo-500 mb-2" />
+                                        <div className="flex justify-between text-xs text-slate-500 mb-6 font-bold"><span>PLOMA (0.1 kg)</span><span>SAC (100 kg)</span></div>
+                                        <div className="flex gap-2">
+                                            <button onClick={handlePunch} disabled={isPunching} className="flex-1 bg-indigo-600 py-3 rounded-xl font-bold flex items-center justify-center gap-2 hover:bg-indigo-500 disabled:opacity-50">{PlayIcon && <PlayIcon size={18}/>} COLPEJAR</button>
+                                            <button onClick={resetBoxa} className="bg-slate-700 px-4 rounded-xl hover:bg-slate-600">{RotateIcon && <RotateIcon size={18}/>}</button>
+                                        </div>
+                                    </div>
+                                    <div className="bg-indigo-900/40 p-4 rounded-2xl border border-indigo-500/30 text-sm italic text-slate-300">
+                                        {InfoIcon && <InfoIcon size={16} className="inline mr-2 mb-1" />}
+                                        Si l'objecte és massa lleuger (ploma), no ofereix prou resistència perquè el boxejador puga aplicar la seua força màxima de 3000N.
+                                    </div>
+                                </div>
+                            </div>
+                        )}
+
+                        {activeTab === 'imants' && (
+                            <div className="grid md:grid-cols-2 gap-8">
+                                <div className="bg-slate-800 p-6 rounded-3xl border border-slate-700 h-96 relative flex flex-col justify-center items-center shadow-2xl overflow-hidden">
+                                    <div className="absolute top-4 w-full px-6 flex justify-between z-10">
+                                        <div className="bg-slate-900/80 p-2 rounded-lg border border-slate-700">
+                                            <p className="text-[10px] text-indigo-400 font-bold uppercase">Imant A ({massa1}kg)</p>
+                                            <p className="text-xs font-mono">Accel: {(200/massa1).toFixed(1)} m/s²</p>
+                                        </div>
+                                        <div className="bg-slate-900/80 p-2 rounded-lg border border-slate-700 text-right">
+                                            <p className="text-[10px] text-indigo-400 font-bold uppercase">Imant B ({massa2}kg)</p>
+                                            <p className="text-xs font-mono">Accel: {(200/massa2).toFixed(1)} m/s²</p>
+                                        </div>
+                                    </div>
+                                    <div className="flex items-center gap-4 relative w-full justify-center">
+                                        <div style={{ transform: `translateX(${pos1}px)`, width: massa1*0.5 + 40 }} className="h-16 bg-blue-600 rounded-lg flex items-center justify-center border-r-8 border-red-500 shadow-lg">{MagnetIcon && <MagnetIcon className="rotate-180 text-white" size={20} />}</div>
+                                        <div style={{ transform: `translateX(${pos2}px)`, width: massa2*0.5 + 40 }} className="h-16 bg-blue-600 rounded-lg flex items-center justify-center border-l-8 border-red-500 shadow-lg">{MagnetIcon && <MagnetIcon className="text-white" size={20} />}</div>
+                                    </div>
+                                    <div className="w-full border-b-2 border-slate-600 mt-4"></div>
+                                </div>
+                                <div className="space-y-6">
+                                    <div className="bg-slate-800 p-6 rounded-3xl border border-slate-700 shadow-lg">
+                                        <h3 className="text-xl font-bold mb-4 italic text-indigo-300">Tercera Llei en Acció</h3>
+                                        <div className="space-y-4">
+                                            <label className="block">
+                                                <div className="flex justify-between text-xs mb-1"><span>Massa Imant A:</span><span className="text-indigo-400 font-bold">{massa1} kg</span></div>
+                                                <input type="range" min="1" max="100" value={massa1} onChange={e => {setMassa1(parseInt(e.target.value)); resetMagnets();}} className="w-full h-2 bg-slate-700 rounded-lg appearance-none cursor-pointer accent-indigo-500" />
+                                            </label>
+                                            <label className="block">
+                                                <div className="flex justify-between text-xs mb-1"><span>Massa Imant B:</span><span className="text-indigo-400 font-bold">{massa2} kg</span></div>
+                                                <input type="range" min="1" max="100" value={massa2} onChange={e => {setMassa2(parseInt(e.target.value)); resetMagnets();}} className="w-full h-2 bg-slate-700 rounded-lg appearance-none cursor-pointer accent-indigo-500" />
+                                            </label>
+                                        </div>
+                                        <div className="flex gap-2 mt-6">
+                                            <button onClick={handleRepulsio} disabled={isSimulatingMag} className="flex-1 bg-indigo-600 py-3 rounded-xl font-bold flex items-center justify-center gap-2 hover:bg-indigo-500 disabled:opacity-50">{PlayIcon && <PlayIcon size={18}/>} ALLIBERAR</button>
+                                            <button onClick={resetMagnets} className="bg-slate-700 px-4 rounded-xl hover:bg-slate-600">{RotateIcon && <RotateIcon size={18}/>}</button>
+                                        </div>
+                                    </div>
+                                    <div className="bg-indigo-900/40 p-4 rounded-2xl border border-indigo-500/30 text-sm text-slate-300">
+                                        Encara que la força és idèntica (Acció-Reacció), el cos amb menys massa experimenta una acceleració molt major.
+                                    </div>
+                                </div>
+                            </div>
+                        )}
+
+                        {activeTab === 'cabells' && (
+                            <div className="grid md:grid-cols-2 gap-8">
+                                <div className="bg-slate-800 p-6 rounded-3xl border border-slate-700 h-96 flex items-center justify-center relative shadow-2xl overflow-hidden">
+                                   <div className={`relative transition-all duration-300 ${isPulling ? '-translate-y-1' : ''}`}>
+                                      <div className="w-16 h-32 bg-slate-600 rounded-full mx-auto relative border-2 border-slate-500">
+                                        <div className="w-12 h-12 bg-orange-200 rounded-full absolute -top-10 left-2 border-2 border-orange-300">
+                                           <div className={`absolute -right-4 top-4 w-4 h-12 bg-orange-200 rounded-full origin-bottom transition-transform ${isPulling ? '-rotate-45' : 'rotate-0'}`}></div>
+                                        </div>
+                                      </div>
+                                      {isPulling && (
+                                        <>
+                                          <div className="absolute -top-24 left-6 flex flex-col items-center animate-bounce text-green-400 font-bold">
+                                            {UpIcon && <UpIcon size={32} />}
+                                            <span className="text-[10px]">MÀ→CAP</span>
+                                          </div>
+                                          <div className="absolute top-10 left-6 flex flex-col items-center animate-bounce text-red-400 font-bold">
+                                            {DownIcon && <DownIcon size={32} />}
+                                            <span className="text-[10px]">CAP→MÀ</span>
+                                          </div>
+                                        </>
+                                      )}
+                                   </div>
+                                   <div className="absolute bottom-6 right-6 bg-slate-900/80 p-4 rounded-2xl border border-slate-700 text-center shadow-xl">
+                                      <p className="text-[10px] text-slate-500 uppercase font-bold">Força Neta Externa</p>
+                                      <p className={`text-4xl font-mono font-bold ${isPulling ? 'text-green-500' : 'text-slate-500'}`}>0.00 N</p>
+                                      <p className="text-[10px] text-slate-400 mt-1">Σ F_ext = 0</p>
+                                   </div>
+                                </div>
+                                <div className="space-y-6">
+                                    <div className="bg-slate-800 p-8 rounded-3xl border border-slate-700 shadow-lg flex flex-col items-center">
+                                        <h3 className="text-xl font-bold mb-6 text-center text-indigo-300">S'alçarà de terra?</h3>
+                                        <button 
+                                            onMouseDown={() => setIsPulling(true)} onMouseUp={() => setIsPulling(false)} onMouseLeave={() => setIsPulling(false)}
+                                            onTouchStart={() => setIsPulling(true)} onTouchEnd={() => setIsPulling(false)}
+                                            className={`w-full py-10 rounded-3xl font-black text-2xl transition-all border-4 shadow-xl active:scale-95 touch-none select-none ${isPulling ? 'bg-orange-500 border-orange-300 shadow-inner' : 'bg-orange-600 border-orange-800'}`}
+                                        >
+                                            {isPulling ? 'ESTIRANT CABELLS!' : 'MANTÉN PER ESTIRAR'}
+                                        </button>
+                                    </div>
+                                    <div className="bg-orange-900/30 p-4 rounded-2xl border border-orange-500/30 text-sm text-slate-300">
+                                        Les forces que el boxejador s'aplica a si mateix són <strong>internes</strong> al sistema. Segons la Primera Llei, el centre de masses no es mourà sense interacció externa.
+                                    </div>
+                                </div>
+                            </div>
+                        )}
+                    </main>
+
+                    <footer className="max-w-5xl mx-auto mt-12 text-center text-slate-500 text-[10px] border-t border-slate-800 pt-6 font-bold uppercase tracking-widest">
+                        Laboratori de Dinàmica v1.4 | Creat per a l'èxit acadèmic en Física
+                    </footer>
+                </div>
+            );
+        };
+
+        // Renderizado de la aplicación
+        const container = document.getElementById('root');
+        const root = ReactDOM.createRoot(container);
+        root.render(<App />);
+    </script>
+</body>
+</html>

@@ -1,0 +1,357 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Laboratorio: El Piano y el Rozamiento</title>
+    <!-- Bibliotecas externas -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <script src="https://unpkg.com/lucide-react@latest"></script>
+
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&family=Fira+Code&display=swap');
+        body { font-family: 'Inter', sans-serif; background-color: #0f172a; }
+        .font-mono { font-family: 'Fira Code', monospace; }
+        input[type=range]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            height: 20px;
+            width: 20px;
+            border-radius: 50%;
+            background: #10b981; /* Emerald 500 */
+            cursor: pointer;
+            border: 2px solid #ffffff;
+            box-shadow: 0 0 10px rgba(16, 185, 129, 0.5);
+        }
+        .floor-pattern {
+            background-color: #334155;
+            background-image: repeating-linear-gradient(45deg, #1e293b 25%, transparent 25%, transparent 75%, #1e293b 75%, #1e293b), 
+                              repeating-linear-gradient(45deg, #1e293b 25%, transparent 25%, transparent 75%, #1e293b 75%, #1e293b);
+            background-size: 40px 40px;
+            background-position: 0 0, 20px 20px;
+        }
+    </style>
+</head>
+<body>
+    <div id="root"></div>
+
+    <script type="text/babel">
+        (() => {
+            var { useState, useEffect } = React;
+            var icons = window.LucideReact || {};
+            
+            var getIcon = (name) => icons[name] || (({className}) => <span className={className || ''}></span>);
+            var PlayIcon = getIcon('Play');
+            var RotateCcwIcon = getIcon('RotateCcw');
+            var MusicIcon = getIcon('Music'); // Representa el piano
+            var InfoIcon = getIcon('Info');
+            var CalculatorIcon = getIcon('Calculator');
+            var ArrowRightIcon = getIcon('ArrowRight');
+            var ArrowLeftIcon = getIcon('ArrowLeft');
+            var ArrowUpIcon = getIcon('ArrowUp');
+            var ArrowDownIcon = getIcon('ArrowDown');
+            var ImagePlusIcon = getIcon('ImagePlus');
+
+            var App = () => {
+                // Constantes del problema
+                const m = 140; // kg
+                const g = 9.8; // m/s^2
+                
+                // Cálculos fijos del enunciado
+                const peso = m * g; // 1372 N
+                const normal = peso; // 1372 N
+                const mu = 650 / normal; // ~0.47376... (El resultado del problema)
+
+                // Estados interactivos
+                const [fApli, setFApli] = useState(650); // Empieza en el punto de equilibrio
+                
+                // Estados de animación
+                const [pos, setPos] = useState(0);
+                const [vel, setVel] = useState(0);
+                const [isMoving, setIsMoving] = useState(false);
+
+                // Dinámica en tiempo real
+                // La fuerza de rozamiento cinético siempre se opone si hay velocidad.
+                // Si la velocidad es 0 y Fap <= Fr_max, el objeto no se mueve (rozamiento estático).
+                const fr_max = mu * normal; // 650 N
+                
+                let fr = 0;
+                let aceleracion = 0;
+
+                if (vel > 0 || fApli > fr_max) {
+                    fr = fr_max; // Está en movimiento o a punto de estarlo
+                    aceleracion = (fApli - fr) / m;
+                } else {
+                    fr = fApli; // Reposo absoluto (el rozamiento iguala a la fuerza aplicada)
+                    aceleracion = 0;
+                }
+
+                // Determinamos el estado para las etiquetas
+                const estadoVisual = 
+                    aceleracion > 0.01 ? "ACELERANDO" : 
+                    aceleracion < -0.01 ? "FRENANDO" : 
+                    (vel > 0 ? "VEL. CONSTANTE" : "EN REPOSO");
+
+                useEffect(() => {
+                    let interval;
+                    if (isMoving) {
+                        interval = setInterval(() => {
+                            setVel(v => {
+                                const newV = v + aceleracion * 0.05;
+                                if (newV <= 0 && aceleracion < 0) {
+                                    setIsMoving(false); // Se detiene por completo
+                                    return 0;
+                                }
+                                return newV;
+                            });
+                            
+                            setPos(p => {
+                                const newP = p + vel * 0.5; // Factor de escala para visualización
+                                if (newP > 250) return -100; // Efecto de bucle infinito (scroll)
+                                return newP;
+                            });
+                        }, 20); // ~50fps
+                    }
+                    return () => clearInterval(interval);
+                }, [isMoving, vel, aceleracion]);
+
+                const handlePlay = () => {
+                    if (vel === 0) {
+                        // Arrancamos con una velocidad inicial de "empuje" de 2 m/s para ver el efecto
+                        setVel(2);
+                    }
+                    setIsMoving(true);
+                };
+
+                const handleReset = () => {
+                    setPos(0);
+                    setVel(0);
+                    setIsMoving(false);
+                    setFApli(650);
+                };
+
+                // Generador de Diagrama de Cuerpo Libre por IA
+                const [imgUrl, setImgUrl] = useState(null);
+                const [imgLoading, setImgLoading] = useState(false);
+
+                const generarDiagrama = async () => {
+                    setImgLoading(true);
+                    const apiKey = ""; 
+                    try {
+                        const response = await fetch(
+                            `https://generativelanguage.googleapis.com/v1beta/models/imagen-4.0-generate-001:predict?key=${apiKey}`,
+                            {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({
+                                    instances: [{ prompt: "Diagrama técnico de física de cuerpo libre. Un piano rectangular en el centro. Vector Peso P hacia abajo, vector Normal N hacia arriba, ambos iguales. Vector Fuerza F hacia la derecha de igual tamaño que el vector Friccion Fr hacia la izquierda (Equilibrio). Estilo educativo, minimalista, fondo blanco" }],
+                                    parameters: { sampleCount: 1 }
+                                })
+                            }
+                        );
+                        if (!response.ok) throw new Error("Error de red");
+                        const data = await response.json();
+                        setImgUrl(`data:image/png;base64,${data.predictions[0].bytesBase64Encoded}`);
+                    } catch (error) {
+                        console.error(error);
+                    } finally {
+                        setImgLoading(false);
+                    }
+                };
+
+                // Escala visual para vectores
+                const vScale = 100 / 650; // 650N son 100px aprox
+
+                return (
+                    <div className="min-h-screen bg-slate-900 text-slate-100 p-4 md:p-8">
+                        <header className="max-w-5xl mx-auto mb-8 border-b border-slate-700 pb-6">
+                            <div className="flex items-center gap-3 mb-2">
+                                <span className="bg-emerald-600 text-white px-3 py-1 rounded-full text-xs font-black uppercase tracking-widest">Dinámica y Cinemática</span>
+                                <h1 className="text-3xl font-black text-emerald-400 uppercase tracking-tight tracking-widest">El Misterio del Piano</h1>
+                            </div>
+                            <div className="bg-slate-800/50 p-4 rounded-xl border border-slate-700 mt-4">
+                                <p className="text-slate-300 text-sm leading-relaxed">
+                                    <strong>Enunciado:</strong> Para arrastrar con velocidad constante un piano de 140 kg de masa sobre un suelo horizontal se necesita una fuerza de 650 N. Calcula el coeficiente de rozamiento.
+                                </p>
+                            </div>
+                        </header>
+
+                        <main className="max-w-5xl mx-auto grid md:grid-cols-2 gap-8">
+                            {/* Panel Visual */}
+                            <div className="bg-slate-800 rounded-3xl border border-slate-700 h-[450px] relative overflow-hidden shadow-2xl flex flex-col justify-end">
+                                
+                                {/* Marcadores superiores */}
+                                <div className="absolute top-4 w-full px-6 flex justify-between z-30 pointer-events-none">
+                                    <div className="bg-slate-900/90 p-3 rounded-lg border border-slate-700 backdrop-blur-md">
+                                        <p className="text-[10px] text-slate-500 uppercase font-black">Estado Físico</p>
+                                        <p className={`text-lg font-mono font-black ${aceleracion === 0 && vel > 0 ? 'text-green-400' : aceleracion > 0 ? 'text-blue-400' : aceleracion < 0 ? 'text-orange-400' : 'text-slate-400'}`}>
+                                            {estadoVisual}
+                                        </p>
+                                    </div>
+                                    <div className="bg-slate-900/90 p-3 rounded-lg border border-slate-700 backdrop-blur-md text-right">
+                                        <p className="text-[10px] text-slate-500 uppercase font-black">Aceleración (a)</p>
+                                        <p className="text-xl font-mono font-black text-emerald-400">{aceleracion.toFixed(2)} m/s²</p>
+                                    </div>
+                                </div>
+
+                                {/* Escena del Piano */}
+                                <div className="relative w-full h-72 flex justify-center items-end pb-12">
+                                    {/* Suelo decorativo infinito */}
+                                    <div className="absolute bottom-0 w-full h-12 floor-pattern border-t-4 border-slate-600"></div>
+                                    
+                                    {/* El Piano */}
+                                    <div 
+                                        className="relative w-28 h-24 bg-slate-900 border-4 border-slate-700 rounded-lg flex flex-col items-center justify-center shadow-2xl z-20"
+                                        style={{ transform: `translateX(${pos}px)` }}
+                                    >
+                                        {/* Dibujo sencillo del piano */}
+                                        <div className="absolute right-0 top-1/2 w-8 h-1/2 bg-white flex flex-col justify-around py-1 px-1 rounded-br border-l border-slate-700">
+                                            <div className="h-1 bg-black w-full"></div>
+                                            <div className="h-1 bg-black w-full"></div>
+                                            <div className="h-1 bg-black w-full"></div>
+                                        </div>
+                                        {MusicIcon && <MusicIcon className="text-slate-500 absolute left-4 top-4 opacity-50" size={24} />}
+                                        <span className="font-black text-slate-300 mt-2 z-10 bg-slate-900/80 px-1 rounded">{m} kg</span>
+
+                                        {/* Vector Fuerza Aplicada (Verde, Derecha) */}
+                                        <div className="absolute left-full top-1/2 -translate-y-1/2 flex items-center pl-1" style={{ width: fApli * vScale }}>
+                                            <div className="h-1.5 bg-green-400 w-full relative">
+                                                <div className="absolute right-0 -top-2">{ArrowRightIcon && <ArrowRightIcon className="text-green-400" size={20} />}</div>
+                                            </div>
+                                            <span className="ml-1 text-[10px] font-black text-green-300 bg-slate-900/50 px-1 rounded">F = {fApli}N</span>
+                                        </div>
+
+                                        {/* Vector Fuerza Rozamiento (Rojo, Izquierda) */}
+                                        <div className="absolute right-full top-1/2 -translate-y-1/2 flex items-center pr-1" style={{ width: fr * vScale }}>
+                                            <span className="mr-1 text-[10px] font-black text-red-300 bg-slate-900/50 px-1 rounded">F_r = {fr.toFixed(0)}N</span>
+                                            <div className="h-1.5 bg-red-500 w-full relative">
+                                                <div className="absolute left-0 -top-2">{ArrowLeftIcon && <ArrowLeftIcon className="text-red-500" size={20} />}</div>
+                                            </div>
+                                        </div>
+
+                                        {/* Vector Normal (Arriba) */}
+                                        <div className="absolute bottom-full left-1/2 -translate-x-1/2 flex flex-col items-center pb-1 pointer-events-none opacity-60" style={{ height: 60 }}>
+                                            <span className="mb-1 text-[10px] font-black text-indigo-300">N</span>
+                                            <div className="w-1 bg-indigo-400 h-full relative">
+                                                <div className="absolute top-0 -translate-x-1.5">{ArrowUpIcon && <ArrowUpIcon className="text-indigo-400" size={16} />}</div>
+                                            </div>
+                                        </div>
+
+                                        {/* Vector Peso (Abajo) */}
+                                        <div className="absolute top-full left-1/2 -translate-x-1/2 flex flex-col items-center pt-1 pointer-events-none opacity-60" style={{ height: 60 }}>
+                                            <div className="w-1 bg-orange-400 h-full relative z-30">
+                                                <div className="absolute bottom-0 -translate-x-1.5">{ArrowDownIcon && <ArrowDownIcon className="text-orange-400" size={16} />}</div>
+                                            </div>
+                                            <span className="mt-1 text-[10px] font-black text-orange-300">P</span>
+                                        </div>
+                                    </div>
+                                    
+                                    {/* Indicador de Velocidad (Flotante sobre el piano) */}
+                                    {vel > 0 && (
+                                        <div className="absolute z-30 font-mono font-bold text-yellow-300 bg-slate-900/80 px-2 rounded-full border border-yellow-500/50 text-xs"
+                                             style={{ bottom: '160px', left: `calc(50% + ${pos}px)`, transform: 'translateX(-50%)' }}>
+                                            v = {vel.toFixed(1)} m/s
+                                        </div>
+                                    )}
+                                </div>
+                            </div>
+
+                            {/* Controles y Resolución */}
+                            <div className="space-y-6">
+                                <div className="bg-slate-800 p-6 rounded-3xl border border-slate-700 shadow-xl">
+                                    <h3 className="text-xl font-bold mb-4 flex items-center gap-2 text-emerald-400">
+                                        {CalculatorIcon && <CalculatorIcon size={20} />} Simular Escenarios
+                                    </h3>
+                                    
+                                    <div className="mb-6">
+                                        <div className="flex justify-between text-xs mb-2">
+                                            <span className="text-green-400 font-bold uppercase">Fuerza Aplicada (F)</span>
+                                            <span className="font-mono bg-slate-900 px-2 py-0.5 rounded text-green-300">{fApli} N</span>
+                                        </div>
+                                        <input 
+                                            type="range" min="0" max="1000" step="10" value={fApli} 
+                                            onChange={e => setFApli(Number(e.target.value))} 
+                                            className="w-full h-2 bg-slate-700 rounded-lg appearance-none cursor-pointer accent-green-500" 
+                                        />
+                                        <p className="text-[10px] text-slate-400 mt-2">
+                                            Si ajustas exactamente a <strong>650 N</strong>, el piano mantendrá su velocidad constante (Equilibrio de fuerzas).
+                                        </p>
+                                    </div>
+
+                                    <div className="flex gap-2">
+                                        <button 
+                                            onClick={handlePlay} 
+                                            disabled={isMoving}
+                                            className="flex-1 bg-emerald-600 hover:bg-emerald-500 text-white font-black py-3 rounded-xl shadow-lg flex justify-center items-center gap-2 disabled:opacity-50 transition-all active:scale-95"
+                                        >
+                                            {PlayIcon && <PlayIcon size={18} />} DAR EMPUJÓN INICIAL
+                                        </button>
+                                        <button onClick={handleReset} className="bg-slate-700 hover:bg-slate-600 text-white font-bold px-4 rounded-xl transition-all shadow-md">
+                                            {RotateCcwIcon && <RotateCcwIcon size={18} />}
+                                        </button>
+                                    </div>
+                                </div>
+
+                                <div className="bg-emerald-950/20 p-6 rounded-3xl border border-emerald-500/20">
+                                    <div className="flex justify-between items-center mb-4 border-b border-emerald-500/30 pb-2">
+                                        <h4 className="font-bold text-emerald-300 flex items-center gap-2">
+                                            {InfoIcon && <InfoIcon size={18} />} Resolución Paso a Paso
+                                        </h4>
+                                        <button onClick={generarDiagrama} className="text-[10px] uppercase font-bold bg-slate-800 hover:bg-slate-700 text-slate-300 px-3 py-1.5 rounded flex items-center gap-1 border border-slate-600">
+                                            {imgLoading ? <span className="animate-pulse">Cargando...</span> : <>{ImagePlusIcon && <ImagePlusIcon size={14}/>} Generar DCL</>}
+                                        </button>
+                                    </div>
+
+                                    {imgUrl && (
+                                        <div className="mb-4 bg-slate-900 p-2 rounded-xl border border-slate-700 text-center">
+                                            <img src={imgUrl} alt="Diagrama de Cuerpo Libre" className="mx-auto max-h-40 rounded-lg" />
+                                        </div>
+                                    )}
+
+                                    <div className="text-xs text-slate-300 space-y-3 leading-relaxed">
+                                        <p><strong>1. Análisis Cinético (La Clave):</strong><br/>
+                                        La frase <em>"velocidad constante"</em> implica que la aceleración es <strong>a = 0</strong>.</p>
+                                        
+                                        <p><strong>2. Eje Vertical (Y):</strong><br/>
+                                        El suelo soporta todo el peso.</p>
+                                        <div className="bg-slate-900/80 p-2 rounded-lg border-l-4 border-indigo-500 font-mono">
+                                            P = m · g = 140 · 9.8 = <strong>1372 N</strong><br/>
+                                            N = P = <strong>1372 N</strong>
+                                        </div>
+                                        
+                                        <p className="mt-3"><strong>3. Eje Horizontal (X) - 2ª Ley de Newton:</strong><br/>
+                                        La fuerza aplicada ($F$) se equilibra con el rozamiento ($F_r$).</p>
+                                        <div className="bg-slate-900/80 p-2 rounded-lg border-l-4 border-green-500 font-mono">
+                                            Σ F_x = m · a<br/>
+                                            F - F_r = m · 0<br/>
+                                            F = F_r  ⇒  F_r = <strong>650 N</strong>
+                                        </div>
+
+                                        <p className="mt-3"><strong>4. Coeficiente de Rozamiento (μ):</strong></p>
+                                        <div className="bg-red-900/40 p-3 rounded-lg border border-red-500/30 font-mono font-bold text-red-200">
+                                            F_r = μ · N<br/>
+                                            μ = F_r / N<br/>
+                                            μ = 650 / 1372 ≈ <strong>0.474</strong>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </main>
+
+                        <footer className="max-w-5xl mx-auto mt-12 pt-6 border-t border-slate-800 text-center text-slate-500 text-[10px] font-bold uppercase tracking-widest">
+                            Profe Física | Dinámica: Fricción y Equilibrio Cinemático
+                        </footer>
+                    </div>
+                );
+            };
+
+            const container = document.getElementById('root');
+            const root = ReactDOM.createRoot(container);
+            root.render(<App />);
+        })();
+    </script>
+</body>
+</html>

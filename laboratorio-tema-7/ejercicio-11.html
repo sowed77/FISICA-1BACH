@@ -1,0 +1,349 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Laboratorio: Plano Inclinado</title>
+    <!-- Bibliotecas externas -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <script src="https://unpkg.com/lucide-react@latest"></script>
+
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&family=Fira+Code&display=swap');
+        body { font-family: 'Inter', sans-serif; background-color: #0f172a; }
+        .font-mono { font-family: 'Fira Code', monospace; }
+        input[type=range]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            height: 20px;
+            width: 20px;
+            border-radius: 50%;
+            background: #ef4444; /* Red 500 */
+            cursor: pointer;
+            border: 2px solid #ffffff;
+            box-shadow: 0 0 10px rgba(239, 68, 68, 0.5);
+        }
+        .ramp-pattern {
+            background-color: #475569;
+            background-image: linear-gradient(45deg, #334155 25%, transparent 25%, transparent 75%, #334155 75%, #334155), 
+                              linear-gradient(45deg, #334155 25%, transparent 25%, transparent 75%, #334155 75%, #334155);
+            background-size: 20px 20px;
+            background-position: 0 0, 10px 10px;
+        }
+    </style>
+</head>
+<body>
+    <div id="root"></div>
+
+    <script type="text/babel">
+        (() => {
+            var { useState, useEffect } = React;
+            var icons = window.LucideReact || {};
+            
+            // Asignación segura de iconos
+            var getIcon = (name) => icons[name] || (({className}) => <span className={className || ''}></span>);
+            var PlayIcon = getIcon('Play');
+            var RotateCcwIcon = getIcon('RotateCcw');
+            var InfoIcon = getIcon('Info');
+            var CalculatorIcon = getIcon('Calculator');
+            var ImagePlusIcon = getIcon('ImagePlus');
+            var ArrowRightIcon = getIcon('ArrowRight');
+            var ArrowDownIcon = getIcon('ArrowDown');
+            var ArrowUpIcon = getIcon('ArrowUp');
+            var MountainIcon = getIcon('Mountain');
+
+            var App = () => {
+                // Parámetros del problema
+                const g = 9.8; // m/s^2
+                const [masa, setMasa] = useState(3.0); // kg
+                const [angulo, setAngulo] = useState(30); // grados
+
+                // Cálculos Físicos
+                const anguloRad = angulo * (Math.PI / 180);
+                const peso = masa * g;
+                const px = peso * Math.sin(anguloRad);
+                const py = peso * Math.cos(anguloRad);
+                const normal = py;
+                
+                // Sin rozamiento, la aceleración es solo px / m = g * sin(a)
+                const aceleracion = g * Math.sin(anguloRad);
+
+                // Animación
+                const [pos, setPos] = useState(0); // Posición en píxeles a lo largo del plano
+                const [vel, setVel] = useState(0);
+                const [isMoving, setIsMoving] = useState(false);
+
+                // Constantes visuales
+                const rampLength = 350; // px
+
+                useEffect(() => {
+                    let interval;
+                    if (isMoving && pos < rampLength) {
+                        interval = setInterval(() => {
+                            setVel(v => v + aceleracion * 0.05); // dt = 0.05
+                            setPos(p => {
+                                const newP = p + vel;
+                                if (newP >= rampLength) {
+                                    setIsMoving(false);
+                                    return rampLength;
+                                }
+                                return newP;
+                            });
+                        }, 20); // 50 fps
+                    }
+                    return () => clearInterval(interval);
+                }, [isMoving, pos, vel, aceleracion]);
+
+                const handlePlay = () => {
+                    if (pos < rampLength && angulo > 0) setIsMoving(true);
+                };
+
+                const reset = () => {
+                    setPos(0);
+                    setVel(0);
+                    setIsMoving(false);
+                };
+
+                // Si cambiamos masa o ángulo, reiniciamos la animación
+                useEffect(() => {
+                    reset();
+                }, [masa, angulo]);
+
+                // Generador de Diagrama de Cuerpo Libre
+                const [imgUrl, setImgUrl] = useState(null);
+                const [imgLoading, setImgLoading] = useState(false);
+
+                const generarDiagrama = async () => {
+                    setImgLoading(true);
+                    const apiKey = ""; 
+                    try {
+                        const response = await fetch(
+                            `https://generativelanguage.googleapis.com/v1beta/models/imagen-4.0-generate-001:predict?key=${apiKey}`,
+                            {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({
+                                    instances: [{ prompt: "Diagrama técnico de física de un plano inclinado. Un bloque cuadrado sobre una rampa inclinada. Vector Peso P apuntando hacia abajo verticalmente, Vector Px paralelo a la rampa hacia abajo, Vector Normal N perpendicular a la rampa hacia arriba. Fondo blanco, minimalista, educativo" }],
+                                    parameters: { sampleCount: 1 }
+                                })
+                            }
+                        );
+                        if (!response.ok) throw new Error("Error en la red");
+                        const data = await response.json();
+                        setImgUrl(`data:image/png;base64,${data.predictions[0].bytesBase64Encoded}`);
+                    } catch (error) {
+                        console.error(error);
+                    } finally {
+                        setImgLoading(false);
+                    }
+                };
+
+                return (
+                    <div className="min-h-screen bg-slate-900 text-slate-100 p-4 md:p-8">
+                        <header className="max-w-5xl mx-auto mb-8 border-b border-slate-700 pb-6">
+                            <div className="flex items-center gap-3 mb-2">
+                                <span className="bg-red-600 text-white px-3 py-1 rounded-full text-xs font-black uppercase tracking-widest">Leyes de Newton</span>
+                                <h1 className="text-3xl font-black text-red-400 uppercase tracking-tight tracking-widest">El Plano Inclinado</h1>
+                            </div>
+                            <div className="bg-slate-800/50 p-4 rounded-xl border border-slate-700 mt-4">
+                                <p className="text-slate-300 text-sm leading-relaxed">
+                                    <strong>Enunciado:</strong> Un cuerpo de 3,0 kg está sobre un plano inclinado 30° sin rozamiento. ¿Con qué aceleración desciende?
+                                </p>
+                            </div>
+                        </header>
+
+                        <main className="max-w-5xl mx-auto grid md:grid-cols-2 gap-8">
+                            {/* Panel Visual */}
+                            <div className="bg-slate-800 rounded-3xl border border-slate-700 h-[500px] relative overflow-hidden shadow-2xl flex flex-col justify-end">
+                                
+                                {/* Marcadores Flotantes */}
+                                <div className="absolute top-4 w-full px-6 flex justify-between z-30 pointer-events-none">
+                                    <div className="bg-slate-900/90 p-3 rounded-lg border border-slate-700 backdrop-blur-md">
+                                        <p className="text-[10px] text-slate-500 uppercase font-black">Fuerza Motriz (P_x)</p>
+                                        <p className="text-xl font-mono font-black text-red-400">{px.toFixed(1)} N</p>
+                                    </div>
+                                    <div className="bg-slate-900/90 p-3 rounded-lg border border-slate-700 backdrop-blur-md text-right">
+                                        <p className="text-[10px] text-slate-500 uppercase font-black">Aceleración (a)</p>
+                                        <p className="text-xl font-mono font-black text-emerald-400">{aceleracion.toFixed(2)} m/s²</p>
+                                    </div>
+                                </div>
+
+                                {/* Escena del Plano Inclinado */}
+                                <div className="relative w-full h-80">
+                                    {/* Contenedor Base para rotar */}
+                                    <div className="absolute bottom-10 left-10 w-[400px] h-full pointer-events-none">
+                                        
+                                        {/* La Rampa (Gira sobre su esquina inferior derecha para que el inicio quede alto) */}
+                                        <div 
+                                            className="absolute bottom-0 left-0 w-full h-2 ramp-pattern origin-bottom-right transition-transform duration-300 shadow-xl"
+                                            style={{ transform: `rotate(${angulo}deg)` }}
+                                        >
+                                            {/* El Bloque (Se mueve a lo largo del eje X de la rampa) */}
+                                            <div 
+                                                className="absolute bottom-2 w-16 h-16 bg-blue-600 border-4 border-blue-400 rounded-lg flex items-center justify-center shadow-lg z-20"
+                                                style={{ left: `${pos}px` }}
+                                            >
+                                                <span className="font-black text-blue-100 text-xs">{masa.toFixed(1)}kg</span>
+
+                                                {/* Vectores (Sólo visibles si hay espacio) */}
+                                                
+                                                {/* Componente Px (Rojo, paralelo a la rampa hacia abajo) */}
+                                                <div className="absolute top-1/2 left-full flex items-center pl-1" style={{ width: px * 3 }}>
+                                                    <div className="h-1 bg-red-400 w-full relative shadow-[0_0_8px_rgba(239,68,68,0.8)]">
+                                                        <div className="absolute right-0 -top-1.5">{ArrowRightIcon && <ArrowRightIcon className="text-red-400" size={16} />}</div>
+                                                    </div>
+                                                    <span className="ml-1 text-[10px] font-black text-red-300">P_x</span>
+                                                </div>
+
+                                                {/* Componente Py (Amarillo, perpendicular hacia abajo) */}
+                                                <div className="absolute top-full left-1/2 -translate-x-1/2 flex flex-col items-center pt-1" style={{ height: py * 2 }}>
+                                                    <div className="w-1 bg-yellow-400 h-full relative">
+                                                        <div className="absolute bottom-0 -translate-x-1.5">{ArrowDownIcon && <ArrowDownIcon className="text-yellow-400" size={16} />}</div>
+                                                    </div>
+                                                    <span className="mt-1 text-[10px] font-black text-yellow-300">P_y</span>
+                                                </div>
+
+                                                {/* Fuerza Normal (Índigo, perpendicular hacia arriba) */}
+                                                <div className="absolute bottom-full left-1/2 -translate-x-1/2 flex flex-col items-center pb-1" style={{ height: normal * 2 }}>
+                                                    <span className="mb-1 text-[10px] font-black text-indigo-300">N</span>
+                                                    <div className="w-1 bg-indigo-400 h-full relative">
+                                                        <div className="absolute top-0 -translate-x-1.5">{ArrowUpIcon && <ArrowUpIcon className="text-indigo-400" size={16} />}</div>
+                                                    </div>
+                                                </div>
+
+                                                {/* Peso Real P (Naranja, siempre apunta hacia abajo globalmente) */}
+                                                {/* Al estar dentro del bloque rotado, contrarrestamos la rotación para que apunte hacia el suelo real */}
+                                                <div 
+                                                    className="absolute top-1/2 left-1/2 origin-top flex flex-col items-center pt-8 opacity-70"
+                                                    style={{ height: peso * 2, transform: `translate(-50%, 0) rotate(${-angulo}deg)` }}
+                                                >
+                                                    <div className="w-1.5 bg-orange-500 h-full relative border-x border-orange-700">
+                                                        <div className="absolute bottom-0 -translate-x-2">{ArrowDownIcon && <ArrowDownIcon className="text-orange-500" size={20} />}</div>
+                                                    </div>
+                                                    <span className="mt-1 text-[12px] font-black text-orange-400 bg-slate-900/50 px-1 rounded">P</span>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        {/* Suelo Base Decorativo */}
+                                        <div className="absolute bottom-0 left-0 w-full border-b-2 border-slate-600 border-dashed"></div>
+                                        
+                                        {/* Arco del Ángulo */}
+                                        {angulo > 0 && (
+                                            <div className="absolute bottom-0 right-0 w-24 h-24 border-l-2 border-t-2 border-red-500/50 rounded-tl-full flex items-end justify-start pb-2 pl-2">
+                                                <span className="text-red-300 font-mono text-sm font-bold">{angulo}º</span>
+                                            </div>
+                                        )}
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* Controles y Resolución */}
+                            <div className="space-y-6">
+                                <div className="bg-slate-800 p-6 rounded-3xl border border-slate-700 shadow-xl">
+                                    <h3 className="text-xl font-bold mb-4 flex items-center gap-2 text-red-400">
+                                        {MountainIcon && <MountainIcon size={20} />} Configurar Plano
+                                    </h3>
+                                    
+                                    <div className="space-y-6 mb-6">
+                                        <div>
+                                            <div className="flex justify-between text-xs mb-2">
+                                                <span className="text-slate-300 font-bold uppercase">Masa del Bloque (m)</span>
+                                                <span className="font-mono bg-slate-900 px-2 py-0.5 rounded">{masa.toFixed(1)} kg</span>
+                                            </div>
+                                            <input 
+                                                type="range" min="1" max="20" step="0.5" value={masa} 
+                                                onChange={e => setMasa(Number(e.target.value))} 
+                                                className="w-full h-2 bg-slate-700 rounded-lg appearance-none cursor-pointer accent-blue-500" 
+                                            />
+                                        </div>
+
+                                        <div>
+                                            <div className="flex justify-between text-xs mb-2">
+                                                <span className="text-red-400 font-bold uppercase">Inclinación (α)</span>
+                                                <span className="font-mono bg-slate-900 px-2 py-0.5 rounded text-red-300">{angulo}º</span>
+                                            </div>
+                                            <input 
+                                                type="range" min="0" max="80" step="1" value={angulo} 
+                                                onChange={e => setAngulo(Number(e.target.value))} 
+                                                className="w-full h-2 bg-slate-700 rounded-lg appearance-none cursor-pointer accent-red-500" 
+                                            />
+                                            <p className="text-[10px] text-slate-500 mt-2">Prueba a cambiar la masa. ¡Verás que la aceleración no cambia!</p>
+                                        </div>
+                                    </div>
+
+                                    <div className="flex gap-2">
+                                        <button 
+                                            onClick={handlePlay} 
+                                            disabled={isMoving || pos >= rampLength || angulo === 0}
+                                            className={`flex-1 font-black py-3 rounded-xl shadow-lg flex justify-center items-center gap-2 disabled:opacity-50 transition-all active:scale-95 ${angulo === 0 ? 'bg-slate-600 text-slate-400' : 'bg-red-600 hover:bg-red-500 text-white'}`}
+                                        >
+                                            {PlayIcon && <PlayIcon size={18} />} {angulo === 0 ? 'NO HAY INCLINACIÓN' : 'DEJAR CAER'}
+                                        </button>
+                                        <button onClick={reset} className="bg-slate-700 hover:bg-slate-600 text-white font-bold px-4 rounded-xl transition-all shadow-md">
+                                            {RotateCcwIcon && <RotateCcwIcon size={18} />}
+                                        </button>
+                                    </div>
+                                </div>
+
+                                <div className="bg-red-950/20 p-6 rounded-3xl border border-red-500/20">
+                                    <div className="flex justify-between items-center mb-4 border-b border-red-500/30 pb-2">
+                                        <h4 className="font-bold text-red-300 flex items-center gap-2">
+                                            {CalculatorIcon && <CalculatorIcon size={18} />} Resolución del Profe
+                                        </h4>
+                                        <button onClick={generarDiagrama} className="text-[10px] uppercase font-bold bg-slate-800 hover:bg-slate-700 text-slate-300 px-3 py-1.5 rounded flex items-center gap-1 border border-slate-600">
+                                            {imgLoading ? <span className="animate-pulse">Cargando...</span> : <>{ImagePlusIcon && <ImagePlusIcon size={14}/>} Generar DCL</>}
+                                        </button>
+                                    </div>
+
+                                    {imgUrl && (
+                                        <div className="mb-4 bg-slate-900 p-2 rounded-xl border border-slate-700 text-center">
+                                            <img src={imgUrl} alt="Diagrama de Cuerpo Libre" className="mx-auto max-h-40 rounded-lg" />
+                                        </div>
+                                    )}
+
+                                    <div className="text-xs text-slate-300 space-y-3 leading-relaxed">
+                                        <p><strong>1. El Truco del Plano Inclinado:</strong><br/>
+                                        Giramos nuestros ejes X e Y para que coincidan con la rampa. Así, el movimiento solo ocurre en el Eje X.</p>
+                                        
+                                        <p><strong>2. Descomposición del Peso (P):</strong><br/>
+                                        El peso (P = m · g) se divide en dos componentes. La que lo empuja cuesta abajo es el <strong>Seno</strong> del ángulo.</p>
+                                        <div className="bg-slate-900/80 p-2 rounded-lg border-l-4 border-orange-500 font-mono">
+                                            P_x = P · sin(30º) = m · g · sin(30º)<br/>
+                                            P_x = 3.0 · 9.8 · 0.5 = <strong>14.7 N</strong>
+                                        </div>
+                                        
+                                        <p className="mt-3"><strong>3. Segunda Ley de Newton (Eje X):</strong><br/>
+                                        Como no hay rozamiento, la única fuerza en el Eje X es P<sub>x</sub>.</p>
+                                        <div className="bg-slate-900/80 p-2 rounded-lg border-l-4 border-emerald-500 font-mono">
+                                            Σ F_x = m · a<br/>
+                                            P_x = m · a<br/>
+                                            m · g · sin(30º) = m · a
+                                        </div>
+
+                                        <p className="bg-red-900/40 p-2 rounded border border-red-500/30 text-red-200 mt-2 font-bold text-center">
+                                            ¡MAGIA! La masa 'm' se cancela en ambos lados:<br/>
+                                            a = g · sin(30º) = 9.8 · 0.5 = 4.9 m/s²
+                                        </p>
+                                    </div>
+                                </div>
+                            </div>
+                        </main>
+
+                        <footer className="max-w-5xl mx-auto mt-12 pt-6 border-t border-slate-800 text-center text-slate-500 text-[10px] font-bold uppercase tracking-widest">
+                            Profe Física | Dinámica: Sistemas en Planos Inclinados
+                        </footer>
+                    </div>
+                );
+            };
+
+            const container = document.getElementById('root');
+            const root = ReactDOM.createRoot(container);
+            root.render(<App />);
+        })();
+    </script>
+</body>
+</html>

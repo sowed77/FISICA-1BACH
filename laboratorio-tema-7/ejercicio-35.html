@@ -1,0 +1,327 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Laboratorio: Explosión de una Roca</title>
+    <!-- Bibliotecas externas -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <script src="https://unpkg.com/lucide-react@latest"></script>
+
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&family=Fira+Code&display=swap');
+        body { font-family: 'Inter', sans-serif; background-color: #0f172a; }
+        .font-mono { font-family: 'Fira Code', monospace; }
+        input[type=range]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            height: 20px;
+            width: 20px;
+            border-radius: 50%;
+            background: #ef4444; /* Red 500 */
+            cursor: pointer;
+            border: 2px solid #ffffff;
+            box-shadow: 0 0 10px rgba(239, 68, 68, 0.5);
+        }
+        .grid-bg {
+            background-image: linear-gradient(rgba(255,255,255,0.05) 1px, transparent 1px),
+                              linear-gradient(90deg, rgba(255,255,255,0.05) 1px, transparent 1px);
+            background-size: 20px 20px;
+        }
+    </style>
+</head>
+<body>
+    <div id="root"></div>
+
+    <script type="text/babel">
+        (() => {
+            var { useState, useEffect } = React;
+            var icons = window.LucideReact || {};
+            
+            // Asignación segura de iconos
+            var getIcon = (name) => icons[name] || (({className}) => <span className={className || ''}></span>);
+            var FlameIcon = getIcon('Flame');
+            var RotateCcwIcon = getIcon('RotateCcw');
+            var InfoIcon = getIcon('Info');
+            var CalculatorIcon = getIcon('Calculator');
+            var ImagePlusIcon = getIcon('ImagePlus');
+            var TargetIcon = getIcon('Target');
+
+            var App = () => {
+                // Estados iniciales basados en el enunciado
+                const [m1, setM1] = useState(1.0); // kg
+                const [v1, setV1] = useState(12);  // m/s
+                const [m2, setM2] = useState(2.0); // kg
+                const [v2, setV2] = useState(8);   // m/s
+                const [v3, setV3] = useState(40);  // m/s
+
+                // Animación
+                const [time, setTime] = useState(0);
+                const [isExploded, setIsExploded] = useState(false);
+
+                // Cálculos Físicos
+                // Momento de los fragmentos 1 y 2 (en ángulo recto)
+                const p1 = m1 * v1; // Eje X positivo
+                const p2 = m2 * v2; // Eje Y positivo (lo dibujaremos hacia arriba)
+                
+                // El fragmento 3 debe cancelar a p1 y p2: p3_x = -p1, p3_y = -p2
+                const p3 = Math.sqrt(p1 * p1 + p2 * p2); // Módulo del momento 3
+                
+                // Conociendo p3 y v3, hallamos m3
+                const m3 = p3 / v3;
+                
+                // Masa total de la roca original
+                const masaTotal = m1 + m2 + m3;
+
+                // Direcciones para la animación (Seno y Coseno)
+                const cosTheta = -p1 / p3;
+                const sinTheta = -p2 / p3;
+                
+                const v3_x = v3 * cosTheta;
+                const v3_y = v3 * sinTheta;
+
+                // Escalas visuales
+                const scale = 2; // px por metro para la posición
+                const pScale = 1.5; // px por unidad de momento para los vectores
+
+                useEffect(() => {
+                    let interval;
+                    if (isExploded && time < 4.0) { // Animar durante 4 segundos virtuales
+                        interval = setInterval(() => {
+                            setTime(prev => prev + 0.05);
+                        }, 30);
+                    }
+                    return () => clearInterval(interval);
+                }, [isExploded, time]);
+
+                const handleExplode = () => {
+                    setTime(0);
+                    setIsExploded(true);
+                };
+
+                const reset = () => {
+                    setTime(0);
+                    setIsExploded(false);
+                };
+
+                // Generador de diagrama DCL técnico con IA
+                const [imgUrl, setImgUrl] = useState(null);
+                const [imgLoading, setImgLoading] = useState(false);
+
+                const generarDiagrama = async () => {
+                    setImgLoading(true);
+                    const apiKey = ""; // API Key de entorno
+                    try {
+                        const response = await fetch(
+                            `https://generativelanguage.googleapis.com/v1beta/models/imagen-4.0-generate-001:predict?key=${apiKey}`,
+                            {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({
+                                    instances: [{ prompt: "Diagrama técnico de vectores de cantidad de movimiento. Tres vectores p1, p2 y p3 saliendo desde un origen central. p1 va hacia la derecha, p2 hacia arriba, y p3 hacia abajo-izquierda equilibrando el sistema. Estilo educativo física, fondo blanco" }],
+                                    parameters: { sampleCount: 1 }
+                                })
+                            }
+                        );
+                        if (!response.ok) throw new Error("Error de red");
+                        const data = await response.json();
+                        setImgUrl(`data:image/png;base64,${data.predictions[0].bytesBase64Encoded}`);
+                    } catch (error) {
+                        console.error(error);
+                    } finally {
+                        setImgLoading(false);
+                    }
+                };
+
+                return (
+                    <div className="min-h-screen bg-slate-900 text-slate-100 p-4 md:p-8">
+                        <header className="max-w-5xl mx-auto mb-8 border-b border-slate-700 pb-6">
+                            <div className="flex items-center gap-3 mb-2">
+                                <span className="bg-red-600 text-white px-3 py-1 rounded-full text-xs font-black uppercase tracking-widest">Dinámica de Sistemas</span>
+                                <h1 className="text-3xl font-black text-red-400 uppercase tracking-tight tracking-widest">Conservación del Momento</h1>
+                            </div>
+                            
+                            <div className="bg-slate-800/50 p-4 rounded-xl border border-slate-700 mt-4">
+                                <h2 className="text-red-300 font-bold mb-1 flex items-center gap-2">
+                                    <TargetIcon size={18} /> Contexto Real (Las Fallas de Valencia)
+                                </h2>
+                                <p className="text-slate-300 text-sm leading-relaxed mb-3">
+                                    Piensa en un cohete de fuegos artificiales (un "castell") que estalla en el aire cuando está en reposo en su punto más alto. Aunque los fragmentos salen disparados en todas direcciones, el centro de gravedad de todos esos trozos no se mueve. Los vectores de "impulso" (momento lineal) se cancelan perfectamente.
+                                </p>
+                                <p className="text-slate-300 text-sm leading-relaxed border-t border-slate-700 pt-3">
+                                    <strong>Enunciado:</strong> Una roca estalla en 3 trozos. El trozo 1 (1,0 kg) sale a 12 m/s y el 2 (2,0 kg) a 8 m/s, en ángulo recto. El tercero sale a 40 m/s. ¿Cuál es la masa de la roca original?
+                                </p>
+                            </div>
+                        </header>
+
+                        <main className="max-w-5xl mx-auto grid md:grid-cols-2 gap-8">
+                            {/* Panel Visual */}
+                            <div className="bg-slate-800 rounded-3xl border border-slate-700 h-[500px] relative overflow-hidden shadow-2xl flex flex-col grid-bg">
+                                
+                                {/* Marcadores superiores */}
+                                <div className="absolute top-4 w-full px-4 z-30 flex justify-between">
+                                    <div className="bg-slate-900/90 p-2 rounded-lg border border-slate-700 backdrop-blur-md">
+                                        <p className="text-[10px] text-slate-500 uppercase font-black">Momento p3 necesario</p>
+                                        <p className="text-sm font-mono font-black text-emerald-400">{p3.toFixed(1)} kg·m/s</p>
+                                    </div>
+                                    <div className="bg-slate-900/90 p-2 rounded-lg border border-slate-700 backdrop-blur-md text-right">
+                                        <p className="text-[10px] text-slate-500 uppercase font-black">Masa Total Roca</p>
+                                        <p className="text-sm font-mono font-black text-red-400">{masaTotal.toFixed(2)} kg</p>
+                                    </div>
+                                </div>
+
+                                {/* Zona de la Explosión */}
+                                <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                                    {/* Roca Original (antes de explotar) */}
+                                    {!isExploded && (
+                                        <div className="w-16 h-16 bg-slate-500 rounded-full border-4 border-slate-400 flex items-center justify-center shadow-[0_0_20px_rgba(255,255,255,0.2)]">
+                                            <span className="text-[10px] font-black text-slate-900">{masaTotal.toFixed(1)}kg</span>
+                                        </div>
+                                    )}
+
+                                    {/* Fragmentos (después de explotar) */}
+                                    {isExploded && (
+                                        <>
+                                            {/* Fragmento 1 (Derecha +X) */}
+                                            <div 
+                                                className="absolute w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center shadow-lg transition-transform"
+                                                style={{ transform: `translate(${v1 * time * scale}px, 0px)` }}
+                                            >
+                                                <span className="text-[9px] font-bold text-blue-900">m1</span>
+                                                {/* Vector p1 */}
+                                                <div className="absolute top-1/2 left-full h-1 bg-blue-300 origin-left -translate-y-1/2" style={{ width: `${p1 * pScale}px` }}></div>
+                                            </div>
+
+                                            {/* Fragmento 2 (Arriba -Y visualmente) */}
+                                            <div 
+                                                className="absolute w-12 h-12 bg-orange-500 rounded-full flex items-center justify-center shadow-lg transition-transform"
+                                                style={{ transform: `translate(0px, ${-v2 * time * scale}px)` }}
+                                            >
+                                                <span className="text-[9px] font-bold text-orange-900">m2</span>
+                                                {/* Vector p2 */}
+                                                <div className="absolute bottom-full left-1/2 w-1 bg-orange-300 origin-bottom -translate-x-1/2" style={{ height: `${p2 * pScale}px` }}></div>
+                                            </div>
+
+                                            {/* Fragmento 3 (Abajo-Izquierda) */}
+                                            <div 
+                                                className="absolute w-6 h-6 bg-emerald-500 rounded-full flex items-center justify-center shadow-lg transition-transform"
+                                                style={{ transform: `translate(${v3_x * time * scale}px, ${v3_y * time * scale}px)` }}
+                                            >
+                                                <span className="text-[8px] font-bold text-emerald-900">m3</span>
+                                                {/* Vector p3 */}
+                                                <div 
+                                                    className="absolute top-1/2 left-1/2 h-1 bg-emerald-300 origin-left"
+                                                    style={{ 
+                                                        width: `${p3 * pScale}px`,
+                                                        transform: `translate(-50%, -50%) rotate(${Math.atan2(v3_y, v3_x)}rad) translateX(10px)` 
+                                                    }}
+                                                ></div>
+                                            </div>
+
+                                            {/* Cruz central de referencia */}
+                                            <div className="absolute w-2 h-2 bg-red-500 rounded-full opacity-50"></div>
+                                        </>
+                                    )}
+                                </div>
+                            </div>
+
+                            {/* Controles y Resolución */}
+                            <div className="space-y-6">
+                                <div className="bg-slate-800 p-6 rounded-3xl border border-slate-700 shadow-xl">
+                                    <h3 className="text-xl font-bold mb-4 flex items-center gap-2 text-red-400">
+                                        {CalculatorIcon && <CalculatorIcon size={20} />} Modificar Datos
+                                    </h3>
+                                    
+                                    <div className="grid grid-cols-2 gap-4 mb-6">
+                                        <div>
+                                            <span className="text-[10px] text-slate-400 uppercase">Masa 1 (kg)</span>
+                                            <input type="number" value={m1} onChange={e => {setM1(Number(e.target.value)); reset();}} className="w-full bg-slate-900 border border-slate-600 rounded p-2 text-sm text-blue-300" />
+                                        </div>
+                                        <div>
+                                            <span className="text-[10px] text-slate-400 uppercase">Velocidad 1 (m/s)</span>
+                                            <input type="number" value={v1} onChange={e => {setV1(Number(e.target.value)); reset();}} className="w-full bg-slate-900 border border-slate-600 rounded p-2 text-sm text-blue-300" />
+                                        </div>
+                                        <div>
+                                            <span className="text-[10px] text-slate-400 uppercase">Masa 2 (kg)</span>
+                                            <input type="number" value={m2} onChange={e => {setM2(Number(e.target.value)); reset();}} className="w-full bg-slate-900 border border-slate-600 rounded p-2 text-sm text-orange-300" />
+                                        </div>
+                                        <div>
+                                            <span className="text-[10px] text-slate-400 uppercase">Velocidad 2 (m/s)</span>
+                                            <input type="number" value={v2} onChange={e => {setV2(Number(e.target.value)); reset();}} className="w-full bg-slate-900 border border-slate-600 rounded p-2 text-sm text-orange-300" />
+                                        </div>
+                                        <div className="col-span-2">
+                                            <span className="text-[10px] text-slate-400 uppercase">Velocidad 3 conocida (m/s)</span>
+                                            <input type="number" value={v3} onChange={e => {setV3(Number(e.target.value)); reset();}} className="w-full bg-slate-900 border border-slate-600 rounded p-2 text-sm text-emerald-300" />
+                                        </div>
+                                    </div>
+
+                                    <div className="flex gap-2">
+                                        <button 
+                                            onClick={handleExplode} 
+                                            disabled={isExploded}
+                                            className="flex-1 bg-red-600 hover:bg-red-500 text-white font-black py-3 rounded-xl shadow-lg flex justify-center items-center gap-2 disabled:opacity-50 transition-all"
+                                        >
+                                            {FlameIcon && <FlameIcon size={18} />} ESTALLAR ROCA
+                                        </button>
+                                        <button onClick={reset} className="bg-slate-700 hover:bg-slate-600 text-white font-bold px-4 rounded-xl transition-all">
+                                            {RotateCcwIcon && <RotateCcwIcon size={18} />}
+                                        </button>
+                                    </div>
+                                </div>
+
+                                <div className="bg-slate-800 p-6 rounded-3xl border border-slate-700 shadow-xl">
+                                    <div className="flex justify-between items-center mb-4 border-b border-slate-600 pb-2">
+                                        <h4 className="font-bold text-red-300 flex items-center gap-2">
+                                            {InfoIcon && <InfoIcon size={18} />} Resolución Paso a Paso
+                                        </h4>
+                                        <button onClick={generarDiagrama} className="text-xs bg-slate-700 hover:bg-slate-600 text-slate-300 px-3 py-1 rounded flex items-center gap-1 border border-slate-500">
+                                            {imgLoading ? <span className="animate-pulse">Cargando...</span> : <>{ImagePlusIcon && <ImagePlusIcon size={14}/>} Generar Vectores</>}
+                                        </button>
+                                    </div>
+
+                                    {imgUrl && (
+                                        <div className="mb-4 bg-slate-900 p-2 rounded-xl border border-slate-700 text-center">
+                                            <img src={imgUrl} alt="Vectores Generados" className="mx-auto max-h-40 rounded-lg" />
+                                        </div>
+                                    )}
+
+                                    <div className="text-xs text-slate-300 space-y-3 leading-relaxed">
+                                        <p><strong>1. Ley de Conservación:</strong> El momento lineal total se conserva. Como la roca estaba quieta, la suma vectorial de los 3 fragmentos debe ser cero.</p>
+                                        <div className="bg-slate-900 p-2 rounded text-center text-red-300 font-mono border border-slate-700">
+                                            p<sub>1</sub> + p<sub>2</sub> + p<sub>3</sub> = 0
+                                        </div>
+                                        
+                                        <p><strong>2. Ejes X e Y (Ángulo recto):</strong><br/>
+                                        p<sub>1</sub> = m<sub>1</sub> · v<sub>1</sub> = {m1} · {v1} = <strong>{p1.toFixed(1)} kg·m/s</strong> (Eje X)<br/>
+                                        p<sub>2</sub> = m<sub>2</sub> · v<sub>2</sub> = {m2} · {v2} = <strong>{p2.toFixed(1)} kg·m/s</strong> (Eje Y)</p>
+                                        
+                                        <p><strong>3. Fragmento 3:</strong> Debe anular a la suma vectorial de los otros dos mediante el Teorema de Pitágoras.</p>
+                                        <div className="bg-slate-900 p-2 rounded text-center text-emerald-300 font-mono border border-slate-700">
+                                            p<sub>3</sub> = √(p<sub>1</sub>² + p<sub>2</sub>²) = √({p1}² + {p2}²) = {p3.toFixed(1)} kg·m/s
+                                        </div>
+
+                                        <p><strong>4. Masa del trozo 3 y Masa Total:</strong><br/>
+                                        m<sub>3</sub> = p<sub>3</sub> / v<sub>3</sub> = {p3.toFixed(1)} / {v3} = <strong>{m3.toFixed(2)} kg</strong><br/>
+                                        Masa Total de la roca = m<sub>1</sub> + m<sub>2</sub> + m<sub>3</sub> = {m1} + {m2} + {m3.toFixed(2)} = <strong>{masaTotal.toFixed(2)} kg</strong></p>
+                                    </div>
+                                </div>
+                            </div>
+                        </main>
+
+                        <footer className="max-w-5xl mx-auto mt-12 pt-6 border-t border-slate-800 text-center text-slate-500 text-[10px] font-bold uppercase tracking-widest">
+                            Profe Física | Dinámica: Conservación del Momento Lineal
+                        </footer>
+                    </div>
+                );
+            };
+
+            const container = document.getElementById('root');
+            const root = ReactDOM.createRoot(container);
+            root.render(<App />);
+        })();
+    </script>
+</body>
+</html>

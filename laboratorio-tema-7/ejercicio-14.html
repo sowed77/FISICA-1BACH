@@ -1,0 +1,366 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Laboratorio: Rozamiento Estático en Plano Inclinado</title>
+    <!-- Bibliotecas externas -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <script src="https://unpkg.com/lucide-react@latest"></script>
+
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&family=Fira+Code&display=swap');
+        body { font-family: 'Inter', sans-serif; background-color: #0f172a; }
+        .font-mono { font-family: 'Fira Code', monospace; }
+        input[type=range]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            height: 20px;
+            width: 20px;
+            border-radius: 50%;
+            background: #f59e0b; /* Yellow 500 */
+            cursor: pointer;
+            border: 2px solid #ffffff;
+            box-shadow: 0 0 10px rgba(245, 158, 11, 0.5);
+        }
+        .ramp-pattern {
+            background-color: #475569;
+            background-image: repeating-linear-gradient(45deg, #334155 0, #334155 2px, transparent 2px, transparent 8px);
+        }
+        .rough-surface {
+            background-image: url('data:image/svg+xml;utf8,<svg width="100" height="100" xmlns="http://www.w3.org/2000/svg"><filter id="noise"><feTurbulence type="fractalNoise" baseFrequency="0.8" numOctaves="4" stitchTiles="stitch"/></filter><rect width="100" height="100" filter="url(%23noise)" opacity="0.15"/></svg>');
+        }
+    </style>
+</head>
+<body>
+    <div id="root"></div>
+
+    <script type="text/babel">
+        (() => {
+            var { useState, useEffect } = React;
+            var icons = window.LucideReact || {};
+            
+            // Asignación segura de iconos
+            var getIcon = (name) => icons[name] || (({className}) => <span className={className || ''}></span>);
+            var PlayIcon = getIcon('Play');
+            var RotateCcwIcon = getIcon('RotateCcw');
+            var InfoIcon = getIcon('Info');
+            var CalculatorIcon = getIcon('Calculator');
+            var ImagePlusIcon = getIcon('ImagePlus');
+            var ArrowRightIcon = getIcon('ArrowRight');
+            var ArrowLeftIcon = getIcon('ArrowLeft');
+            var ArrowDownIcon = getIcon('ArrowDown');
+            var AlertTriangleIcon = getIcon('AlertTriangle');
+            var CheckCircleIcon = getIcon('CheckCircle');
+
+            var App = () => {
+                // Parámetros del problema
+                const g = 9.8; // m/s^2
+                const m = 10; // kg (Usamos una masa de 10kg por defecto para tener números redondos visuales)
+                
+                // Estados interactivos
+                const [angulo, setAngulo] = useState(40); // grados
+                const [mu_e, setMuE] = useState(0.50); // Coeficiente de rozamiento estático
+
+                // Cálculos Físicos
+                const anguloRad = angulo * (Math.PI / 180);
+                const peso = m * g;
+                
+                // Componente del peso que intenta mover el bloque
+                const px = peso * Math.sin(anguloRad);
+                
+                // Fuerza Normal (necesaria para la fricción)
+                const normal = peso * Math.cos(anguloRad);
+                
+                // Fuerza de rozamiento estático MÁXIMA posible
+                const fr_max = mu_e * normal;
+
+                // Condición de deslizamiento: ¿Supera la fuerza de tracción al agarre máximo?
+                const desliza = px > fr_max;
+
+                // Fuerza de rozamiento real (si no desliza, solo iguala a Px. Si desliza, sería cinética, pero para el ejemplo visual usamos la máxima para comparar)
+                const fr_real = desliza ? fr_max : px; 
+                
+                // Aceleración (Simplificada, asumiendo mu_c ~= mu_e para la animación)
+                const aceleracion = desliza ? (px - fr_max) / m : 0;
+
+                // Animación
+                const [pos, setPos] = useState(0); 
+                const [vel, setVel] = useState(0);
+                const [isMoving, setIsMoving] = useState(false);
+
+                // Constantes visuales
+                const rampLength = 320; // px
+
+                useEffect(() => {
+                    let interval;
+                    if (isMoving && pos < rampLength) {
+                        interval = setInterval(() => {
+                            setVel(v => v + aceleracion * 0.05); 
+                            setPos(p => {
+                                const newP = p + vel;
+                                if (newP >= rampLength) {
+                                    setIsMoving(false);
+                                    return rampLength;
+                                }
+                                return newP;
+                            });
+                        }, 20); // 50 fps
+                    }
+                    return () => clearInterval(interval);
+                }, [isMoving, pos, vel, aceleracion]);
+
+                const handlePlay = () => {
+                    if (pos < rampLength && desliza) setIsMoving(true);
+                };
+
+                const reset = () => {
+                    setPos(0);
+                    setVel(0);
+                    setIsMoving(false);
+                };
+
+                // Si cambiamos parámetros, reiniciamos la animación
+                useEffect(() => {
+                    reset();
+                }, [angulo, mu_e]);
+
+                // Ángulo crítico (donde tan(a) = mu)
+                const anguloCritico = Math.atan(mu_e) * (180 / Math.PI);
+
+                // Generador de Diagrama de Cuerpo Libre
+                const [imgUrl, setImgUrl] = useState(null);
+                const [imgLoading, setImgLoading] = useState(false);
+
+                const generarDiagrama = async () => {
+                    setImgLoading(true);
+                    const apiKey = ""; 
+                    try {
+                        const response = await fetch(
+                            `https://generativelanguage.googleapis.com/v1beta/models/imagen-4.0-generate-001:predict?key=${apiKey}`,
+                            {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({
+                                    instances: [{ prompt: "Diagrama técnico de física. Bloque en plano inclinado con rozamiento. Vectores: Px hacia abajo del plano, Fr_max hacia arriba del plano oponiéndose. Condición Px > Fr para deslizar. Minimalista, fondo blanco, educativo" }],
+                                    parameters: { sampleCount: 1 }
+                                })
+                            }
+                        );
+                        if (!response.ok) throw new Error("Error en la red");
+                        const data = await response.json();
+                        setImgUrl(`data:image/png;base64,${data.predictions[0].bytesBase64Encoded}`);
+                    } catch (error) {
+                        console.error(error);
+                    } finally {
+                        setImgLoading(false);
+                    }
+                };
+
+                // Escala para los vectores
+                const vScale = 1.5;
+
+                return (
+                    <div className="min-h-screen bg-slate-900 text-slate-100 p-4 md:p-8">
+                        <header className="max-w-5xl mx-auto mb-8 border-b border-slate-700 pb-6">
+                            <div className="flex items-center gap-3 mb-2">
+                                <span className="bg-yellow-600 text-slate-900 px-3 py-1 rounded-full text-xs font-black uppercase tracking-widest">Estática y Dinámica</span>
+                                <h1 className="text-3xl font-black text-yellow-400 uppercase tracking-tight tracking-widest">¿Deslizará o no?</h1>
+                            </div>
+                            <div className="bg-slate-800/50 p-4 rounded-xl border border-slate-700 mt-4">
+                                <p className="text-slate-300 text-sm leading-relaxed">
+                                    <strong>Enunciado:</strong> Un plano inclinado forma un ángulo de 40° sobre la horizontal. Se abandona un cuerpo en la parte alta. Si el coeficiente de rozamiento estático es 0,50, ¿deslizará?
+                                </p>
+                            </div>
+                        </header>
+
+                        <main className="max-w-5xl mx-auto grid md:grid-cols-2 gap-8">
+                            {/* Panel Visual */}
+                            <div className="bg-slate-800 rounded-3xl border border-slate-700 h-[500px] relative overflow-hidden shadow-2xl flex flex-col justify-end pb-4">
+                                
+                                {/* HUD Superior */}
+                                <div className="absolute top-4 w-full px-6 flex justify-between z-30 pointer-events-none">
+                                    <div className="bg-slate-900/90 p-3 rounded-lg border border-slate-700 backdrop-blur-md">
+                                        <p className="text-[10px] text-slate-500 uppercase font-black">Fuerza a favor (P_x)</p>
+                                        <p className={`text-xl font-mono font-black ${desliza ? 'text-green-400' : 'text-slate-300'}`}>{px.toFixed(1)} N</p>
+                                    </div>
+                                    
+                                    {/* Indicador central de estado */}
+                                    <div className={`mt-2 px-6 py-2 rounded-full font-black uppercase tracking-widest transition-all h-10 flex items-center justify-center border-2 ${desliza ? 'bg-green-500/20 text-green-400 border-green-500/50' : 'bg-red-500/20 text-red-400 border-red-500/50'}`}>
+                                        {desliza ? <span className="flex items-center gap-2"><CheckCircleIcon size={18}/> ¡DESLIZARÁ!</span> : <span className="flex items-center gap-2"><AlertTriangleIcon size={18}/> BLOQUEADO</span>}
+                                    </div>
+
+                                    <div className="bg-slate-900/90 p-3 rounded-lg border border-slate-700 backdrop-blur-md text-right">
+                                        <p className="text-[10px] text-slate-500 uppercase font-black">Agarre Máximo (F_r max)</p>
+                                        <p className={`text-xl font-mono font-black ${!desliza ? 'text-red-400' : 'text-slate-300'}`}>{fr_max.toFixed(1)} N</p>
+                                    </div>
+                                </div>
+
+                                {/* Escena de la Rampa */}
+                                <div className="relative w-full h-80">
+                                    <div className="absolute bottom-10 left-10 w-[400px] h-full pointer-events-none">
+                                        
+                                        {/* Grupo Rotado (Rampa + Bloque juntos) */}
+                                        <div 
+                                            className="absolute bottom-0 left-0 w-full h-full origin-bottom-right transition-transform duration-300 z-20"
+                                            style={{ transform: `rotate(${angulo}deg)` }}
+                                        >
+                                            {/* La Rampa */}
+                                            <div className="absolute bottom-0 left-0 w-full h-4 ramp-pattern shadow-xl overflow-hidden rounded-l-full">
+                                                {/* Textura rugosa dependiente de mu */}
+                                                <div className="absolute inset-0 rough-surface" style={{ opacity: mu_e }}></div>
+                                            </div>
+
+                                            {/* El Bloque */}
+                                            <div 
+                                                className="absolute bottom-4 w-16 h-14 bg-orange-600 border-4 border-orange-400 rounded-lg flex items-center justify-center shadow-lg transition-all"
+                                                style={{ left: `${pos}px` }}
+                                            >
+                                                <span className="font-black text-orange-200 text-xs">Cuerpo</span>
+
+                                                {/* Vector Px (Verde, empuja hacia abajo de la rampa -> Derecha local) */}
+                                                <div className="absolute top-1/3 left-full flex items-center pl-1" style={{ width: px * vScale }}>
+                                                    <div className="h-1.5 bg-green-400 w-full relative shadow-[0_0_8px_rgba(74,222,128,0.8)]">
+                                                        <div className="absolute right-0 -top-2">{ArrowRightIcon && <ArrowRightIcon className="text-green-400" size={20} />}</div>
+                                                    </div>
+                                                    <span className="ml-1 text-[10px] font-black text-green-300 bg-slate-900/80 px-1 rounded">P_x</span>
+                                                </div>
+
+                                                {/* Vector Fricción (Rojo, frena hacia arriba de la rampa -> Izquierda local) */}
+                                                <div className="absolute bottom-1/3 right-full flex items-center pr-1" style={{ width: fr_real * vScale }}>
+                                                    <span className="mr-1 text-[10px] font-black text-red-400 bg-slate-900/80 px-1 rounded">F_r</span>
+                                                    <div className="h-1.5 bg-red-500 w-full relative shadow-[0_0_8px_rgba(239,68,68,0.8)]">
+                                                        <div className="absolute left-0 -top-2">{ArrowLeftIcon && <ArrowLeftIcon className="text-red-500" size={20} />}</div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        {/* Suelo y Ángulo */}
+                                        <div className="absolute bottom-0 left-0 w-full border-b-2 border-slate-600 border-dashed"></div>
+                                        
+                                        {angulo > 0 && (
+                                            <div className="absolute bottom-0 right-0 w-24 h-24 border-l-2 border-t-2 border-yellow-500/50 rounded-tl-full flex items-end justify-start pb-2 pl-2">
+                                                <span className="text-yellow-300 font-mono text-sm font-bold">{angulo}º</span>
+                                            </div>
+                                        )}
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* Controles y Resolución */}
+                            <div className="space-y-6">
+                                <div className="bg-slate-800 p-6 rounded-3xl border border-slate-700 shadow-xl">
+                                    <h3 className="text-xl font-bold mb-4 flex items-center gap-2 text-yellow-400">
+                                        {CalculatorIcon && <CalculatorIcon size={20} />} Variables del Problema
+                                    </h3>
+                                    
+                                    <div className="space-y-6 mb-6">
+                                        <div>
+                                            <div className="flex justify-between text-xs mb-2">
+                                                <span className="text-slate-300 font-bold uppercase">Inclinación (α)</span>
+                                                <span className="font-mono bg-slate-900 px-2 py-0.5 rounded text-white">{angulo}º</span>
+                                            </div>
+                                            <input 
+                                                type="range" min="0" max="80" step="1" value={angulo} 
+                                                onChange={e => setAngulo(Number(e.target.value))} 
+                                                className="w-full h-2 bg-slate-700 rounded-lg appearance-none cursor-pointer accent-yellow-500" 
+                                            />
+                                        </div>
+
+                                        <div>
+                                            <div className="flex justify-between text-xs mb-2">
+                                                <span className="text-red-400 font-bold uppercase">Coef. Rozamiento Estático (μ_e)</span>
+                                                <span className="font-mono bg-slate-900 px-2 py-0.5 rounded text-red-300">{mu_e.toFixed(2)}</span>
+                                            </div>
+                                            <input 
+                                                type="range" min="0" max="1.5" step="0.05" value={mu_e} 
+                                                onChange={e => setMuE(Number(e.target.value))} 
+                                                className="w-full h-2 bg-slate-700 rounded-lg appearance-none cursor-pointer accent-red-500" 
+                                            />
+                                            <div className="flex justify-between text-[10px] text-slate-500 mt-2 font-bold">
+                                                <span>0 (Gel)</span>
+                                                <span>0.5 (Goma/Fusta)</span>
+                                                <span>1.0+ (Velcro)</span>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div className="flex gap-2">
+                                        <button 
+                                            onClick={handlePlay} 
+                                            disabled={isMoving || pos >= rampLength || !desliza}
+                                            className={`flex-1 font-black py-3 rounded-xl shadow-lg flex justify-center items-center gap-2 disabled:opacity-50 transition-all active:scale-95 ${!desliza ? 'bg-slate-600 text-slate-400' : 'bg-yellow-600 hover:bg-yellow-500 text-slate-900'}`}
+                                        >
+                                            {PlayIcon && <PlayIcon size={18} />} {!desliza ? 'ATASCADO POR FRICCIÓN' : 'ABANDONAR CUERPO'}
+                                        </button>
+                                        <button onClick={reset} className="bg-slate-700 hover:bg-slate-600 text-white font-bold px-4 rounded-xl transition-all shadow-md">
+                                            {RotateCcwIcon && <RotateCcwIcon size={18} />}
+                                        </button>
+                                    </div>
+                                </div>
+
+                                <div className="bg-yellow-950/20 p-6 rounded-3xl border border-yellow-500/20">
+                                    <div className="flex justify-between items-center mb-4 border-b border-yellow-500/30 pb-2">
+                                        <h4 className="font-bold text-yellow-300 flex items-center gap-2">
+                                            {InfoIcon && <InfoIcon size={18} />} Resolución Paso a Paso
+                                        </h4>
+                                        <button onClick={generarDiagrama} className="text-[10px] uppercase font-bold bg-slate-800 hover:bg-slate-700 text-slate-300 px-3 py-1.5 rounded flex items-center gap-1 border border-slate-600">
+                                            {imgLoading ? <span className="animate-pulse">Cargando...</span> : <>{ImagePlusIcon && <ImagePlusIcon size={14}/>} Generar DCL</>}
+                                        </button>
+                                    </div>
+
+                                    {imgUrl && (
+                                        <div className="mb-4 bg-slate-900 p-2 rounded-xl border border-slate-700 text-center">
+                                            <img src={imgUrl} alt="Diagrama de Cuerpo Libre" className="mx-auto max-h-40 rounded-lg" />
+                                        </div>
+                                    )}
+
+                                    <div className="text-xs text-slate-300 space-y-3 leading-relaxed">
+                                        <p><strong>1. Condición de Deslizamiento:</strong><br/>
+                                        Para que el bloque se mueva, la componente del peso que lo empuja cuesta abajo (P<sub>x</sub>) debe superar a la resistencia máxima de la superficie (F<sub>r_max</sub>).</p>
+                                        
+                                        <div className="bg-slate-900/80 p-3 rounded-lg border-l-4 border-slate-500 font-mono">
+                                            P<sub>x</sub> &gt; F<sub>r_max</sub><br/>
+                                            m · g · sin(α) &gt; μ<sub>e</sub> · N<br/>
+                                            m · g · sin(α) &gt; μ<sub>e</sub> · m · g · cos(α)
+                                        </div>
+                                        
+                                        <p className="mt-3"><strong>2. El truco de la Tangente (¡Sin usar la masa!):</strong><br/>
+                                        Como m y g están en ambos lados de la inecuación, se cancelan. Si dividimos el Seno entre el Coseno obtenemos la Tangente:</p>
+                                        <div className="bg-slate-900/80 p-3 rounded-lg border-l-4 border-yellow-500 font-mono text-yellow-200">
+                                            sin(α) / cos(α) &gt; μ<sub>e</sub><br/>
+                                            <strong>tan(α) &gt; μ<sub>e</sub></strong>
+                                        </div>
+
+                                        <p className="mt-3"><strong>3. Comprobación de nuestros datos:</strong></p>
+                                        <div className={`p-3 rounded-lg font-mono font-bold border ${desliza ? 'bg-green-900/40 border-green-500/50 text-green-300' : 'bg-red-900/40 border-red-500/50 text-red-300'}`}>
+                                            tan(40º) = {Math.tan(40 * Math.PI / 180).toFixed(3)}<br/>
+                                            {Math.tan(40 * Math.PI / 180).toFixed(3)} &gt; 0.50  ⇒  {desliza ? '¡SÍ DESLIZARÁ!' : '¡NO DESLIZARÁ!'}
+                                        </div>
+
+                                        <p className="text-[10px] text-slate-400 mt-2 italic">
+                                            El ángulo exacto en el que el bloque estaría a punto de deslizar (Ángulo Crítico) es arctan(0.50) = <strong>{anguloCritico.toFixed(1)}º</strong>. Cualquier ángulo superior a este, lo hará caer.
+                                        </p>
+                                    </div>
+                                </div>
+                            </div>
+                        </main>
+
+                        <footer className="max-w-5xl mx-auto mt-12 pt-6 border-t border-slate-800 text-center text-slate-500 text-[10px] font-bold uppercase tracking-widest">
+                            Profe Física | Dinámica: Fricción Estática e Inclinación
+                        </footer>
+                    </div>
+                );
+            };
+
+            const container = document.getElementById('root');
+            const root = ReactDOM.createRoot(container);
+            root.render(<App />);
+        })();
+    </script>
+</body>
+</html>

@@ -1,0 +1,289 @@
+<!DOCTYPE html>
+<html lang="ca">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Laboratori: La Grua del Port</title>
+    <!-- Biblioteques externes -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <script src="https://unpkg.com/lucide-react@latest"></script>
+
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&family=Fira+Code&display=swap');
+        body { font-family: 'Inter', sans-serif; background-color: #0f172a; }
+        .font-mono { font-family: 'Fira Code', monospace; }
+        input[type=range]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            height: 24px;
+            width: 24px;
+            border-radius: 50%;
+            background: #eab308; /* Yellow 500 */
+            cursor: pointer;
+            border: 3px solid #ffffff;
+            box-shadow: 0 0 10px rgba(234, 179, 8, 0.5);
+        }
+        .cable-pattern {
+            background-image: repeating-linear-gradient(45deg, #64748b 0, #64748b 2px, #94a3b8 2px, #94a3b8 4px);
+        }
+    </style>
+</head>
+<body>
+    <div id="root"></div>
+
+    <script type="text/babel">
+        (() => {
+            var { useState, useEffect } = React;
+            var icons = window.LucideReact || {};
+            
+            // Assignació segura d'icones per a evitar errors de compilació
+            var getIcon = (name) => icons[name] || (({className}) => <span className={className || ''}></span>);
+            var PlayIcon = getIcon('Play');
+            var RotateIcon = getIcon('RotateCcw');
+            var AnchorIcon = getIcon('Anchor');
+            var ArrowUpIcon = getIcon('ArrowUp');
+            var ArrowDownIcon = getIcon('ArrowDown');
+            var AlertTriangleIcon = getIcon('AlertTriangle');
+            var InfoIcon = getIcon('Info');
+            var ShieldAlertIcon = getIcon('ShieldAlert');
+
+            var App = () => {
+                // Constants del problema
+                const g = 9.8; // m/s^2
+                const P_kN = 20; // Pes en kN
+                const T_max_kN = 30; // Tensió màxima en kN
+                
+                const P = P_kN * 1000; // Pes en N
+                const T_max = T_max_kN * 1000; // Tensió màxima en N
+                const m = P / g; // Massa en kg (aprox 2040.82)
+
+                // Estats de l'aplicació
+                const [acceleracio, setAcceleracio] = useState(0); // m/s^2
+                const [posicioY, setPosicioY] = useState(0);
+                const [isMoving, setIsMoving] = useState(false);
+                const [isBroken, setIsBroken] = useState(false);
+
+                // Càlcul de la Tensió actual: T - P = m * a  =>  T = P + m * a
+                const tensio_actual = P + (m * acceleracio);
+                const tensio_actual_kN = tensio_actual / 1000;
+                
+                // Comprovació de ruptura abans de moure
+                const willBreak = tensio_actual > T_max;
+
+                useEffect(() => {
+                    let interval;
+                    if (isMoving && !isBroken) {
+                        interval = setInterval(() => {
+                            setPosicioY(prev => {
+                                const novaPos = prev + (acceleracio === 0 ? 1 : acceleracio * 1.5);
+                                if (novaPos > 200) {
+                                    setIsMoving(false);
+                                    return 200;
+                                }
+                                return novaPos;
+                            });
+                        }, 50);
+                    }
+                    return () => clearInterval(interval);
+                }, [isMoving, isBroken, acceleracio]);
+
+                const handlePlay = () => {
+                    if (willBreak) {
+                        setIsBroken(true);
+                        setPosicioY(-150); // Simula la caiguda lliure de colp
+                        setIsMoving(false);
+                    } else {
+                        setIsMoving(true);
+                    }
+                };
+
+                const reset = () => {
+                    setPosicioY(0);
+                    setIsMoving(false);
+                    setIsBroken(false);
+                };
+
+                return (
+                    <div className="min-h-screen bg-slate-900 text-slate-100 p-4 md:p-8">
+                        <header className="max-w-5xl mx-auto mb-8 border-b border-slate-700 pb-6">
+                            <div className="flex items-center gap-3 mb-2">
+                                <span className="bg-yellow-600 text-slate-900 px-3 py-1 rounded-full text-xs font-black uppercase tracking-widest">Dinàmica Aplicada</span>
+                                <h1 className="text-3xl font-black text-yellow-400 uppercase tracking-tight tracking-widest">La Grua del Port</h1>
+                            </div>
+                            <div className="bg-slate-800/50 p-4 rounded-xl border border-slate-700 mt-4">
+                                <p className="text-slate-300 text-sm leading-relaxed">
+                                    <strong>Enunciat:</strong> Una grua eleva un pes de 20 kN amb un cable la resistència a la ruptura del qual és de 30 kN. Quina és la màxima acceleració amb què pot pujar el pes sense trencar el cable?
+                                </p>
+                            </div>
+                        </header>
+
+                        <main className="max-w-5xl mx-auto grid md:grid-cols-2 gap-8">
+                            {/* Visor Visual (Grua) */}
+                            <div className="bg-slate-800 rounded-3xl border border-slate-700 h-[500px] relative overflow-hidden shadow-2xl flex flex-col justify-end">
+                                
+                                {/* Dades superposades */}
+                                <div className="absolute top-4 left-4 z-30 flex flex-col gap-2">
+                                    <div className={`p-2 rounded-lg border backdrop-blur-sm ${isBroken ? 'bg-red-900/80 border-red-500' : 'bg-slate-900/80 border-slate-700'}`}>
+                                        <p className={`text-[10px] uppercase font-black ${isBroken ? 'text-red-300' : 'text-slate-500'}`}>Tensió del Cable (T)</p>
+                                        <p className={`text-xl font-mono font-black ${isBroken ? 'text-red-400' : 'text-indigo-400'}`}>
+                                            {tensio_actual_kN.toFixed(1)} kN
+                                        </p>
+                                    </div>
+                                    <div className="bg-slate-900/80 p-2 rounded-lg border border-slate-700 backdrop-blur-sm">
+                                        <p className="text-[10px] text-slate-500 uppercase font-black">Acceleració (a)</p>
+                                        <p className="text-sm font-mono font-black text-yellow-400">{acceleracio.toFixed(1)} m/s²</p>
+                                    </div>
+                                </div>
+
+                                {/* Missatge d'alerta */}
+                                {isBroken && (
+                                    <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-40 animate-pulse text-center">
+                                        <div className="bg-red-600 text-white px-6 py-4 rounded-2xl font-black uppercase shadow-[0_0_30px_rgba(220,38,38,0.6)] border-2 border-red-300 flex flex-col items-center">
+                                            <ShieldAlertIcon size={40} className="mb-2" />
+                                            CABLE TRENCAT!
+                                        </div>
+                                    </div>
+                                )}
+
+                                {/* Escenari Grua */}
+                                <div className="relative w-full h-full">
+                                    {/* Braç superior de la grua */}
+                                    <div className="absolute top-0 w-full h-12 bg-yellow-500 border-b-8 border-yellow-600 flex justify-center shadow-lg z-20">
+                                        {/* Motor/Politja */}
+                                        <div className="w-16 h-8 bg-slate-700 rounded-b-xl border-x-2 border-b-2 border-slate-500 absolute -bottom-8"></div>
+                                    </div>
+
+                                    {/* Cable */}
+                                    {!isBroken && (
+                                        <div 
+                                            className="absolute left-1/2 -translate-x-1/2 cable-pattern w-2 z-10 transition-all"
+                                            style={{ top: '40px', bottom: `${100 + posicioY}px` }}
+                                        ></div>
+                                    )}
+                                    
+                                    {/* Cable trencat (només es mostra si isBroken) */}
+                                    {isBroken && (
+                                        <>
+                                            <div className="absolute left-1/2 -translate-x-1/2 cable-pattern w-2 z-10" style={{ top: '40px', height: '100px' }}></div>
+                                            <div className="absolute left-1/2 -translate-x-1/2 cable-pattern w-2 z-10" style={{ bottom: `${100 + posicioY}px`, height: '40px' }}></div>
+                                        </>
+                                    )}
+
+                                    {/* Contenidor (Massa) */}
+                                    <div 
+                                        className="absolute left-1/2 -translate-x-1/2 w-32 h-20 bg-blue-600 border-4 border-blue-800 rounded-sm z-20 flex items-center justify-center shadow-2xl transition-all duration-300"
+                                        style={{ bottom: `${100 + posicioY}px` }}
+                                    >
+                                        <span className="font-black text-blue-200 opacity-50 text-2xl tracking-widest">MSC</span>
+                                        
+                                        {/* Vectors de força */}
+                                        <div className="absolute top-1/2 right-full pr-4 flex flex-col items-center pointer-events-none">
+                                            {/* Tensió (Amunt) - Només si no està trencat */}
+                                            {!isBroken && (
+                                                <div className="flex flex-col items-center pb-1 transition-all" style={{ height: Math.min(150, tensio_actual_kN * 4) }}>
+                                                    <span className="mb-1 text-[10px] font-black text-indigo-300">T</span>
+                                                    <div className="w-1.5 bg-indigo-400 h-full relative">
+                                                        <div className="absolute top-0 left-1/2 -translate-x-1/2">{ArrowUpIcon && <ArrowUpIcon size={20} className="text-indigo-400" />}</div>
+                                                    </div>
+                                                </div>
+                                            )}
+                                            {/* Pes (Avall) */}
+                                            <div className="flex flex-col items-center pt-1" style={{ height: P_kN * 4 }}>
+                                                <div className="w-1.5 bg-red-400 h-full relative">
+                                                    <div className="absolute bottom-0 left-1/2 -translate-x-1/2">{ArrowDownIcon && <ArrowDownIcon size={20} className="text-red-400" />}</div>
+                                                </div>
+                                                <span className="mt-1 text-[10px] font-black text-red-300">P</span>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    {/* Moll (Terra) */}
+                                    <div className="absolute bottom-0 w-full h-20 bg-slate-700 border-t-8 border-slate-600 flex items-center justify-center">
+                                        <span className="text-slate-500 font-mono text-xs uppercase tracking-widest">Moll de Càrrega</span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* Panell de Control */}
+                            <div className="space-y-6">
+                                <div className="bg-slate-800 p-6 rounded-3xl border border-slate-700 shadow-xl">
+                                    <div className="flex justify-between items-center mb-6">
+                                        <h3 className="text-xl font-bold flex items-center gap-2">
+                                            {AnchorIcon && <AnchorIcon className="text-yellow-400" />} Control del Motor
+                                        </h3>
+                                    </div>
+
+                                    <div className="mb-6">
+                                        <div className="flex justify-between mb-2 text-sm">
+                                            <span className="text-slate-400 font-bold uppercase tracking-widest">Acceleració d'Elevació</span>
+                                            <span className="font-mono text-yellow-400 font-bold text-xl">{acceleracio.toFixed(1)} m/s²</span>
+                                        </div>
+                                        <input 
+                                            type="range" min="0" max="10" step="0.1" value={acceleracio} 
+                                            onChange={e => {setAcceleracio(Number(e.target.value)); reset();}} 
+                                            className={`w-full h-3 rounded-lg appearance-none cursor-pointer ${willBreak ? 'bg-red-900/50 accent-red-500' : 'bg-slate-700 accent-yellow-500'}`} 
+                                        />
+                                        <div className="flex justify-between text-[10px] font-bold text-slate-500 mt-2">
+                                            <span>Velocitat Constant (0 m/s²)</span>
+                                            <span className="text-red-400 flex items-center gap-1"><AlertTriangleIcon size={10} /> Risc de Ruptura!</span>
+                                            <span>Estirada Brusca (10 m/s²)</span>
+                                        </div>
+                                    </div>
+
+                                    <div className="flex gap-2">
+                                        <button 
+                                            onClick={handlePlay} 
+                                            disabled={isMoving && !isBroken}
+                                            className={`flex-1 font-black py-4 rounded-xl transition-all shadow-lg text-sm flex justify-center items-center gap-2 ${willBreak ? 'bg-red-600 hover:bg-red-500 text-white' : 'bg-yellow-500 hover:bg-yellow-400 text-slate-900'}`}
+                                        >
+                                            {PlayIcon && <PlayIcon size={18} />} PUGAR CÀRREGA
+                                        </button>
+                                        <button onClick={reset} className="bg-slate-700 hover:bg-slate-600 text-white font-bold py-4 px-5 rounded-xl transition-all shadow-lg">
+                                            {RotateIcon && <RotateIcon size={18} />}
+                                        </button>
+                                    </div>
+                                </div>
+
+                                <div className="bg-yellow-950/20 p-6 rounded-3xl border border-yellow-500/20">
+                                    <h4 className="font-bold text-yellow-300 mb-4 flex items-center gap-2">
+                                        {InfoIcon && <InfoIcon size={18} />} Desglossament Matemàtic
+                                    </h4>
+                                    <div className="text-xs text-slate-300 space-y-4 leading-relaxed">
+                                        <p><strong>1. Massa del contenidor:</strong><br/> m = P / g = 20.000 / 9.8 ≈ 2040.8 kg.</p>
+                                        
+                                        <p><strong>2. Equació Dinàmica (2a Llei):</strong><br/>
+                                        La força neta que produeix l'acceleració cap amunt és la diferència entre la Tensió que estira i el Pes que frena:<br/>
+                                        <span className="font-mono text-indigo-300 block mt-1">Σ F = m · a  ⇒  T - P = m · a</span>
+                                        </p>
+
+                                        <p><strong>3. Acceleració Màxima:</strong><br/>
+                                        Sustituïm la Tensió pel límit de ruptura del cable (30.000 N):</p>
+                                        
+                                        <div className="bg-slate-900/80 p-3 rounded-lg border-l-4 border-yellow-500 font-mono text-yellow-200">
+                                            30000 - 20000 = 2040.8 · a<br/>
+                                            10000 = 2040.8 · a<br/>
+                                            <strong>a = 10000 / 2040.8 = 4.9 m/s²</strong>
+                                        </div>
+                                        <p className="italic text-slate-400">Fixa't que l'acceleració límit (4.9 m/s²) és exactament la meitat de la gravetat ($g/2$).</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </main>
+
+                        <footer className="max-w-5xl mx-auto mt-12 pt-6 border-t border-slate-800 text-center text-slate-500 text-[10px] font-bold uppercase tracking-widest">
+                            Profe Física | Dinàmica: Tensions i Límits de Ruptura
+                        </footer>
+                    </div>
+                );
+            };
+
+            const container = document.getElementById('root');
+            const root = ReactDOM.createRoot(container);
+            root.render(<App />);
+        })();
+    </script>
+</body>
+</html>

@@ -1,0 +1,310 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Laboratorio: Equilibrio de Tensiones</title>
+    <!-- Bibliotecas externas -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <script src="https://unpkg.com/lucide-react@latest"></script>
+
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&family=Fira+Code&display=swap');
+        body { font-family: 'Inter', sans-serif; background-color: #0f172a; }
+        .font-mono { font-family: 'Fira Code', monospace; }
+        input[type=range]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            height: 20px;
+            width: 20px;
+            border-radius: 50%;
+            background: #8b5cf6; /* Violet 500 */
+            cursor: pointer;
+            border: 2px solid #ffffff;
+            box-shadow: 0 0 10px rgba(139, 92, 246, 0.5);
+        }
+    </style>
+</head>
+<body>
+    <div id="root"></div>
+
+    <script type="text/babel">
+        (() => {
+            var { useState, useEffect } = React;
+            var icons = window.LucideReact || {};
+            
+            var CalculatorIcon = icons.Calculator || (({className}) => <span className={className}></span>);
+            var SettingsIcon = icons.Settings || (({className}) => <span className={className}></span>);
+            var InfoIcon = icons.Info || (({className}) => <span className={className}></span>);
+            var AlertTriangleIcon = icons.AlertTriangle || (({className}) => <span className={className}></span>);
+            var ImagePlusIcon = icons.ImagePlus || (({className}) => <span className={className}></span>);
+
+            var App = () => {
+                // Parámetros fijos
+                const g = 9.8; // m/s^2
+
+                // Estados interactivos
+                const [masa, setMasa] = useState(7.5); // kg
+                const [anguloAlpha, setAnguloAlpha] = useState(120); // Ángulo total entre los cables
+
+                // Cálculos Físicos
+                const peso = masa * g; // P = m * g
+                
+                // Si el ángulo total es Alpha, cada cable forma un ángulo Theta = Alpha / 2 con la VERTICAL
+                const thetaDeg = anguloAlpha / 2;
+                const thetaRad = thetaDeg * (Math.PI / 180);
+                
+                // Equilibrio en Y: 2 * T_y = P  =>  2 * T * cos(Theta) = P  =>  T = P / (2 * cos(Theta))
+                const tension = peso / (2 * Math.cos(thetaRad));
+
+                // Constantes visuales para el SVG
+                const L = 160; // Longitud del cable en px
+                const ceilingY = 40;
+                const centerX = 200;
+                
+                // Posición de la masa
+                const massY = ceilingY + L * Math.cos(thetaRad);
+                
+                // Posición de los anclajes en el techo
+                const dx = L * Math.sin(thetaRad);
+                const anchorLeftX = centerX - dx;
+                const anchorRightX = centerX + dx;
+
+                // Advertencia de tensión extrema (cuando T > Peso*2)
+                const isExtreme = tension > peso * 2;
+
+                // Generador de Diagrama de Cuerpo Libre
+                const [imgUrl, setImgUrl] = useState(null);
+                const [imgLoading, setImgLoading] = useState(false);
+
+                const generarDiagrama = async () => {
+                    setImgLoading(true);
+                    const apiKey = ""; 
+                    try {
+                        const response = await fetch(
+                            `https://generativelanguage.googleapis.com/v1beta/models/imagen-4.0-generate-001:predict?key=${apiKey}`,
+                            {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({
+                                    instances: [{ prompt: "Diagrama técnico de física. Dos cables sujetan una masa desde un techo, formando una Y invertida. Vectores de Tensión T1 y T2 apuntando hacia arriba por los cables. Vector Peso P apuntando hacia abajo desde la masa. Fondo blanco, estilo educativo minimalista." }],
+                                    parameters: { sampleCount: 1 }
+                                })
+                            }
+                        );
+                        if (!response.ok) throw new Error("Error en la red");
+                        const data = await response.json();
+                        setImgUrl(`data:image/png;base64,${data.predictions[0].bytesBase64Encoded}`);
+                    } catch (error) {
+                        console.error(error);
+                    } finally {
+                        setImgLoading(false);
+                    }
+                };
+
+                return (
+                    <div className="min-h-screen bg-slate-900 text-slate-100 p-4 md:p-8">
+                        <header className="max-w-5xl mx-auto mb-8 border-b border-slate-700 pb-6">
+                            <div className="flex items-center gap-3 mb-2">
+                                <span className="bg-violet-600 text-white px-3 py-1 rounded-full text-xs font-black uppercase tracking-widest">Estática</span>
+                                <h1 className="text-3xl font-black text-violet-400 uppercase tracking-tight tracking-widest">Tensiones Simétricas</h1>
+                            </div>
+                            <div className="bg-slate-800/50 p-4 rounded-xl border border-slate-700 mt-4">
+                                <p className="text-slate-300 text-sm leading-relaxed">
+                                    <strong>Enunciado:</strong> ¿Qué tensión soportará cada cable si sujetan una masa de 7,5 kg y el ángulo entre ellos es de 120°? ¿Y si es de 90°?
+                                </p>
+                            </div>
+                        </header>
+
+                        <main className="max-w-5xl mx-auto grid md:grid-cols-2 gap-8">
+                            {/* Panel Visual */}
+                            <div className="bg-slate-800 rounded-3xl border border-slate-700 h-[500px] relative overflow-hidden shadow-2xl flex flex-col pt-4">
+                                
+                                {/* Marcadores Flotantes */}
+                                <div className="px-6 flex justify-between z-30 pointer-events-none mb-4">
+                                    <div className="bg-slate-900/90 p-3 rounded-lg border border-slate-700 backdrop-blur-md">
+                                        <p className="text-[10px] text-slate-500 uppercase font-black">Peso Colgado (P)</p>
+                                        <p className="text-xl font-mono font-black text-orange-400">{peso.toFixed(1)} N</p>
+                                    </div>
+                                    <div className={`bg-slate-900/90 p-3 rounded-lg border backdrop-blur-md text-right border-b-4 ${isExtreme ? 'border-b-red-500' : 'border-b-violet-500'}`}>
+                                        <p className="text-[10px] text-slate-500 uppercase font-black flex items-center justify-end gap-1">
+                                            {isExtreme && <AlertTriangleIcon size={12} className="text-red-500" />} Tensión (T) cada cable
+                                        </p>
+                                        <p className={`text-xl font-mono font-black ${isExtreme ? 'text-red-400' : 'text-violet-400'}`}>
+                                            {tension.toFixed(1)} N
+                                        </p>
+                                    </div>
+                                </div>
+
+                                {/* Escena SVG */}
+                                <div className="relative w-full flex-1 flex justify-center mt-4">
+                                    
+                                    {/* Techo decorativo */}
+                                    <div className="absolute top-0 w-full h-10 bg-slate-700 border-b-4 border-slate-600 pattern-dots opacity-50"></div>
+
+                                    {/* SVG de las cuerdas y vectores */}
+                                    <svg width="400" height="400" className="absolute top-0 overflow-visible z-10">
+                                        {/* Arco del Ángulo */}
+                                        <path 
+                                            d={`M ${centerX - 20*Math.sin(thetaRad)} ${massY - 20*Math.cos(thetaRad)} A 20 20 0 0 1 ${centerX + 20*Math.sin(thetaRad)} ${massY - 20*Math.cos(thetaRad)}`}
+                                            fill="none" stroke="#fbbf24" strokeWidth="2" strokeDasharray="3 3"
+                                        />
+                                        <text x={centerX} y={massY - 30} fill="#fbbf24" fontSize="12" fontWeight="bold" textAnchor="middle">{anguloAlpha}º</text>
+
+                                        {/* Cuerda Izquierda */}
+                                        <line x1={anchorLeftX} y1={ceilingY} x2={centerX} y2={massY} stroke="#94a3b8" strokeWidth="4" strokeLinecap="round" />
+                                        {/* Cuerda Derecha */}
+                                        <line x1={anchorRightX} y1={ceilingY} x2={centerX} y2={massY} stroke="#94a3b8" strokeWidth="4" strokeLinecap="round" />
+                                        
+                                        {/* Anclajes */}
+                                        <circle cx={anchorLeftX} cy={ceilingY} r="6" fill="#475569" stroke="#94a3b8" strokeWidth="2" />
+                                        <circle cx={anchorRightX} cy={ceilingY} r="6" fill="#475569" stroke="#94a3b8" strokeWidth="2" />
+
+                                        {/* Vectores Tensión (Dibujados sobre la cuerda) */}
+                                        <line 
+                                            x1={centerX} y1={massY} 
+                                            x2={centerX - (L/2)*Math.sin(thetaRad)} y2={massY - (L/2)*Math.cos(thetaRad)} 
+                                            stroke="#8b5cf6" strokeWidth="3" markerEnd="url(#arrow-violet)" 
+                                        />
+                                        <text x={centerX - (L/2)*Math.sin(thetaRad) - 15} y={massY - (L/2)*Math.cos(thetaRad)} fill="#a78bfa" fontSize="12" fontWeight="bold">T</text>
+
+                                        <line 
+                                            x1={centerX} y1={massY} 
+                                            x2={centerX + (L/2)*Math.sin(thetaRad)} y2={massY - (L/2)*Math.cos(thetaRad)} 
+                                            stroke="#8b5cf6" strokeWidth="3" markerEnd="url(#arrow-violet)" 
+                                        />
+                                        <text x={centerX + (L/2)*Math.sin(thetaRad) + 5} y={massY - (L/2)*Math.cos(thetaRad)} fill="#a78bfa" fontSize="12" fontWeight="bold">T</text>
+
+                                        {/* Vector Peso */}
+                                        <line x1={centerX} y1={massY} x2={centerX} y2={massY + 60} stroke="#f97316" strokeWidth="3" markerEnd="url(#arrow-orange)" />
+                                        <text x={centerX + 10} y={massY + 50} fill="#fdba74" fontSize="12" fontWeight="bold">P</text>
+
+                                        {/* Definición de las flechas (Markers) */}
+                                        <defs>
+                                            <marker id="arrow-violet" viewBox="0 0 10 10" refX="5" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+                                                <path d="M 0 0 L 10 5 L 0 10 z" fill="#8b5cf6" />
+                                            </marker>
+                                            <marker id="arrow-orange" viewBox="0 0 10 10" refX="5" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+                                                <path d="M 0 0 L 10 5 L 0 10 z" fill="#f97316" />
+                                            </marker>
+                                        </defs>
+                                    </svg>
+
+                                    {/* La Masa (Caja) */}
+                                    <div 
+                                        className="absolute w-16 h-16 bg-orange-600 border-4 border-orange-400 rounded-lg flex items-center justify-center shadow-lg z-20"
+                                        style={{ left: `${centerX - 32}px`, top: `${massY}px` }}
+                                    >
+                                        <span className="font-black text-orange-200 text-xs">{masa.toFixed(1)}kg</span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* Controles y Resolución */}
+                            <div className="space-y-6">
+                                <div className="bg-slate-800 p-6 rounded-3xl border border-slate-700 shadow-xl">
+                                    <h3 className="text-xl font-bold mb-4 flex items-center gap-2 text-violet-400">
+                                        {SettingsIcon && <SettingsIcon size={20} />} Ajustar Variables
+                                    </h3>
+                                    
+                                    <div className="space-y-6 mb-6">
+                                        <div>
+                                            <div className="flex justify-between text-xs mb-2">
+                                                <span className="text-slate-300 font-bold uppercase">Masa Colgada (m)</span>
+                                                <span className="font-mono bg-slate-900 px-2 py-0.5 rounded text-white">{masa.toFixed(1)} kg</span>
+                                            </div>
+                                            <input 
+                                                type="range" min="1" max="20" step="0.5" value={masa} 
+                                                onChange={e => setMasa(Number(e.target.value))} 
+                                                className="w-full h-2 bg-slate-700 rounded-lg appearance-none cursor-pointer accent-orange-500" 
+                                            />
+                                        </div>
+
+                                        <div className="pt-4 border-t border-slate-700">
+                                            <div className="flex justify-between text-xs mb-2">
+                                                <span className="text-yellow-400 font-bold uppercase">Ángulo entre cables (α)</span>
+                                                <span className="font-mono bg-slate-900 px-2 py-0.5 rounded text-yellow-200">{anguloAlpha}º</span>
+                                            </div>
+                                            <input 
+                                                type="range" min="10" max="170" step="1" value={anguloAlpha} 
+                                                onChange={e => setAnguloAlpha(Number(e.target.value))} 
+                                                className="w-full h-3 bg-slate-700 rounded-lg appearance-none cursor-pointer accent-yellow-500" 
+                                            />
+                                            <div className="flex justify-between text-[10px] text-slate-500 mt-2 font-bold uppercase">
+                                                <span>10º (Casi rectos)</span>
+                                                <span>170º (Casi planos)</span>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    {/* Botones de Atajo */}
+                                    <div className="grid grid-cols-2 gap-2">
+                                        <button onClick={() => setAnguloAlpha(90)} className="bg-slate-700 hover:bg-slate-600 text-xs font-bold py-3 rounded-xl border border-slate-600 text-slate-300 transition-all">
+                                            CASO B: 90º
+                                        </button>
+                                        <button onClick={() => setAnguloAlpha(120)} className="bg-violet-900/50 hover:bg-violet-800/50 text-xs font-bold py-3 rounded-xl border border-violet-500/50 text-violet-300 transition-all">
+                                            CASO A: 120º
+                                        </button>
+                                    </div>
+                                </div>
+
+                                <div className="bg-violet-950/20 p-6 rounded-3xl border border-violet-500/20">
+                                    <div className="flex justify-between items-center mb-4 border-b border-violet-500/30 pb-2">
+                                        <h4 className="font-bold text-violet-300 flex items-center gap-2">
+                                            {CalculatorIcon && <CalculatorIcon size={18} />} Resolución Paso a Paso
+                                        </h4>
+                                        <button onClick={generarDiagrama} className="text-[10px] uppercase font-bold bg-slate-800 hover:bg-slate-700 text-slate-300 px-3 py-1.5 rounded flex items-center gap-1 border border-slate-600">
+                                            {imgLoading ? <span className="animate-pulse">Cargando...</span> : <>{ImagePlusIcon && <ImagePlusIcon size={14}/>} Generar DCL</>}
+                                        </button>
+                                    </div>
+
+                                    {imgUrl && (
+                                        <div className="mb-4 bg-slate-900 p-2 rounded-xl border border-slate-700 text-center">
+                                            <img src={imgUrl} alt="Diagrama de Cuerpo Libre" className="mx-auto max-h-40 rounded-lg" />
+                                        </div>
+                                    )}
+
+                                    <div className="text-xs text-slate-300 space-y-4 leading-relaxed">
+                                        <p><strong>1. Análisis del Eje Vertical (Y):</strong><br/>
+                                        El peso (P = m · g = {peso.toFixed(1)} N) tira hacia abajo. La componente vertical de <strong>ambos cables juntos</strong> debe equilibrarlo.</p>
+                                        
+                                        <div className="bg-slate-900/80 p-2 rounded-lg border-l-4 border-slate-500 font-mono">
+                                            Σ F_y = 0  ⇒  T_y + T_y = P<br/>
+                                            2 · T_y = {peso.toFixed(1)}
+                                        </div>
+
+                                        <p><strong>2. Trigonometría (El ángulo θ):</strong><br/>
+                                        El ángulo α es el total. Si trazamos una línea vertical por el medio, cada cable forma un ángulo θ = α / 2 con la vertical.</p>
+                                        <div className="bg-slate-900/80 p-2 rounded-lg border-l-4 border-yellow-500 font-mono">
+                                            θ = {anguloAlpha}º / 2 = <strong>{thetaDeg}º</strong><br/>
+                                            T_y = T · cos({thetaDeg}º)
+                                        </div>
+
+                                        <p><strong>3. Cálculo de la Tensión:</strong></p>
+                                        <div className="bg-slate-900/80 p-3 rounded-lg border-l-4 border-violet-500 font-mono text-violet-200 shadow-inner">
+                                            2 · T · cos({thetaDeg}º) = {peso.toFixed(1)}<br/>
+                                            T = {peso.toFixed(1)} / (2 · cos({thetaDeg}º))<br/>
+                                            T = {peso.toFixed(1)} / (2 · {Math.cos(thetaRad).toFixed(3)}) = <strong>{tension.toFixed(2)} N</strong>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </main>
+
+                        <footer className="max-w-5xl mx-auto mt-12 pt-6 border-t border-slate-800 text-center text-slate-500 text-[10px] font-bold uppercase tracking-widest">
+                            Profe Física | Estática: Descomposición Vectorial
+                        </footer>
+                    </div>
+                );
+            };
+
+            const container = document.getElementById('root');
+            const root = ReactDOM.createRoot(container);
+            root.render(<App />);
+        })();
+    </script>
+</body>
+</html>

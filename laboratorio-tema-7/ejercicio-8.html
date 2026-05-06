@@ -1,0 +1,294 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Laboratorio: Descomposición de Fuerzas</title>
+    <!-- Bibliotecas externas -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <script src="https://unpkg.com/lucide-react@latest"></script>
+
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&family=Fira+Code&display=swap');
+        body { font-family: 'Inter', sans-serif; background-color: #0f172a; }
+        .font-mono { font-family: 'Fira Code', monospace; }
+        input[type=range]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            height: 20px;
+            width: 20px;
+            border-radius: 50%;
+            background: #a855f7; /* Purple 500 */
+            cursor: pointer;
+            border: 2px solid #ffffff;
+            box-shadow: 0 0 10px rgba(168, 85, 247, 0.5);
+        }
+        .floor-pattern {
+            background-image: repeating-linear-gradient(90deg, #334155 0, #334155 20px, transparent 20px, transparent 40px);
+            background-position: bottom;
+            background-size: 40px 4px;
+            background-repeat: repeat-x;
+        }
+    </style>
+</head>
+<body>
+    <div id="root"></div>
+
+    <script type="text/babel">
+        (() => {
+            var { useState, useEffect } = React;
+            var icons = window.LucideReact || {};
+            
+            // Asignación segura de iconos
+            var getIcon = (name) => icons[name] || (({className}) => <span className={className || ''}></span>);
+            var PlayIcon = getIcon('Play');
+            var RotateCcwIcon = getIcon('RotateCcw');
+            var TargetIcon = getIcon('Target');
+            var InfoIcon = getIcon('Info');
+            var CalculatorIcon = getIcon('Calculator');
+            var ArrowRightIcon = getIcon('ArrowRight');
+            var ArrowUpIcon = getIcon('ArrowUp');
+            var AlertTriangleIcon = getIcon('AlertTriangle');
+
+            var App = () => {
+                // Datos fijos del problema
+                const m = 6.0; // kg
+                const a = 8.5; // m/s^2
+                const g = 9.8; // m/s^2
+                
+                // Estados interactivos
+                const [angle, setAngle] = useState(0); // Ángulo en grados
+
+                // Cálculos Físicos
+                const peso = m * g; // 58.8 N
+                
+                // La fuerza horizontal Fx DEBE ser m * a para lograr esa aceleración (no hay rozamiento)
+                const fx_requerida = m * a; // 6.0 * 8.5 = 51.0 N
+                
+                // Cálculo de la Fuerza total necesaria (F)
+                const angleRad = angle * (Math.PI / 180);
+                const fuerzaTotal = fx_requerida / Math.cos(angleRad);
+                
+                // Cálculo de la componente Y de esa fuerza
+                const fy = fuerzaTotal * Math.sin(angleRad);
+                
+                // Cálculo de la Normal (El suelo soporta el peso menos lo que "tira" la fuerza hacia arriba)
+                const normal = peso - fy;
+                
+                // Si la fuerza Y es mayor que el peso, el bloque "vuela"
+                const isLifting = normal < 0;
+
+                // Animación simple de desplazamiento
+                const [pos, setPos] = useState(0);
+                const [isMoving, setIsMoving] = useState(false);
+
+                useEffect(() => {
+                    let interval;
+                    if (isMoving && pos < 200) {
+                        interval = setInterval(() => {
+                            setPos(p => {
+                                const newP = p + (a * 0.5);
+                                if (newP > 200) {
+                                    setIsMoving(false);
+                                    return 200;
+                                }
+                                return newP;
+                            });
+                        }, 20);
+                    }
+                    return () => clearInterval(interval);
+                }, [isMoving, pos, a]);
+
+                const handlePlay = () => {
+                    if (pos < 200 && !isLifting) setIsMoving(true);
+                };
+
+                const handleReset = () => {
+                    setPos(0);
+                    setIsMoving(false);
+                };
+
+                return (
+                    <div className="min-h-screen bg-slate-900 text-slate-100 p-4 md:p-8">
+                        <header className="max-w-5xl mx-auto mb-8 border-b border-slate-700 pb-6">
+                            <div className="flex items-center gap-3 mb-2">
+                                <span className="bg-purple-600 text-white px-3 py-1 rounded-full text-xs font-black uppercase tracking-widest">Trigonometría Física</span>
+                                <h1 className="text-3xl font-black text-purple-400 uppercase tracking-tight tracking-widest">Fuerzas Inclinadas</h1>
+                            </div>
+                            <div className="bg-slate-800/50 p-4 rounded-xl border border-slate-700 mt-4">
+                                <p className="text-slate-300 text-sm leading-relaxed">
+                                    <strong>Enunciado:</strong> Un bloque de 6,0 kg está en reposo sobre una superficie horizontal lisa. Al aplicarle una fuerza se le comunica una aceleración de 8,5 m/s². Calcula el valor de la fuerza: a) si es paralela a la superficie, b) si forma un ángulo de 30° con la horizontal.
+                                </p>
+                            </div>
+                        </header>
+
+                        <main className="max-w-5xl mx-auto grid md:grid-cols-2 gap-8">
+                            {/* Panel Visual */}
+                            <div className="bg-slate-800 rounded-3xl border border-slate-700 h-[500px] relative overflow-hidden shadow-2xl flex flex-col justify-end pb-8">
+                                
+                                {/* HUD de Datos en Vivo */}
+                                <div className="absolute top-4 w-full px-6 flex justify-between z-30 pointer-events-none">
+                                    <div className="bg-slate-900/90 p-3 rounded-lg border border-slate-700 backdrop-blur-md">
+                                        <p className="text-[10px] text-slate-500 uppercase font-black">Fuerza a Aplicar (F)</p>
+                                        <p className="text-xl font-mono font-black text-purple-400">
+                                            {isLifting ? 'INVIABLE' : `${fuerzaTotal.toFixed(1)} N`}
+                                        </p>
+                                    </div>
+                                    <div className="bg-slate-900/90 p-3 rounded-lg border border-slate-700 backdrop-blur-md text-right">
+                                        <p className="text-[10px] text-slate-500 uppercase font-black">Reacción Normal (N)</p>
+                                        <p className={`text-xl font-mono font-black ${isLifting ? 'text-red-400' : 'text-blue-400'}`}>
+                                            {isLifting ? '¡Cuerpo volando!' : `${Math.max(0, normal).toFixed(1)} N`}
+                                        </p>
+                                    </div>
+                                </div>
+
+                                {/* Escenario del Bloque */}
+                                <div className="relative w-full h-64 flex items-end">
+                                    
+                                    {/* El Bloque */}
+                                    <div 
+                                        className={`absolute bottom-0 w-24 h-20 bg-blue-600 border-4 border-blue-400 rounded-lg flex items-center justify-center shadow-lg transition-all z-20 ${isLifting && pos === 0 ? '-translate-y-10' : ''}`}
+                                        style={{ left: `${40 + pos}px` }}
+                                    >
+                                        <span className="font-black text-blue-200">{m} kg</span>
+
+                                        {/* Componente Fx (Línea de puntos verde) */}
+                                        {!isLifting && (
+                                            <div className="absolute top-1/2 left-full flex items-center pl-1 pointer-events-none" style={{ width: 80 }}>
+                                                <div className="h-0.5 bg-emerald-400 w-full relative border-t-2 border-dashed border-emerald-400"></div>
+                                                <span className="ml-1 text-[10px] font-black text-emerald-300 absolute left-8 -bottom-4">F<sub>x</sub> = 51 N</span>
+                                            </div>
+                                        )}
+
+                                        {/* Componente Fy (Línea de puntos naranja) */}
+                                        {!isLifting && angle > 0 && (
+                                            <div className="absolute bottom-1/2 left-[calc(100%+80px)] flex flex-col items-center pb-1 pointer-events-none" style={{ height: Math.min(100, fy) }}>
+                                                <div className="w-0.5 bg-orange-400 h-full relative border-l-2 border-dashed border-orange-400"></div>
+                                                <span className="mb-1 text-[10px] font-black text-orange-300 absolute -top-4 -left-12 whitespace-nowrap">F<sub>y</sub> = {fy.toFixed(1)} N</span>
+                                            </div>
+                                        )}
+
+                                        {/* Fuerza Principal F (Morada) - Dibujada en el origen */}
+                                        {!isLifting && (
+                                            <div 
+                                                className="absolute top-1/2 left-full origin-left flex items-center pl-1 pointer-events-none" 
+                                                style={{ 
+                                                    width: Math.min(150, 80 / Math.cos(angleRad)), 
+                                                    transform: `rotate(${-angle}deg)` 
+                                                }}
+                                            >
+                                                <div className="h-1 bg-purple-400 w-full relative shadow-[0_0_10px_rgba(168,85,247,0.8)]">
+                                                    <div className="absolute right-0 -top-1.5">{ArrowRightIcon && <ArrowRightIcon size={16} className="text-purple-400" />}</div>
+                                                </div>
+                                                <span className="ml-1 text-xs font-black text-purple-300" style={{ transform: `rotate(${angle}deg)` }}>F</span>
+                                            </div>
+                                        )}
+                                        
+                                        {/* Indicador de Ángulo */}
+                                        {!isLifting && angle > 0 && (
+                                            <div className="absolute top-1/2 left-full w-12 h-12 border-t-2 border-r-2 border-purple-400/30 rounded-tr-full pointer-events-none">
+                                                <span className="absolute bottom-2 left-6 text-[10px] text-purple-200">{angle}º</span>
+                                            </div>
+                                        )}
+                                    </div>
+
+                                    {/* Suelo */}
+                                    <div className="absolute -bottom-8 w-full h-8 bg-slate-700 border-t-4 border-slate-500 floor-pattern"></div>
+                                </div>
+                            </div>
+
+                            {/* Controles y Resolución */}
+                            <div className="space-y-6">
+                                <div className="bg-slate-800 p-6 rounded-3xl border border-slate-700 shadow-xl">
+                                    <h3 className="text-xl font-bold mb-4 flex items-center gap-2 text-purple-400">
+                                        {TargetIcon && <TargetIcon size={20} />} Control del Ángulo
+                                    </h3>
+                                    
+                                    <div className="space-y-6 mb-6">
+                                        <div>
+                                            <div className="flex justify-between text-xs mb-2">
+                                                <span className="text-slate-300 font-bold uppercase">Ángulo de la Fuerza (θ)</span>
+                                                <span className="font-mono bg-slate-900 px-2 py-0.5 rounded text-purple-300">{angle}º</span>
+                                            </div>
+                                            <input 
+                                                type="range" min="0" max="80" step="1" value={angle} 
+                                                onChange={e => {setAngle(Number(e.target.value)); handleReset();}} 
+                                                className={`w-full h-3 rounded-lg appearance-none cursor-pointer ${isLifting ? 'bg-red-900/50 accent-red-500' : 'bg-slate-700 accent-purple-500'}`} 
+                                            />
+                                        </div>
+
+                                        <div className="flex gap-2">
+                                            <button onClick={() => {setAngle(0); handleReset();}} className="flex-1 bg-slate-700 hover:bg-slate-600 text-xs font-bold py-2 rounded-lg transition-all border border-slate-600">
+                                                CASO A (0º)
+                                            </button>
+                                            <button onClick={() => {setAngle(30); handleReset();}} className="flex-1 bg-slate-700 hover:bg-slate-600 text-xs font-bold py-2 rounded-lg transition-all border border-slate-600">
+                                                CASO B (30º)
+                                            </button>
+                                        </div>
+                                    </div>
+
+                                    <div className="flex gap-2">
+                                        <button 
+                                            onClick={handlePlay} 
+                                            disabled={isMoving || pos >= 200 || isLifting}
+                                            className={`flex-1 font-black py-3 rounded-xl shadow-lg flex justify-center items-center gap-2 disabled:opacity-50 transition-all active:scale-95 ${isLifting ? 'bg-red-600 text-white' : 'bg-purple-600 hover:bg-purple-500 text-white'}`}
+                                        >
+                                            {isLifting && <AlertTriangleIcon size={18} />}
+                                            {isLifting ? 'EL BLOQUE DESPEGA' : <>{PlayIcon && <PlayIcon size={18} />} EMPUJAR</>}
+                                        </button>
+                                        <button onClick={handleReset} className="bg-slate-700 hover:bg-slate-600 text-white font-bold px-4 rounded-xl transition-all shadow-md">
+                                            {RotateCcwIcon && <RotateCcwIcon size={18} />}
+                                        </button>
+                                    </div>
+                                </div>
+
+                                <div className="bg-purple-950/20 p-6 rounded-3xl border border-purple-500/20">
+                                    <div className="flex justify-between items-center mb-4 border-b border-purple-500/30 pb-2">
+                                        <h4 className="font-bold text-purple-300 flex items-center gap-2">
+                                            {CalculatorIcon && <CalculatorIcon size={18} />} Resolución Matemática
+                                        </h4>
+                                    </div>
+
+                                    <div className="text-xs text-slate-300 space-y-4 leading-relaxed">
+                                        <p><strong>1. Análisis del eje X:</strong><br/>
+                                        Como no hay rozamiento, la única fuerza que aporta aceleración horizontal es F<sub>x</sub>.</p>
+                                        <div className="bg-slate-900/80 p-2 rounded-lg border-l-4 border-emerald-500 font-mono">
+                                            F<sub>x</sub> = m · a = {m} · {a} = <strong>51 N</strong>
+                                        </div>
+                                        <p className="italic text-slate-400">Esta fuerza horizontal de 51 N es obligatoria para cualquier caso si queremos mantener los 8.5 m/s².</p>
+                                        
+                                        <p className="mt-4 text-purple-300 font-bold border-b border-slate-700 pb-1">CASO A: Paralela a la superficie (θ = 0º)</p>
+                                        <div className="bg-slate-900/80 p-2 rounded-lg border-l-4 border-purple-500 font-mono">
+                                            F · cos(0º) = F<sub>x</sub><br/>
+                                            F · 1 = 51  ⇒  <strong>F = 51 N</strong>
+                                        </div>
+
+                                        <p className="mt-4 text-purple-300 font-bold border-b border-slate-700 pb-1">CASO B: Ángulo de 30º (θ = 30º)</p>
+                                        <p>Al tirar hacia arriba, parte de nuestra fuerza (F<sub>y</sub>) se pierde sin aportar movimiento. Para compensar y lograr los 51 N en horizontal, debemos tirar con más fuerza total.</p>
+                                        <div className="bg-slate-900/80 p-2 rounded-lg border-l-4 border-purple-500 font-mono">
+                                            F · cos(30º) = F<sub>x</sub><br/>
+                                            F · 0.866 = 51<br/>
+                                            F = 51 / 0.866 = <strong>58.89 N</strong>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </main>
+
+                        <footer className="max-w-5xl mx-auto mt-12 pt-6 border-t border-slate-800 text-center text-slate-500 text-[10px] font-bold uppercase tracking-widest">
+                            Profe Física | Dinámica: Descomposición Trigonométrica
+                        </footer>
+                    </div>
+                );
+            };
+
+            const container = document.getElementById('root');
+            const root = ReactDOM.createRoot(container);
+            root.render(<App />);
+        })();
+    </script>
+</body>
+</html>

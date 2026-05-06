@@ -1,0 +1,319 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Laboratorio: Muelle en Plano Inclinado</title>
+    <!-- Bibliotecas externas -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <script src="https://unpkg.com/lucide-react@latest"></script>
+
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&family=Fira+Code&display=swap');
+        body { font-family: 'Inter', sans-serif; background-color: #0f172a; }
+        .font-mono { font-family: 'Fira Code', monospace; }
+        input[type=range]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            height: 20px;
+            width: 20px;
+            border-radius: 50%;
+            background: #db2777; /* Pink 600 */
+            cursor: pointer;
+            border: 2px solid #ffffff;
+            box-shadow: 0 0 10px rgba(219, 39, 119, 0.5);
+        }
+        .ramp-pattern {
+            background-color: #334155;
+            background-image: repeating-linear-gradient(45deg, #1e293b 0, #1e293b 2px, transparent 2px, transparent 8px);
+        }
+    </style>
+</head>
+<body>
+    <div id="root"></div>
+
+    <script type="text/babel">
+        (() => {
+            var { useState, useEffect } = React;
+            var icons = window.LucideReact || {};
+            
+            var CalculatorIcon = icons.Calculator || (({className}) => <span className={className}></span>);
+            var AnchorIcon = icons.Anchor || (({className}) => <span className={className}></span>);
+            var InfoIcon = icons.Info || (({className}) => <span className={className}></span>);
+            var ArrowRightIcon = icons.ArrowRight || (({className}) => <span className={className}></span>);
+            var ArrowLeftIcon = icons.ArrowLeft || (({className}) => <span className={className}></span>);
+            var ImagePlusIcon = icons.ImagePlus || (({className}) => <span className={className}></span>);
+
+            var App = () => {
+                // Parámetros fijos
+                const g = 9.8; // m/s^2
+
+                // Estados interactivos (Iniciamos con los datos del enunciado)
+                const [masa, setMasa] = useState(7.0); // kg
+                const [angulo, setAngulo] = useState(60); // grados
+                const [dxCm, setDxCm] = useState(16.4); // cm
+
+                // Cálculos Físicos
+                const anguloRad = angulo * (Math.PI / 180);
+                const peso = masa * g;
+                const px = peso * Math.sin(anguloRad); // Componente que empuja hacia abajo de la rampa
+                
+                // En equilibrio: Fe = Px
+                const fe = px; 
+                
+                const dxM = dxCm / 100; // Pasamos a metros
+                const k = fe / dxM; // k = F / x (Constante elástica)
+
+                // Renderizado visual del muelle horizontal
+                const generateHorizontalSpring = (width) => {
+                    const coils = 12;
+                    const height = 16;
+                    const leftPadding = 10;
+                    const rightPadding = 10;
+                    
+                    let path = `M 0 10 L ${leftPadding} 10 `;
+                    const coilWidth = (width - leftPadding - rightPadding) / coils;
+                    
+                    for(let i=0; i<coils; i++) {
+                        const y = i % 2 === 0 ? 10 - height/2 : 10 + height/2;
+                        const x = leftPadding + coilWidth * (i + 0.5);
+                        path += `L ${x} ${y} `;
+                    }
+                    
+                    path += `L ${width - rightPadding} 10 L ${width} 10`;
+                    return path;
+                };
+
+                // Dimensiones visuales
+                const l0 = 80; // Longitud del muelle en reposo (px)
+                const scale = 2; // px per cm
+                const springLength = l0 + (dxCm * scale);
+
+                // Generador de Diagrama de Cuerpo Libre
+                const [imgUrl, setImgUrl] = useState(null);
+                const [imgLoading, setImgLoading] = useState(false);
+
+                const generarDiagrama = async () => {
+                    setImgLoading(true);
+                    const apiKey = ""; 
+                    try {
+                        const response = await fetch(
+                            `https://generativelanguage.googleapis.com/v1beta/models/imagen-4.0-generate-001:predict?key=${apiKey}`,
+                            {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({
+                                    instances: [{ prompt: "Diagrama técnico de física. Un bloque sobre un plano inclinado sujeto por un muelle a la parte superior. Vector Px apuntando hacia abajo del plano. Vector Fuerza Elástica Fe apuntando hacia arriba del plano. Ambos vectores son de igual tamaño (equilibrio). Fondo blanco, minimalista, educativo" }],
+                                    parameters: { sampleCount: 1 }
+                                })
+                            }
+                        );
+                        if (!response.ok) throw new Error("Error en la red");
+                        const data = await response.json();
+                        setImgUrl(`data:image/png;base64,${data.predictions[0].bytesBase64Encoded}`);
+                    } catch (error) {
+                        console.error(error);
+                    } finally {
+                        setImgLoading(false);
+                    }
+                };
+
+                return (
+                    <div className="min-h-screen bg-slate-900 text-slate-100 p-4 md:p-8">
+                        <header className="max-w-5xl mx-auto mb-8 border-b border-slate-700 pb-6">
+                            <div className="flex items-center gap-3 mb-2">
+                                <span className="bg-pink-600 text-white px-3 py-1 rounded-full text-xs font-black uppercase tracking-widest">Equilibrio Estático</span>
+                                <h1 className="text-3xl font-black text-pink-400 uppercase tracking-tight tracking-widest">Muelle en Pendiente</h1>
+                            </div>
+                            <div className="bg-slate-800/50 p-4 rounded-xl border border-slate-700 mt-4">
+                                <p className="text-slate-300 text-sm leading-relaxed">
+                                    <strong>Enunciado:</strong> Un bloque de 7,0 kg en un plano inclinado a 60° está sujeto por un muelle que se alarga 16,4 cm. ¿Cuál es su constante elástica?
+                                </p>
+                            </div>
+                        </header>
+
+                        <main className="max-w-5xl mx-auto grid md:grid-cols-2 gap-8">
+                            {/* Panel Visual */}
+                            <div className="bg-slate-800 rounded-3xl border border-slate-700 h-[500px] relative overflow-hidden shadow-2xl flex flex-col justify-end pb-8">
+                                
+                                {/* Marcadores Flotantes */}
+                                <div className="absolute top-4 w-full px-6 flex justify-between z-30 pointer-events-none">
+                                    <div className="bg-slate-900/90 p-3 rounded-lg border border-slate-700 backdrop-blur-md">
+                                        <p className="text-[10px] text-slate-500 uppercase font-black">Fuerza a equilibrar (P_x)</p>
+                                        <p className="text-xl font-mono font-black text-orange-400">{px.toFixed(1)} N</p>
+                                    </div>
+                                    <div className="bg-slate-900/90 p-3 rounded-lg border border-slate-700 backdrop-blur-md text-right border-b-4 border-b-pink-500">
+                                        <p className="text-[10px] text-slate-500 uppercase font-black">Constante Elástica (k)</p>
+                                        <p className="text-xl font-mono font-black text-pink-400">{k.toFixed(1)} N/m</p>
+                                    </div>
+                                </div>
+
+                                {/* Escena de la Rampa */}
+                                <div className="relative w-full h-80">
+                                    <div className="absolute bottom-10 left-10 w-[400px] h-full pointer-events-none">
+                                        
+                                        {/* Grupo Rotado (Rampa + Bloque). Rotamos desde bottom-right para que se eleve la izquierda */}
+                                        <div 
+                                            className="absolute bottom-0 left-0 w-full h-full origin-bottom-right transition-transform duration-300 z-20"
+                                            style={{ transform: `rotate(${angulo}deg)` }}
+                                        >
+                                            {/* La Rampa */}
+                                            <div className="absolute bottom-0 left-0 w-full h-4 ramp-pattern shadow-xl rounded-l-full"></div>
+
+                                            {/* Anclaje superior del muelle */}
+                                            <div className="absolute bottom-4 left-6 w-4 h-12 bg-slate-500 rounded-t-sm border-2 border-slate-400 flex items-end justify-center pb-2 shadow-lg">
+                                                <div className="w-2 h-2 bg-slate-800 rounded-full"></div>
+                                            </div>
+
+                                            {/* El Muelle SVG */}
+                                            <div className="absolute bottom-6 z-10 transition-all duration-300" style={{ left: '30px' }}>
+                                                <svg width={springLength} height="20" className="overflow-visible">
+                                                    <path 
+                                                        d={generateHorizontalSpring(springLength)} 
+                                                        fill="none" stroke="#db2777" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"
+                                                    />
+                                                </svg>
+                                            </div>
+
+                                            {/* El Bloque */}
+                                            <div 
+                                                className="absolute bottom-4 h-16 bg-orange-600 border-4 border-orange-400 rounded-lg flex items-center justify-center shadow-lg transition-all duration-300 z-30"
+                                                style={{ left: `${30 + springLength}px`, width: '56px' }}
+                                            >
+                                                <span className="font-black text-orange-200 text-xs">{masa.toFixed(1)} kg</span>
+
+                                                {/* Vector Px (Naranja, hacia abajo del plano -> Derecha local) */}
+                                                <div className="absolute top-1/2 left-full flex items-center pl-1" style={{ width: Math.max(30, px) }}>
+                                                    <div className="h-1 bg-orange-400 w-full relative shadow-[0_0_8px_rgba(249,115,22,0.8)]">
+                                                        <div className="absolute right-0 -top-1.5">{ArrowRightIcon && <ArrowRightIcon className="text-orange-400" size={16} />}</div>
+                                                    </div>
+                                                    <span className="ml-1 text-[10px] font-black text-orange-300 bg-slate-900/80 px-1 rounded">P_x</span>
+                                                </div>
+
+                                                {/* Vector Fuerza Elástica (Rosa, hacia arriba del plano -> Izquierda local) */}
+                                                <div className="absolute top-1/2 right-full flex items-center pr-1" style={{ width: Math.max(30, fe) }}>
+                                                    <span className="mr-1 text-[10px] font-black text-pink-300 bg-slate-900/80 px-1 rounded whitespace-nowrap">F_e</span>
+                                                    <div className="h-1 bg-pink-500 w-full relative shadow-[0_0_8px_rgba(219,39,119,0.8)]">
+                                                        <div className="absolute left-0 -top-1.5">{ArrowLeftIcon && <ArrowLeftIcon className="text-pink-500" size={16} />}</div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        {/* Suelo y Ángulo */}
+                                        <div className="absolute bottom-0 left-0 w-full border-b-2 border-slate-600 border-dashed"></div>
+                                        
+                                        {angulo > 0 && (
+                                            <div className="absolute bottom-0 right-0 w-24 h-24 border-l-2 border-t-2 border-pink-500/50 rounded-tl-full flex items-end justify-start pb-2 pl-2">
+                                                <span className="text-pink-300 font-mono text-sm font-bold">{angulo}º</span>
+                                            </div>
+                                        )}
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* Controles y Resolución */}
+                            <div className="space-y-6">
+                                <div className="bg-slate-800 p-6 rounded-3xl border border-slate-700 shadow-xl">
+                                    <h3 className="text-xl font-bold mb-4 flex items-center gap-2 text-pink-400">
+                                        {AnchorIcon && <AnchorIcon size={20} />} Ajustar Sistema
+                                    </h3>
+                                    
+                                    <div className="space-y-6 mb-2">
+                                        <div>
+                                            <div className="flex justify-between text-xs mb-2">
+                                                <span className="text-orange-400 font-bold uppercase">Masa del bloque (m)</span>
+                                                <span className="font-mono bg-slate-900 px-2 py-0.5 rounded text-white">{masa.toFixed(1)} kg</span>
+                                            </div>
+                                            <input 
+                                                type="range" min="1" max="20" step="0.5" value={masa} 
+                                                onChange={e => setMasa(Number(e.target.value))} 
+                                                className="w-full h-2 bg-slate-700 rounded-lg appearance-none cursor-pointer accent-orange-500" 
+                                            />
+                                        </div>
+
+                                        <div>
+                                            <div className="flex justify-between text-xs mb-2">
+                                                <span className="text-slate-300 font-bold uppercase">Inclinación (α)</span>
+                                                <span className="font-mono bg-slate-900 px-2 py-0.5 rounded text-white">{angulo}º</span>
+                                            </div>
+                                            <input 
+                                                type="range" min="0" max="85" step="1" value={angulo} 
+                                                onChange={e => setAngulo(Number(e.target.value))} 
+                                                className="w-full h-2 bg-slate-700 rounded-lg appearance-none cursor-pointer accent-slate-400" 
+                                            />
+                                        </div>
+
+                                        <div className="pt-4 border-t border-slate-700">
+                                            <div className="flex justify-between text-xs mb-2">
+                                                <span className="text-pink-400 font-bold uppercase">Alargamiento (Δx)</span>
+                                                <span className="font-mono bg-slate-900 px-2 py-0.5 rounded text-pink-200">{dxCm.toFixed(1)} cm</span>
+                                            </div>
+                                            <input 
+                                                type="range" min="1" max="40" step="0.1" value={dxCm} 
+                                                onChange={e => setDxCm(Number(e.target.value))} 
+                                                className="w-full h-2 bg-slate-700 rounded-lg appearance-none cursor-pointer accent-pink-500" 
+                                            />
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div className="bg-pink-950/20 p-6 rounded-3xl border border-pink-500/20">
+                                    <div className="flex justify-between items-center mb-4 border-b border-pink-500/30 pb-2">
+                                        <h4 className="font-bold text-pink-300 flex items-center gap-2">
+                                            {CalculatorIcon && <CalculatorIcon size={18} />} Resolución Paso a Paso
+                                        </h4>
+                                        <button onClick={generarDiagrama} className="text-[10px] uppercase font-bold bg-slate-800 hover:bg-slate-700 text-slate-300 px-3 py-1.5 rounded flex items-center gap-1 border border-slate-600">
+                                            {imgLoading ? <span className="animate-pulse">Cargando...</span> : <>{ImagePlusIcon && <ImagePlusIcon size={14}/>} Generar DCL</>}
+                                        </button>
+                                    </div>
+
+                                    {imgUrl && (
+                                        <div className="mb-4 bg-slate-900 p-2 rounded-xl border border-slate-700 text-center">
+                                            <img src={imgUrl} alt="Diagrama de Cuerpo Libre" className="mx-auto max-h-40 rounded-lg" />
+                                        </div>
+                                    )}
+
+                                    <div className="text-xs text-slate-300 space-y-3 leading-relaxed">
+                                        <p><strong>1. El peso cuesta abajo (P<sub>x</sub>):</strong><br/>
+                                        Como el bloque está en un plano inclinado, la fuerza que "tira" de él hacia abajo no es todo su peso, sino solo la componente P<sub>x</sub> (con el Seno).</p>
+                                        <div className="bg-slate-900/80 p-2 rounded-lg border-l-4 border-orange-500 font-mono text-orange-200">
+                                            P<sub>x</sub> = m · g · sin(α)<br/>
+                                            P<sub>x</sub> = {masa.toFixed(1)} · 9.8 · sin({angulo}º) = <strong>{px.toFixed(2)} N</strong>
+                                        </div>
+                                        
+                                        <p className="mt-3"><strong>2. Equilibrio de Fuerzas:</strong><br/>
+                                        Si el bloque está en reposo, la fuerza del muelle hacia arriba anula a la del peso hacia abajo.</p>
+                                        <div className="bg-slate-900/80 p-2 rounded-lg border-l-4 border-slate-500 font-mono">
+                                            F<sub>e</sub> = P<sub>x</sub> = <strong>{fe.toFixed(2)} N</strong>
+                                        </div>
+
+                                        <p className="mt-3"><strong>3. Ley de Hooke y Trampa de Unidades:</strong><br/>
+                                        ¡OJO! El alargamiento (x) debe estar en <strong>metros</strong>.</p>
+                                        <div className="bg-slate-900/80 p-3 rounded-lg border-l-4 border-pink-500 font-mono text-pink-200 shadow-inner">
+                                            x = {dxCm.toFixed(1)} cm = <strong>{dxM.toFixed(3)} m</strong><br/>
+                                            F<sub>e</sub> = k · x  ⇒  k = F<sub>e</sub> / x<br/>
+                                            k = {fe.toFixed(2)} / {dxM.toFixed(3)} = <strong>{k.toFixed(2)} N/m</strong>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </main>
+
+                        <footer className="max-w-5xl mx-auto mt-12 pt-6 border-t border-slate-800 text-center text-slate-500 text-[10px] font-bold uppercase tracking-widest">
+                            Profe Física | Dinámica: Elasticidad en Plano Inclinado
+                        </footer>
+                    </div>
+                );
+            };
+
+            const container = document.getElementById('root');
+            const root = ReactDOM.createRoot(container);
+            root.render(<App />);
+        })();
+    </script>
+</body>
+</html>

@@ -1,0 +1,295 @@
+<!DOCTYPE html>
+<html lang="ca">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Laboratori: Màquina d'Atwood</title>
+    <!-- Biblioteques -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <script src="https://unpkg.com/lucide-react@latest"></script>
+
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&family=Fira+Code&display=swap');
+        body { font-family: 'Inter', sans-serif; background-color: #0f172a; }
+        .font-mono { font-family: 'Fira Code', monospace; }
+        input[type=range]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            height: 20px;
+            width: 20px;
+            border-radius: 50%;
+            background: #14b8a6; /* Teal 500 */
+            cursor: pointer;
+            border: 2px solid #ffffff;
+            box-shadow: 0 0 10px rgba(20, 184, 166, 0.5);
+        }
+        .rope-vertical { border-right: 3px solid #94a3b8; }
+    </style>
+</head>
+<body>
+    <div id="root"></div>
+
+    <script type="text/babel">
+        (() => {
+            var { useState, useEffect } = React;
+            var icons = window.LucideReact || {};
+            var { Play, RotateCcw, Info, Settings, ArrowUp, ArrowDown, ArrowDownToLine } = icons;
+
+            var App = () => {
+                // Paràmetres del sistema (Valors inicials de l'enunciat)
+                const [m1, setM1] = useState(0.4); // Massa 1 (kg) - Esquerra
+                const [m2, setM2] = useState(0.5); // Massa 2 (kg) - Dreta
+                const g = 9.8; // Gravetat (m/s^2)
+
+                // Estats de l'animació
+                const [pos, setPos] = useState(0); // Posició (positiu = m2 baixa, m1 puja)
+                const [vel, setVel] = useState(0);
+                const [isMoving, setIsMoving] = useState(false);
+
+                // Càlculs físics
+                const p1 = m1 * g;
+                const p2 = m2 * g;
+                
+                // Acceleració: a = g * (m2 - m1) / (m1 + m2)
+                const mTotal = m1 + m2;
+                const a = g * (m2 - m1) / mTotal; 
+                
+                // Tensió: T = m1 * (g + a) o T = 2*m1*m2*g / (m1+m2)
+                const tensio = (2 * m1 * m2 * g) / mTotal;
+
+                const maxPos = 120; // Límit de desplaçament en píxels
+                const isCrashed = Math.abs(pos) >= maxPos;
+
+                useEffect(() => {
+                    let interval;
+                    if (isMoving && !isCrashed) {
+                        interval = setInterval(() => {
+                            setVel(v => v + a * 0.05);
+                            setPos(p => {
+                                const newP = p + vel;
+                                if (Math.abs(newP) >= maxPos) {
+                                    setIsMoving(false); 
+                                    return Math.sign(newP) * maxPos;
+                                }
+                                return newP;
+                            });
+                        }, 20);
+                    }
+                    return () => clearInterval(interval);
+                }, [isMoving, pos, vel, a, isCrashed]);
+
+                const handlePlay = () => {
+                    if (!isCrashed && a !== 0) setIsMoving(true);
+                };
+
+                const reset = () => {
+                    setPos(0);
+                    setVel(0);
+                    setIsMoving(false);
+                };
+
+                return (
+                    <div className="min-h-screen bg-slate-900 text-slate-100 p-4 md:p-8">
+                        <header className="max-w-5xl mx-auto mb-8 border-b border-slate-700 pb-6">
+                            <div className="flex items-center gap-3 mb-2">
+                                <span className="bg-teal-600 text-white px-3 py-1 rounded-full text-xs font-black uppercase tracking-widest">Sistemes Lligats</span>
+                                <h1 className="text-3xl font-black text-teal-400 uppercase tracking-tight tracking-widest">La Màquina d'Atwood</h1>
+                            </div>
+                            <div className="bg-slate-800/50 p-4 rounded-xl border border-slate-700">
+                                <p className="text-slate-300 text-sm leading-relaxed">
+                                    <strong>Enunciat:</strong> Dos cossos de 400 g i 500 g pengen dels extrems d'una corda que passa per una politja sense massa ni fregament. Calcula l'acceleració del sistema i la tensió de la corda.
+                                </p>
+                            </div>
+                        </header>
+
+                        <main className="max-w-5xl mx-auto grid md:grid-cols-2 gap-8">
+                            {/* Visualització Gràfica */}
+                            <div className="bg-slate-800 rounded-3xl border border-slate-700 h-[550px] relative overflow-hidden shadow-2xl flex flex-col items-center">
+                                
+                                {/* Dades flotants */}
+                                <div className="absolute top-4 left-4 grid grid-cols-2 gap-2 z-30">
+                                    <div className="bg-slate-900/90 p-2 rounded-lg border border-slate-700">
+                                        <p className="text-[10px] text-slate-500 uppercase font-black">Acceleració</p>
+                                        <p className="text-sm font-mono font-black text-teal-400">{Math.abs(a).toFixed(2)} m/s²</p>
+                                    </div>
+                                    <div className="bg-slate-900/90 p-2 rounded-lg border border-slate-700">
+                                        <p className="text-[10px] text-slate-500 uppercase font-black">Tensió (T)</p>
+                                        <p className="text-sm font-mono font-black text-indigo-400">{tensio.toFixed(2)} N</p>
+                                    </div>
+                                </div>
+
+                                {/* Sostre i Politja */}
+                                <div className="w-full h-8 bg-slate-700 border-b-4 border-slate-600 flex justify-center">
+                                    <div className="w-4 h-16 bg-slate-600 relative">
+                                        <div className="absolute -bottom-6 left-1/2 -translate-x-1/2 w-16 h-16 bg-slate-500 border-4 border-slate-400 rounded-full z-20 flex items-center justify-center shadow-lg">
+                                            <div className="w-3 h-3 bg-slate-900 rounded-full"></div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                {/* Sistema de Cordes i Masses */}
+                                <div className="relative w-full h-full mt-10">
+                                    
+                                    {/* Corda Esquerra (m1) */}
+                                    <div 
+                                        className="absolute left-[calc(50%-32px)] rope-vertical w-0.5 z-10 transition-all"
+                                        style={{ top: '0', height: `${150 - pos}px` }}
+                                    ></div>
+
+                                    {/* Corda Dreta (m2) */}
+                                    <div 
+                                        className="absolute right-[calc(50%-32px)] rope-vertical w-0.5 z-10 transition-all"
+                                        style={{ top: '0', height: `${150 + pos}px` }}
+                                    ></div>
+
+                                    {/* Massa 1 (Esquerra) */}
+                                    <div 
+                                        className="absolute bg-emerald-500 border-2 border-emerald-300 rounded-lg flex items-center justify-center z-20 shadow-md transition-all"
+                                        style={{ left: 'calc(50% - 48px)', top: `${150 - pos}px`, width: '36px', height: `${Math.max(30, m1 * 40 + 20)}px` }}
+                                    >
+                                        <span className="font-black text-emerald-950 text-xs">m<sub>1</sub></span>
+                                        
+                                        {/* Vectors m1 */}
+                                        <div className="absolute top-1/2 right-full pr-2 flex flex-col items-center">
+                                            {/* Tensió (Amunt) */}
+                                            <div className="flex flex-col items-center pb-1" style={{ height: tensio * 10 }}>
+                                                <span className="mb-1 text-[10px] font-bold text-indigo-300">T</span>
+                                                <div className="w-1 bg-indigo-400 h-full relative">
+                                                    <div className="absolute top-0 -translate-x-[6px]">{ArrowUp && <ArrowUp size={16} className="text-indigo-400" />}</div>
+                                                </div>
+                                            </div>
+                                            {/* Pes (Avall) */}
+                                            <div className="flex flex-col items-center pt-1" style={{ height: p1 * 10 }}>
+                                                <div className="w-1 bg-red-400 h-full relative">
+                                                    <div className="absolute bottom-0 -translate-x-[6px]">{ArrowDown && <ArrowDown size={16} className="text-red-400" />}</div>
+                                                </div>
+                                                <span className="mt-1 text-[10px] font-bold text-red-300">P<sub>1</sub></span>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    {/* Massa 2 (Dreta) */}
+                                    <div 
+                                        className="absolute bg-orange-500 border-2 border-orange-300 rounded-lg flex items-center justify-center z-20 shadow-xl transition-all"
+                                        style={{ right: 'calc(50% - 48px)', top: `${150 + pos}px`, width: '36px', height: `${Math.max(30, m2 * 40 + 20)}px` }}
+                                    >
+                                        <span className="font-black text-orange-950 text-xs">m<sub>2</sub></span>
+                                        
+                                        {/* Vectors m2 */}
+                                        <div className="absolute top-1/2 left-full pl-2 flex flex-col items-center">
+                                            {/* Tensió (Amunt) */}
+                                            <div className="flex flex-col items-center pb-1" style={{ height: tensio * 10 }}>
+                                                <span className="mb-1 text-[10px] font-bold text-indigo-300">T</span>
+                                                <div className="w-1 bg-indigo-400 h-full relative">
+                                                    <div className="absolute top-0 -translate-x-[6px]">{ArrowUp && <ArrowUp size={16} className="text-indigo-400" />}</div>
+                                                </div>
+                                            </div>
+                                            {/* Pes (Avall) */}
+                                            <div className="flex flex-col items-center pt-1" style={{ height: p2 * 10 }}>
+                                                <div className="w-1 bg-red-400 h-full relative">
+                                                    <div className="absolute bottom-0 -translate-x-[6px]">{ArrowDown && <ArrowDown size={16} className="text-red-400" />}</div>
+                                                </div>
+                                                <span className="mt-1 text-[10px] font-bold text-red-300">P<sub>2</sub></span>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    {/* Terra (Límit inferior) */}
+                                    <div className="absolute bottom-0 w-full h-8 bg-slate-700 border-t-4 border-slate-600"></div>
+
+                                    {isCrashed && (
+                                        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-30 animate-pulse">
+                                            <div className="bg-red-600 text-white px-4 py-2 rounded-lg font-black uppercase shadow-lg border-2 border-red-400">
+                                                Sistema Aturat
+                                            </div>
+                                        </div>
+                                    )}
+                                </div>
+                            </div>
+
+                            {/* Tauler de Control */}
+                            <div className="space-y-6">
+                                <div className="bg-slate-800 p-6 rounded-3xl border border-slate-700 shadow-xl">
+                                    <div className="flex justify-between items-center mb-6">
+                                        <h3 className="text-xl font-bold flex items-center gap-2">
+                                            {Settings && <Settings className="text-teal-400" />} Configura les Masses
+                                        </h3>
+                                        <button onClick={reset} className="p-2 bg-slate-700 rounded-lg hover:bg-slate-600 shadow-md">
+                                            {RotateCcw && <RotateCcw size={18} />}
+                                        </button>
+                                    </div>
+
+                                    <div className="space-y-6 mb-6">
+                                        {/* Control m1 */}
+                                        <div>
+                                            <div className="flex justify-between text-xs mb-2">
+                                                <span className="text-emerald-400 font-bold uppercase tracking-wider">m<sub>1</sub> (Esquerra)</span>
+                                                <span className="font-mono bg-slate-900 px-2 py-1 rounded text-white">{m1.toFixed(1)} kg ({(m1*1000).toFixed(0)} g)</span>
+                                            </div>
+                                            <input type="range" min="0.1" max="2.0" step="0.1" value={m1} onChange={e => {setM1(Number(e.target.value)); reset();}} className="w-full h-2 bg-slate-700 rounded-lg appearance-none cursor-pointer" />
+                                        </div>
+                                        
+                                        {/* Control m2 */}
+                                        <div>
+                                            <div className="flex justify-between text-xs mb-2">
+                                                <span className="text-orange-400 font-bold uppercase tracking-wider">m<sub>2</sub> (Dreta)</span>
+                                                <span className="font-mono bg-slate-900 px-2 py-1 rounded text-white">{m2.toFixed(1)} kg ({(m2*1000).toFixed(0)} g)</span>
+                                            </div>
+                                            <input type="range" min="0.1" max="2.0" step="0.1" value={m2} onChange={e => {setM2(Number(e.target.value)); reset();}} className="w-full h-2 bg-slate-700 rounded-lg appearance-none cursor-pointer" />
+                                        </div>
+                                    </div>
+
+                                    <button 
+                                        onClick={handlePlay} 
+                                        disabled={isMoving || isCrashed || a === 0} 
+                                        className={`w-full py-4 rounded-xl font-black flex items-center justify-center gap-2 transition-all shadow-lg ${a === 0 ? 'bg-slate-600 text-slate-400 cursor-not-allowed' : 'bg-teal-600 hover:bg-teal-500 text-white active:scale-95'}`}
+                                    >
+                                        {Play && <Play size={18}/>} 
+                                        {a === 0 ? 'EQUILIBRI PERFECTE' : 'ALLIBERAR EL SISTEMA'}
+                                    </button>
+                                </div>
+
+                                <div className="bg-teal-950/20 p-6 rounded-3xl border border-teal-500/20">
+                                    <h4 className="font-bold text-teal-300 mb-4 flex items-center gap-2">
+                                        {Info && <Info size={18} />} Resolució del Profe
+                                    </h4>
+                                    <div className="text-[12px] text-slate-300 space-y-4 leading-relaxed">
+                                        <p><strong>1. Conversió d'unitats:</strong> m<sub>1</sub> = 0.4 kg, m<sub>2</sub> = 0.5 kg.</p>
+                                        <p><strong>2. Sistema d'equacions:</strong><br/>
+                                        El cos 2 és més pesat, per tant baixa (P<sub>2</sub> - T = m<sub>2</sub>·a)<br/>
+                                        El cos 1 és més lleuger, per tant puja (T - P<sub>1</sub> = m<sub>1</sub>·a)
+                                        </p>
+                                        
+                                        <div className="bg-slate-900/80 p-3 rounded-lg border-l-4 border-teal-500 font-mono text-teal-200">
+                                            <strong>Acceleració:</strong><br/>
+                                            a = g · (m<sub>2</sub> - m<sub>1</sub>) / (m<sub>1</sub> + m<sub>2</sub>)<br/>
+                                            a = 9.8 · (0.5 - 0.4) / (0.9) = 1.09 m/s²
+                                        </div>
+
+                                        <div className="bg-slate-900/80 p-3 rounded-lg border-l-4 border-indigo-500 font-mono text-indigo-200">
+                                            <strong>Tensió:</strong><br/>
+                                            T = m<sub>1</sub> · (g + a)<br/>
+                                            T = 0.4 · (9.8 + 1.09) = 4.36 N
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </main>
+
+                        <footer className="max-w-5xl mx-auto mt-12 pt-6 border-t border-slate-800 text-center text-slate-500 text-[10px] font-bold uppercase tracking-widest">
+                            Profe Física | Dinàmica: La Màquina d'Atwood
+                        </footer>
+                    </div>
+                );
+            };
+
+            const container = document.getElementById('root');
+            const root = ReactDOM.createRoot(container);
+            root.render(<App />);
+        })();
+    </script>
+</body>
+</html>
