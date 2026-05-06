@@ -1,0 +1,473 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dinámica Interactiva - Física Avanzada</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Configuración de MathJax para fórmulas claras -->
+    <script>
+        window.MathJax = {
+            tex: {
+                inlineMath: [['$', '$'], ['\\(', '\\)']],
+                displayMath: [['$$', '$$'], ['\\[', '\\]']]
+            },
+            svg: { fontCache: 'global' }
+        };
+    </script>
+    <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&family=Fira+Code:wght@400;500&display=swap');
+        
+        body { font-family: 'Inter', sans-serif; }
+        
+        .math-display-box {
+            background: #f1f5f9;
+            border-radius: 8px;
+            padding: 1.5rem;
+            margin: 1rem 0;
+            border-left: 6px solid #2563eb;
+            font-size: 1.25rem;
+            overflow-x: auto;
+        }
+
+        .theory-section {
+            border-bottom: 1px solid #e2e8f0;
+            padding-bottom: 3rem;
+            margin-bottom: 3rem;
+        }
+
+        .canvas-container {
+            background: #ffffff;
+            border: 2px solid #e2e8f0;
+            border-radius: 12px;
+            box-shadow: inset 0 2px 4px 0 rgba(0,0,0,0.05);
+        }
+
+        .nav-link {
+            transition: all 0.2s;
+            border-bottom: 2px solid transparent;
+        }
+
+        .nav-link:hover {
+            color: #2563eb;
+            border-bottom-color: #2563eb;
+        }
+
+        .highlight-text {
+            color: #1e40af;
+            font-weight: 600;
+        }
+    </style>
+</head>
+<body class="bg-slate-50 text-slate-900 leading-relaxed">
+
+    <nav class="sticky top-0 bg-white/90 backdrop-blur-md z-50 border-b border-slate-200 shadow-sm">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between h-16 items-center">
+                <div class="flex-shrink-0 font-bold text-2xl text-blue-700 flex items-center gap-2">
+                    <span>FísicaLab</span>
+                </div>
+                <div class="hidden lg:flex space-x-6 text-sm uppercase tracking-wider">
+                    <a href="#historia" class="nav-link font-semibold">Historia</a>
+                    <a href="#newton" class="nav-link font-semibold">Leyes</a>
+                    <a href="#rozamiento" class="nav-link font-semibold">Rozamiento</a>
+                    <a href="#elastica" class="nav-link font-semibold">Hooke</a>
+                    <a href="#circular" class="nav-link font-semibold">Circular</a>
+                    <a href="#gravitatoria" class="nav-link font-semibold">Gravitación</a>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <header class="bg-slate-900 text-white py-20 px-4 relative overflow-hidden">
+        <div class="absolute inset-0 opacity-10">
+            <svg width="100%" height="100%"><defs><pattern id="grid" width="40" height="40" patternUnits="userSpaceOnUse"><path d="M 40 0 L 0 0 0 40" fill="none" stroke="white" stroke-width="1"/></pattern></defs><rect width="100%" height="100%" fill="url(#grid)" /></svg>
+        </div>
+        <div class="max-w-5xl mx-auto text-center relative z-10">
+            <h1 class="text-5xl md:text-7xl font-extrabold mb-6">Dinámica y Fuerzas</h1>
+            <p class="text-xl md:text-2xl text-slate-300 max-w-3xl mx-auto">
+                De la visión de Aristóteles a la precisión de Newton: un viaje por las causas del movimiento.
+            </p>
+        </div>
+    </header>
+
+    <main class="max-w-6xl mx-auto py-16 px-6">
+
+        <!-- CONTEXTO HISTÓRICO -->
+        <section id="historia" class="theory-section">
+            <h2 class="text-3xl font-bold text-blue-800 mb-6">1. Visión Histórica</h2>
+            <div class="grid md:grid-cols-3 gap-8">
+                <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-100">
+                    <h3 class="font-bold text-lg mb-2 text-slate-700">Aristóteles</h3>
+                    <p class="text-sm text-slate-600 italic">"Un cuerpo solo se mantiene en movimiento mientras actúe una fuerza sobre él."</p>
+                    <p class="text-sm mt-3">Creía erróneamente que la velocidad de caída dependía del peso y que el estado natural era el reposo.</p>
+                </div>
+                <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-100">
+                    <h3 class="font-bold text-lg mb-2 text-slate-700">Galileo Galilei</h3>
+                    <p class="text-sm text-slate-600 italic">"Todos los cuerpos caen libremente con la misma aceleración."</p>
+                    <p class="text-sm mt-3">Sentó las bases de la dinámica moderna mediante la experimentación con planos inclinados.</p>
+                </div>
+                <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-100">
+                    <h3 class="font-bold text-lg mb-2 text-slate-700">Newton y Descartes</h3>
+                    <p class="text-sm text-slate-600 italic">"Principio de Inercia."</p>
+                    <p class="text-sm mt-3">Newton desarrolló el concepto formal de fuerza y sus leyes fundamentales en su obra <em>Principia</em> (1687).</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- LEYES DE NEWTON -->
+        <section id="newton" class="theory-section">
+            <div class="grid lg:grid-cols-2 gap-12">
+                <div class="space-y-6">
+                    <h2 class="text-3xl font-bold text-blue-800">2. Las Leyes de Newton</h2>
+                    <div class="space-y-4">
+                        <div class="bg-blue-50 p-4 rounded-lg">
+                            <h4 class="font-bold text-blue-900">Primera Ley: Inercia</h4>
+                            <p class="text-sm">Todo cuerpo permanece en reposo o MRU si la suma de fuerzas es cero.</p>
+                            <div class="math-display-box">
+                                $$ \sum \vec{F} = 0 \implies \vec{v} = \text{constante} $$
+                            </div>
+                        </div>
+                        <div class="bg-indigo-50 p-4 rounded-lg">
+                            <h4 class="font-bold text-indigo-900">Segunda Ley: Ley Fundamental</h4>
+                            <p class="text-sm">La aceleración es proporcional a la fuerza e inversa a la masa.</p>
+                            <div class="math-display-box">
+                                $$ \vec{F}_{\text{resultante}} = m \cdot \vec{a} $$
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="bg-white p-8 rounded-2xl shadow-lg border border-slate-200">
+                    <h3 class="text-xl font-bold mb-4 text-center">Simulador de Aceleración</h3>
+                    <div class="canvas-container h-40 mb-6 flex items-end justify-start p-4 bg-slate-50 relative">
+                        <div id="newton-block" class="w-12 h-12 bg-blue-600 rounded flex items-center justify-center text-white text-[10px] font-bold transition-all shadow-md">m</div>
+                        <div class="absolute bottom-0 left-0 w-full h-1 bg-slate-400"></div>
+                    </div>
+                    <div class="space-y-4">
+                        <label class="block text-sm font-bold">Fuerza Aplicada: <span id="f-val-text" class="text-blue-600">50 N</span></label>
+                        <input type="range" id="f-slider" class="w-full h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer" min="1" max="200" value="50">
+                        
+                        <label class="block text-sm font-bold">Masa (kg): <span id="m-val-text" class="text-blue-600">10 kg</span></label>
+                        <input type="range" id="m-slider" class="w-full h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer" min="1" max="50" value="10">
+                        
+                        <div class="text-center bg-slate-900 text-white p-4 rounded-xl mt-4">
+                            <p class="text-xs uppercase opacity-70">Aceleración Calculada</p>
+                            <div class="text-2xl font-mono" id="a-calc">5.00 m/s²</div>
+                        </div>
+                        <button onclick="animateNewton()" class="w-full py-3 bg-blue-700 text-white font-bold rounded-lg hover:bg-blue-800 transition">Simular Movimiento</button>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- ROZAMIENTO -->
+        <section id="rozamiento" class="theory-section">
+            <h2 class="text-3xl font-bold text-blue-800 mb-6">3. Fuerza de Rozamiento</h2>
+            <p class="mb-6">Las fuerzas de rozamiento se oponen al deslizamiento. Dependen de la naturaleza de las superficies y de la fuerza normal.</p>
+            
+            <div class="grid lg:grid-cols-2 gap-12 items-center">
+                <div class="math-display-box">
+                    <p class="text-sm font-bold text-slate-500 mb-2">Fórmula General:</p>
+                    $$ F_{fr} = \mu \cdot N $$
+                    <hr class="my-3 border-slate-300">
+                    <p class="text-sm font-bold text-slate-500 mb-2">En Plano Inclinado:</p>
+                    $$ P_x = m \cdot g \cdot \sin(\alpha) $$
+                    $$ P_y = N = m \cdot g \cdot \cos(\alpha) $$
+                </div>
+                <div class="bg-white p-6 rounded-xl shadow border">
+                    <canvas id="slope-canvas" width="400" height="250" class="w-full rounded-lg bg-slate-50"></canvas>
+                    <div class="grid grid-cols-2 gap-4 mt-4">
+                        <input type="range" id="angle-input" min="0" max="60" value="25">
+                        <input type="range" id="mu-input" min="0" max="100" value="30">
+                        <div class="text-center text-xs font-bold">Ángulo: <span id="angle-txt">25°</span></div>
+                        <div class="text-center text-xs font-bold">μ: <span id="mu-txt">0.30</span></div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- DINÁMICA CIRCULAR -->
+        <section id="circular" class="theory-section">
+            <h2 class="text-3xl font-bold text-blue-800 mb-6">4. Dinámica del Movimiento Circular</h2>
+            <p class="mb-4">Si cambia la dirección del vector velocidad, aparece una aceleración perpendicular a la trayectoria: la <span class="highlight-text">aceleración centrípeta</span>.</p>
+            
+            <div class="grid lg:grid-cols-3 gap-8">
+                <div class="lg:col-span-1 space-y-4">
+                    <div class="math-display-box text-center">
+                        $$ a_c = \frac{v^2}{R} = \omega^2 R $$
+                    </div>
+                    <div class="math-display-box text-center">
+                        $$ F_c = m \cdot \frac{v^2}{R} $$
+                    </div>
+                </div>
+                <div class="lg:col-span-2 bg-slate-900 rounded-2xl p-8 relative overflow-hidden flex flex-col items-center justify-center min-h-[300px]">
+                    <div id="circle-track" class="w-48 h-48 border-2 border-dashed border-slate-600 rounded-full flex items-center justify-center relative">
+                        <div id="circle-obj" class="w-6 h-6 bg-yellow-400 rounded-full absolute shadow-[0_0_15px_rgba(250,204,21,0.5)]"></div>
+                        <div class="w-2 h-2 bg-white rounded-full"></div>
+                        <div id="force-vec" class="absolute bg-red-500 h-0.5 origin-left transition-all"></div>
+                    </div>
+                    <div class="mt-8 grid grid-cols-2 gap-4 w-full max-w-sm">
+                        <button onclick="changeSpeed(0.5)" class="bg-slate-700 text-white px-4 py-2 rounded text-xs">Frenar</button>
+                        <button onclick="changeSpeed(2)" class="bg-slate-700 text-white px-4 py-2 rounded text-xs">Acelerar</button>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- LEY DE HOOKE -->
+        <section id="elastica" class="theory-section">
+            <h2 class="text-3xl font-bold text-blue-800 mb-6">5. Fuerzas Elásticas (Ley de Hooke)</h2>
+            <div class="grid md:grid-cols-2 gap-12 items-center">
+                <div>
+                    <p class="mb-4 text-slate-700">La deformación de un muelle es proporcional a la fuerza deformadora aplicada. Newton llamó a esto la fuerza restauradora.</p>
+                    <div class="math-display-box">
+                        $$ \vec{F}_e = -k \cdot \Delta \vec{x} $$
+                    </div>
+                    <p class="text-sm text-slate-500">Donde $k$ es la constante elástica en $N/m$ y $\Delta x$ es el alargamiento.</p>
+                </div>
+                <div class="bg-white p-8 rounded-xl shadow-inner border flex flex-col items-center">
+                    <div class="w-32 h-4 bg-slate-800 rounded-sm"></div>
+                    <svg width="100" height="200" id="spring-svg" class="mt-0">
+                        <path d="M50,0 L50,10 Q65,15 50,20 Q35,25 50,30 Q65,35 50,40 Q35,45 50,50 Q65,55 50,60 Q35,65 50,70 L50,80" 
+                              fill="none" stroke="#475569" stroke-width="3" id="spring-wire" />
+                    </svg>
+                    <div id="hooke-mass" class="w-10 h-10 bg-red-600 rounded flex items-center justify-center text-white font-bold text-[10px]">m</div>
+                    <input type="range" id="hooke-slider" min="1" max="100" value="20" class="mt-6 w-full">
+                </div>
+            </div>
+        </section>
+
+        <!-- GRAVITACIÓN Y ÓRBITAS -->
+        <section id="gravitatoria" class="theory-section border-none">
+            <h2 class="text-3xl font-bold text-blue-800 mb-6">6. Gravitación Universal</h2>
+            <p class="mb-6">Esta ley explica tanto la caída de una manzana como el movimiento de los planetas y satélites artificiales.</p>
+            
+            <div class="grid lg:grid-cols-2 gap-12 mb-12">
+                <div class="space-y-4">
+                    <div class="math-display-box">
+                        <p class="text-xs font-bold uppercase text-blue-500 mb-2">Ley de Atracción:</p>
+                        $$ F = G \cdot \frac{M \cdot m}{r^2} $$
+                    </div>
+                    <div class="math-display-box border-l-yellow-500">
+                        <p class="text-xs font-bold uppercase text-yellow-600 mb-2">Velocidad Orbital:</p>
+                        $$ v_{\text{orbital}} = \sqrt{\frac{G \cdot M}{r}} $$
+                    </div>
+                </div>
+                <div class="space-y-4">
+                    <div class="math-display-box border-l-emerald-500">
+                        <p class="text-xs font-bold uppercase text-emerald-600 mb-2">Radio de órbita (III Ley Kepler):</p>
+                        $$ r = \sqrt[3]{\frac{G \cdot M_T \cdot T^2}{4 \pi^2}} $$
+                    </div>
+                    <div class="math-display-box border-l-purple-500">
+                        <p class="text-xs font-bold uppercase text-purple-600 mb-2">Altura sobre la superficie:</p>
+                        $$ h = r - R_{\text{Tierra}} $$
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Simulador planetario simplificado -->
+            <div class="bg-slate-900 p-8 rounded-3xl shadow-2xl relative min-h-[400px] flex items-center justify-center">
+                <div id="earth" class="w-20 h-20 bg-blue-500 rounded-full shadow-[0_0_50px_rgba(59,130,246,0.3)] flex items-center justify-center overflow-hidden border-2 border-blue-400">
+                    <div class="w-full h-full bg-gradient-to-br from-green-400/30 to-transparent"></div>
+                </div>
+                <div id="orbit-circle" class="absolute border border-slate-700 rounded-full transition-all"></div>
+                <div id="satellite" class="absolute w-4 h-4 bg-slate-300 rounded-sm shadow-lg"></div>
+                
+                <div class="absolute bottom-6 right-6 bg-white/10 backdrop-blur-md p-4 rounded-xl text-white text-xs border border-white/20">
+                    <p>Fuerza gravitatoria: <span id="fg-val" class="text-yellow-400 font-mono">---</span></p>
+                    <p class="mt-2 text-[10px] opacity-70">Deslice para ajustar distancia</p>
+                    <input type="range" id="grav-dist" min="80" max="250" value="150" class="w-full mt-2">
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <footer class="bg-slate-950 text-slate-400 py-16 px-4">
+        <div class="max-w-6xl mx-auto grid md:grid-cols-2 gap-12">
+            <div>
+                <h4 class="text-white font-bold mb-4">Sobre este Laboratorio</h4>
+                <p class="text-sm">Diseñado para estudiantes de física, combinando rigor matemático con visualización interactiva. Basado en el currículo de Dinámica.</p>
+            </div>
+            <div class="text-right">
+                <p class="text-xs">© 2024 FísicaLab - Dinámica Avanzada</p>
+                <p class="text-xs mt-2">Renderizado de fórmulas mediante <span class="text-blue-400">MathJax</span></p>
+            </div>
+        </div>
+    </footer>
+
+    <script>
+        // --- UTILIDADES ---
+        const G = 6.674e-11;
+        const M_EARTH = 5.972e24;
+
+        // --- NEWTON 2 ---
+        const fSlider = document.getElementById('f-slider');
+        const mSlider = document.getElementById('m-slider');
+        const fText = document.getElementById('f-val-text');
+        const mText = document.getElementById('m-val-text');
+        const aCalc = document.getElementById('a-calc');
+        const block = document.getElementById('newton-block');
+
+        function updateNewton() {
+            const f = fSlider.value;
+            const m = mSlider.value;
+            const a = (f/m).toFixed(2);
+            fText.innerText = f + ' N';
+            mText.innerText = m + ' kg';
+            aCalc.innerText = a + ' m/s²';
+            block.style.width = (m*1 + 20) + 'px';
+            block.style.height = (m*1 + 20) + 'px';
+            block.innerText = m + 'kg';
+        }
+
+        function animateNewton() {
+            block.style.transition = 'none';
+            block.style.transform = 'translateX(0)';
+            setTimeout(() => {
+                const a = fSlider.value / mSlider.value;
+                block.style.transition = `transform ${2/Math.sqrt(a)}s cubic-bezier(.37,0,.63,1)`;
+                block.style.transform = `translateX(300px)`;
+            }, 50);
+        }
+
+        fSlider.oninput = updateNewton;
+        mSlider.oninput = updateNewton;
+
+        // --- PLANO INCLINADO ---
+        const canvas = document.getElementById('slope-canvas');
+        const ctx = canvas.getContext('2d');
+        const angleIn = document.getElementById('angle-input');
+        const muIn = document.getElementById('mu-input');
+
+        function drawSlope() {
+            const angleDeg = angleIn.value;
+            const angle = angleDeg * Math.PI / 180;
+            const mu = muIn.value / 100;
+            
+            document.getElementById('angle-txt').innerText = angleDeg + '°';
+            document.getElementById('mu-txt').innerText = mu.toFixed(2);
+
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            
+            // Suelo
+            ctx.beginPath();
+            ctx.moveTo(50, 200);
+            ctx.lineTo(350, 200);
+            ctx.stroke();
+
+            // Rampa
+            const rLen = 250;
+            const endX = 50 + rLen * Math.cos(angle);
+            const endY = 200 - rLen * Math.sin(angle);
+            
+            ctx.beginPath();
+            ctx.moveTo(50, 200);
+            ctx.lineTo(endX, endY);
+            ctx.lineTo(endX, 200);
+            ctx.closePath();
+            ctx.fillStyle = '#cbd5e1';
+            ctx.fill();
+            ctx.stroke();
+
+            // Bloque
+            ctx.save();
+            ctx.translate(50 + (rLen/2) * Math.cos(angle), 200 - (rLen/2) * Math.sin(angle));
+            ctx.rotate(-angle);
+            ctx.fillStyle = '#2563eb';
+            ctx.fillRect(-15, -30, 30, 30);
+            
+            // Vector normal
+            ctx.beginPath();
+            ctx.strokeStyle = 'green';
+            ctx.moveTo(0, -15); ctx.lineTo(0, -60); ctx.stroke();
+            
+            ctx.restore();
+        }
+        angleIn.oninput = drawSlope;
+        muIn.oninput = drawSlope;
+
+        // --- DINÁMICA CIRCULAR ---
+        let rotation = 0;
+        let speed = 0.05;
+        function animateCircular() {
+            rotation += speed;
+            const radius = 96; // mitad de 48*4 (w-48 de tailwind)
+            const obj = document.getElementById('circle-obj');
+            const vec = document.getElementById('force-vec');
+            
+            const x = Math.cos(rotation) * radius;
+            const y = Math.sin(rotation) * radius;
+            
+            obj.style.transform = `translate(${x}px, ${y}px)`;
+            
+            // El vector siempre apunta al centro
+            vec.style.width = (speed * 500) + 'px';
+            vec.style.left = (x + 24 + radius) + 'px'; // ajuste visual
+            
+            requestAnimationFrame(animateCircular);
+        }
+
+        window.changeSpeed = (factor) => { speed = Math.max(0.01, Math.min(0.2, speed * factor)); };
+
+        // --- HOOKE ---
+        const hookeS = document.getElementById('hooke-slider');
+        const wire = document.getElementById('spring-wire');
+        const hMass = document.getElementById('hooke-mass');
+
+        function updateHooke() {
+            const m = hookeS.value;
+            const ext = m * 0.8;
+            const scale = 80 + ext;
+            
+            let pathD = "M50,0 L50,10 ";
+            const segs = 10;
+            const h = (scale - 20) / segs;
+            for(let i=0; i<segs; i++) {
+                const side = i % 2 === 0 ? 65 : 35;
+                pathD += `Q${side},${10 + i*h + h/2} 50,${10 + (i+1)*h} `;
+            }
+            pathD += `L50,${scale + 10}`;
+            wire.setAttribute('d', pathD);
+            hMass.style.marginTop = '-10px';
+            hMass.innerText = m + 'kg';
+        }
+        hookeS.oninput = updateHooke;
+
+        // --- GRAVITACIÓN ---
+        const gDist = document.getElementById('grav-dist');
+        let orbitRot = 0;
+        function animateGrav() {
+            orbitRot += 0.02;
+            const d = parseInt(gDist.value);
+            const sat = document.getElementById('satellite');
+            const orb = document.getElementById('orbit-circle');
+            
+            orb.style.width = (d * 2) + 'px';
+            orb.style.height = (d * 2) + 'px';
+            
+            const x = Math.cos(orbitRot) * d;
+            const y = Math.sin(orbitRot) * d;
+            sat.style.transform = `translate(${x}px, ${y}px)`;
+            
+            // F_g = G * M * m / r^2
+            // Usamos d como escala de r
+            const force = (G * M_EARTH * 1000) / Math.pow(d * 1e5, 2);
+            document.getElementById('fg-val').innerText = force.toExponential(2) + " N";
+            
+            requestAnimationFrame(animateGrav);
+        }
+
+        // --- INIT ---
+        window.onload = () => {
+            updateNewton();
+            drawSlope();
+            animateCircular();
+            updateHooke();
+            animateGrav();
+        };
+    </script>
+</body>
+</html>
