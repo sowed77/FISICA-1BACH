@@ -1,1066 +1,1639 @@
 <!DOCTYPE html>
 <html lang="es" data-theme="light">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Teoría Interactiva · Dinámica Tema 7</title>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Literata:opsz,wght@7..72,500;7..72,700&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-    <script>
-        window.MathJax = {
-            tex: { inlineMath: [['\\(', '\\)'], ['$', '$']] },
-            svg: { fontCache: 'global' }
-        };
-    </script>
-    <script defer src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js"></script>
-    <style>
-        :root {
-            --bg: #f4f1eb;
-            --surface: #fbfaf7;
-            --surface2: #f1ede6;
-            --surface3: #e7e0d6;
-            --text: #201c17;
-            --muted: #6f6a61;
-            --faint: #9b958c;
-            --primary: #0d6b6f;
-            --primary-soft: rgba(13, 107, 111, 0.1);
-            --primary-strong: #08484b;
-            --accent: #c76a2a;
-            --danger: #9c3943;
-            --success: #3f7b3a;
-            --border: rgba(32, 28, 23, 0.12);
-            --divider: rgba(32, 28, 23, 0.08);
-            --shadow: 0 8px 24px rgba(15, 23, 42, 0.08);
-            --radius: 1rem;
-            --radius-sm: 0.5rem;
-            --font-display: 'Literata', Georgia, serif;
-            --font-body: 'Inter', sans-serif;
-            --transition: 0.25s ease;
-        }
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Teoría Interactiva Dinámica – Tema 7</title>
 
-        [data-theme="dark"] {
-            --bg: #171513;
-            --surface: #201d1a;
-            --surface2: #292521;
-            --surface3: #332e29;
-            --text: #ece5da;
-            --muted: #b4ada2;
-            --faint: #8f877d;
-            --primary: #67b1b1;
-            --primary-soft: rgba(103, 177, 177, 0.12);
-            --primary-strong: #9ed0d0;
-            --border: rgba(236, 229, 218, 0.14);
-            --divider: rgba(236, 229, 218, 0.09);
-        }
+  <!-- Fuentes y MathJax -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link
+    href="https://fonts.googleapis.com/css2?family=Literata:opsz,wght@7..72,500;7..72,700&family=Inter:wght@400;500;600;700;800&display=swap"
+    rel="stylesheet"
+  />
+  <script>
+    window.MathJax = {
+      tex: {
+        inlineMath: [["\\(", "\\)"], ["$", "$"]],
+      },
+      svg: { fontCache: "global" },
+    };
+  </script>
+  <script
+    defer
+    src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js"
+  ></script>
 
-        * { box-sizing: border-box; margin: 0; padding: 0; }
-        html { scroll-behavior: smooth; }
+  <style>
+    :root {
+      --bg: #f4f1eb;
+      --surface: #fbfaf7;
+      --surface2: #f1ede6;
+      --surface3: #e7e0d6;
+      --text: #201c17;
+      --muted: #6f6a61;
+      --faint: #9b958c;
+      --primary: #0d6b6f;
+      --primary-soft: rgba(13, 107, 111, 0.1);
+      --primary-strong: #08484b;
+      --accent: #c76a2a;
+      --danger: #9c3943;
+      --success: #3f7b3a;
+      --border: rgba(32, 28, 23, 0.12);
+      --divider: rgba(32, 28, 23, 0.08);
+      --shadow: 0 8px 24px rgba(15, 23, 42, 0.08);
+      --radius: 1rem;
+      --radius-sm: 0.5rem;
+      --font-display: "Literata", Georgia, serif;
+      --font-body: "Inter", system-ui, -apple-system, BlinkMacSystemFont,
+        "Segoe UI", sans-serif;
+      --transition: 0.25s ease;
+    }
 
-        body {
-            font-family: var(--font-body);
-            background: var(--bg);
-            color: var(--text);
-            line-height: 1.7;
-            transition: background var(--transition), color var(--transition);
-        }
+    [data-theme="dark"] {
+      --bg: #171513;
+      --surface: #201d1a;
+      --surface2: #292521;
+      --surface3: #332e29;
+      --text: #ece5da;
+      --muted: #b4ada2;
+      --faint: #8f877d;
+      --primary: #67b1b1;
+      --primary-soft: rgba(103, 177, 177, 0.12);
+      --primary-strong: #9ed0d0;
+      --accent: #f59e0b;
+      --border: rgba(236, 229, 218, 0.14);
+      --divider: rgba(236, 229, 218, 0.09);
+      --shadow: 0 10px 32px rgba(15, 23, 42, 0.45);
+    }
 
-        .app-container {
-            display: grid;
-            grid-template-columns: 300px 1fr;
-            min-height: 100vh;
-            max-width: 1400px;
-            margin: 0 auto;
-        }
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
 
-        /* ── Sidebar ── */
-        .sidebar {
-            background: var(--surface);
-            border-right: 1px solid var(--border);
-            padding: 2rem 1.5rem;
-            position: sticky;
-            top: 0;
-            height: 100vh;
-            overflow-y: auto;
-            display: flex;
-            flex-direction: column;
-            gap: 1.5rem;
-        }
+    html {
+      scroll-behavior: smooth;
+    }
 
-        .sidebar-header {
-            display: flex;
-            align-items: center;
-            gap: 0.8rem;
-        }
+    body {
+      font-family: var(--font-body);
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.7;
+      transition: background var(--transition), color var(--transition);
+    }
 
-        .sidebar-header svg {
-            width: 36px;
-            height: 36px;
-            color: var(--primary);
-        }
+    .app-container {
+      display: grid;
+      grid-template-columns: 300px 1fr;
+      min-height: 100vh;
+      max-width: 1400px;
+      margin: 0 auto;
+    }
 
-        .sidebar h2 {
-            font-family: var(--font-display);
-            font-size: 1.2rem;
-            color: var(--primary);
-            letter-spacing: -0.02em;
-        }
+    .sidebar {
+      background: var(--surface);
+      border-right: 1px solid var(--border);
+      padding: 2rem 1.5rem;
+      position: sticky;
+      top: 0;
+      height: 100vh;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 1.5rem;
+    }
 
-        .sidebar .subtitle {
-            font-size: 0.75rem;
-            text-transform: uppercase;
-            letter-spacing: 0.12em;
-            color: var(--muted);
-            margin-top: -0.8rem;
-        }
+    .sidebar-header {
+      display: flex;
+      align-items: center;
+      gap: 0.8rem;
+    }
 
-        .sidebar nav {
-            display: flex;
-            flex-direction: column;
-            gap: 0.2rem;
-            flex: 1;
-        }
+    .sidebar-header svg {
+      width: 36px;
+      height: 36px;
+      color: var(--primary);
+    }
 
-        .sidebar .nav-link {
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-            padding: 0.7rem 1rem;
-            border-radius: 0.7rem;
-            text-decoration: none;
-            color: var(--text);
-            font-weight: 500;
-            font-size: 0.9rem;
-            transition: all 0.2s;
-            border: 1px solid transparent;
-            cursor: pointer;
-        }
+    .sidebar h2 {
+      font-family: var(--font-display);
+      font-size: 1.2rem;
+      color: var(--primary);
+      letter-spacing: -0.02em;
+    }
 
-        .sidebar .nav-link:hover {
-            background: var(--primary-soft);
-            border-color: var(--border);
-            color: var(--primary);
-        }
+    .subtitle {
+      font-size: 0.75rem;
+      text-transform: uppercase;
+      letter-spacing: 0.12em;
+      color: var(--muted);
+      margin-top: -0.8rem;
+    }
 
-        .sidebar .nav-link.active {
-            background: var(--primary-soft);
-            border-color: var(--border);
-            font-weight: 700;
-            color: var(--primary);
-        }
+    nav {
+      display: flex;
+      flex-direction: column;
+      gap: 0.2rem;
+      flex: 1;
+    }
 
-        .sidebar .nav-link .icon {
-            width: 20px;
-            text-align: center;
-            flex-shrink: 0;
-        }
+    .nav-link {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 0.7rem 1rem;
+      border-radius: 0.7rem;
+      text-decoration: none;
+      color: var(--text);
+      font-weight: 500;
+      font-size: 0.9rem;
+      transition: all 0.2s;
+      border: 1px solid transparent;
+      cursor: pointer;
+    }
 
-        .theme-row {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            padding-top: 0.5rem;
-            border-top: 1px solid var(--divider);
-        }
+    .nav-link .icon {
+      width: 20px;
+      text-align: center;
+      flex-shrink: 0;
+    }
 
-        .theme-toggle {
-            background: var(--surface2);
-            border: 1px solid var(--border);
-            border-radius: 2rem;
-            padding: 0.45rem 1rem;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            gap: 0.4rem;
-            font-size: 0.85rem;
-            color: var(--text);
-            transition: all 0.2s;
-        }
+    .nav-link:hover {
+      background: var(--primary-soft);
+      border-color: var(--border);
+      color: var(--primary);
+    }
 
-        .theme-toggle:hover {
-            background: var(--surface3);
-        }
+    .nav-link.active {
+      background: var(--primary-soft);
+      border-color: var(--border);
+      font-weight: 700;
+      color: var(--primary);
+    }
 
-        /* ── Main Content ── */
-        .main-content {
-            padding: 2rem 2.5rem;
-            overflow-y: auto;
-        }
+    .theme-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding-top: 0.5rem;
+      border-top: 1px solid var(--divider);
+    }
 
-        .page-header {
-            margin-bottom: 2.5rem;
-            padding-bottom: 1.5rem;
-            border-bottom: 2px solid var(--divider);
-        }
+    .theme-toggle {
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 2rem;
+      padding: 0.45rem 1rem;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+      font-size: 0.85rem;
+      color: var(--text);
+      transition: all 0.2s;
+    }
 
-        .page-header h1 {
-            font-family: var(--font-display);
-            font-size: 2.2rem;
-            letter-spacing: -0.03em;
-            margin-bottom: 0.3rem;
-        }
+    .theme-toggle:hover {
+      background: var(--surface3);
+    }
 
-        .page-header .breadcrumb {
-            color: var(--muted);
-            font-size: 0.9rem;
-        }
+    .main-content {
+      padding: 2rem 2.5rem;
+      overflow-y: auto;
+    }
 
-        .section {
-            margin-bottom: 3rem;
-            scroll-margin-top: 2rem;
-        }
+    .page-header {
+      margin-bottom: 2.5rem;
+      padding-bottom: 1.5rem;
+      border-bottom: 2px solid var(--divider);
+    }
 
-        .section h3 {
-            font-family: var(--font-display);
-            font-size: 1.5rem;
-            color: var(--primary);
-            margin-bottom: 1rem;
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-        }
+    .breadcrumb {
+      color: var(--muted);
+      font-size: 0.9rem;
+      margin-bottom: 0.25rem;
+    }
 
-        .section h3::after {
-            content: '';
-            flex: 1;
-            height: 1px;
-            background: var(--divider);
-        }
+    .page-header h1 {
+      font-family: var(--font-display);
+      font-size: 2.2rem;
+      letter-spacing: -0.03em;
+      margin-bottom: 0.3rem;
+    }
 
-        .card {
-            background: var(--surface);
-            border-radius: var(--radius);
-            border: 1px solid var(--border);
-            box-shadow: var(--shadow);
-            padding: 1.5rem;
-            margin-bottom: 1.5rem;
-            transition: background var(--transition), border var(--transition);
-        }
+    .page-header p {
+      color: var(--muted);
+      max-width: 620px;
+      font-size: 0.95rem;
+    }
 
-        .card p {
-            margin-bottom: 0.8rem;
-            color: var(--muted);
-        }
+    .section {
+      margin-bottom: 3rem;
+      scroll-margin-top: 2rem;
+    }
 
-        .card .formula {
-            background: var(--surface2);
-            border-radius: var(--radius-sm);
-            padding: 0.8rem 1rem;
-            margin: 0.8rem 0;
-            font-family: 'Courier New', monospace;
-            font-size: 1.1rem;
-            text-align: center;
-            border: 1px solid var(--border);
-        }
+    .section h3 {
+      font-family: var(--font-display);
+      font-size: 1.5rem;
+      color: var(--primary);
+      margin-bottom: 1rem;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
 
-        .interactive-box {
-            background: var(--surface2);
-            border-radius: var(--radius);
-            border: 1px solid var(--border);
-            padding: 1.2rem;
-            margin: 1rem 0;
-        }
+    .section h3::after {
+      content: "";
+      flex: 1;
+      height: 1px;
+      background: var(--divider);
+    }
 
-        .interactive-box h4 {
-            font-size: 0.9rem;
-            text-transform: uppercase;
-            letter-spacing: 0.1em;
-            color: var(--primary);
-            margin-bottom: 0.8rem;
-        }
+    .card {
+      background: var(--surface);
+      border-radius: var(--radius);
+      border: 1px solid var(--border);
+      box-shadow: var(--shadow);
+      padding: 1.5rem;
+      margin-bottom: 1.5rem;
+      transition: background var(--transition), border var(--transition);
+    }
 
-        canvas {
-            display: block;
-            margin: 0 auto;
-            border-radius: var(--radius-sm);
-            max-width: 100%;
-            background: #111827;
-            touch-action: none;
-        }
+    .card p {
+      margin-bottom: 0.7rem;
+      color: var(--muted);
+      font-size: 0.95rem;
+    }
 
-        .control-bar {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 1rem;
-            align-items: center;
-            margin-top: 0.8rem;
-            padding: 0.5rem;
-            background: var(--surface);
-            border-radius: var(--radius-sm);
-            border: 1px solid var(--border);
-        }
+    .card h4 {
+      margin-bottom: 0.5rem;
+      font-size: 1rem;
+      color: var(--primary);
+    }
 
-        .control-bar label {
-            font-size: 0.85rem;
-            color: var(--muted);
-            display: flex;
-            align-items: center;
-            gap: 0.3rem;
-        }
+    .formula {
+      background: var(--surface2);
+      border-radius: var(--radius-sm);
+      padding: 0.8rem 1rem;
+      margin: 0.8rem 0;
+      font-family: "Courier New", monospace;
+      font-size: 1.05rem;
+      text-align: center;
+      border: 1px solid var(--border);
+    }
 
-        .control-bar input[type="range"] {
-            width: 100px;
-            accent-color: var(--primary);
-        }
+    .interactive-box {
+      background: var(--surface2);
+      border-radius: var(--radius);
+      border: 1px solid var(--border);
+      padding: 1.2rem;
+      margin: 1rem 0;
+    }
 
-        button {
-            font-family: inherit;
-            font-size: 0.85rem;
-            font-weight: 600;
-            padding: 0.5rem 1rem;
-            border-radius: 2rem;
-            border: 1px solid var(--border);
-            background: var(--surface);
-            color: var(--text);
-            cursor: pointer;
-            transition: all 0.2s;
-        }
+    .interactive-box h4 {
+      font-size: 0.9rem;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      color: var(--primary);
+      margin-bottom: 0.8rem;
+    }
 
-        button:hover {
-            background: var(--primary-soft);
-            border-color: var(--primary);
-        }
+    canvas {
+      display: block;
+      margin: 0 auto;
+      border-radius: var(--radius-sm);
+      max-width: 100%;
+      background: #111827;
+      touch-action: none;
+    }
 
-        button.primary {
-            background: var(--primary);
-            color: white;
-            border: none;
-        }
+    .control-bar {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 1rem;
+      align-items: center;
+      margin-top: 0.8rem;
+      padding: 0.5rem;
+      background: var(--surface);
+      border-radius: var(--radius-sm);
+      border: 1px solid var(--border);
+    }
 
-        button.primary:hover {
-            background: var(--primary-strong);
-        }
+    .control-bar label {
+      font-size: 0.85rem;
+      color: var(--muted);
+      display: flex;
+      align-items: center;
+      gap: 0.3rem;
+    }
 
-        .quiz-block {
-            background: var(--primary-soft);
-            border-radius: var(--radius);
-            border: 1px solid var(--border);
-            padding: 1.2rem;
-            margin: 1rem 0;
-        }
+    .control-bar input[type="range"] {
+      width: 120px;
+      accent-color: var(--primary);
+    }
 
-        .quiz-block .question {
-            font-weight: 600;
-            margin-bottom: 0.8rem;
-        }
+    .control-bar button {
+      font-family: inherit;
+      font-size: 0.85rem;
+      font-weight: 600;
+      padding: 0.5rem 1rem;
+      border-radius: 2rem;
+      border: 1px solid var(--border);
+      background: var(--surface);
+      color: var(--text);
+      cursor: pointer;
+      transition: all 0.2s;
+    }
 
-        .quiz-block .options {
-            display: flex;
-            flex-direction: column;
-            gap: 0.4rem;
-        }
+    .control-bar button:hover {
+      background: var(--primary-soft);
+      border-color: var(--primary);
+    }
 
-        .quiz-block .option {
-            padding: 0.6rem 1rem;
-            border-radius: 0.5rem;
-            background: var(--surface);
-            border: 1px solid var(--border);
-            cursor: pointer;
-            transition: 0.2s;
-            font-size: 0.9rem;
-        }
+    .control-bar button.primary {
+      background: var(--primary);
+      color: #ffffff;
+      border: none;
+    }
 
-        .quiz-block .option:hover {
-            background: var(--primary-soft);
-        }
+    .control-bar button.primary:hover {
+      background: var(--primary-strong);
+    }
 
-        .quiz-block .option.correct {
-            background: rgba(63, 123, 58, 0.2);
-            border-color: var(--success);
-            color: var(--success);
-        }
+    .quiz-block {
+      background: var(--primary-soft);
+      border-radius: var(--radius);
+      border: 1px solid var(--border);
+      padding: 1.2rem;
+      margin: 1rem 0;
+    }
 
-        .quiz-block .option.wrong {
-            background: rgba(156, 57, 67, 0.15);
-            border-color: var(--danger);
-            color: var(--danger);
-        }
+    .quiz-block .question {
+      font-weight: 600;
+      margin-bottom: 0.8rem;
+      font-size: 0.95rem;
+    }
 
-        .quiz-block .feedback {
-            margin-top: 0.8rem;
-            font-weight: 500;
-            font-size: 0.9rem;
-            min-height: 1.5rem;
-        }
+    .quiz-block .options {
+      display: flex;
+      flex-direction: column;
+      gap: 0.4rem;
+    }
 
-        .hidden {
-            display: none;
-        }
+    .quiz-block .option {
+      padding: 0.6rem 1rem;
+      border-radius: 0.5rem;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      cursor: pointer;
+      transition: 0.2s;
+      font-size: 0.9rem;
+    }
 
-        .two-col {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 1.5rem;
-        }
+    .quiz-block .option:hover {
+      background: var(--primary-soft);
+    }
 
-        .highlight-box {
-            background: var(--surface);
-            border-left: 4px solid var(--accent);
-            padding: 1rem;
-            border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
-            margin: 1rem 0;
-        }
+    .quiz-block .option.correct {
+      background: rgba(63, 123, 58, 0.2);
+      border-color: var(--success);
+      color: var(--success);
+    }
 
-        @media (max-width: 900px) {
-            .app-container {
-                grid-template-columns: 1fr;
-            }
-            .sidebar {
-                position: relative;
-                height: auto;
-                padding: 1rem;
-                border-right: none;
-                border-bottom: 1px solid var(--border);
-            }
-            .main-content {
-                padding: 1rem;
-            }
-            .two-col {
-                grid-template-columns: 1fr;
-            }
-        }
-    </style>
+    .quiz-block .option.wrong {
+      background: rgba(156, 57, 67, 0.15);
+      border-color: var(--danger);
+      color: var(--danger);
+    }
+
+    .quiz-block .feedback {
+      margin-top: 0.8rem;
+      font-weight: 500;
+      font-size: 0.9rem;
+      min-height: 1.5rem;
+    }
+
+    .hidden {
+      display: none;
+    }
+
+    .two-col {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1.5rem;
+    }
+
+    .highlight-box {
+      background: var(--surface);
+      border-left: 4px solid var(--accent);
+      padding: 1rem;
+      border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
+      margin: 1rem 0;
+      font-size: 0.92rem;
+      color: var(--muted);
+    }
+
+    footer {
+      text-align: center;
+      padding: 2rem 0;
+      color: var(--faint);
+      font-size: 0.85rem;
+      border-top: 1px solid var(--divider);
+      margin-top: 3rem;
+    }
+
+    @media (max-width: 900px) {
+      .app-container {
+        grid-template-columns: 1fr;
+      }
+
+      .sidebar {
+        position: relative;
+        height: auto;
+        padding: 1rem;
+        border-right: none;
+        border-bottom: 1px solid var(--border);
+      }
+
+      .main-content {
+        padding: 1rem;
+      }
+
+      .two-col {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
 </head>
+
 <body>
-    <div class="app-container">
-        <!-- ══════════ SIDEBAR ══════════ -->
-        <aside class="sidebar" id="sidebar">
-            <div class="sidebar-header">
-                <svg viewBox="0 0 36 36" fill="none"><circle cx="18" cy="18" r="15" stroke="currentColor" stroke-width="2.5"/><path d="M10 22c3-7 13-9 16-2" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/></svg>
-                <div>
-                    <h2>Dinámica</h2>
-                    <div class="subtitle">Tema 7 · Teoría</div>
-                </div>
+  <div class="app-container">
+    <!-- SIDEBAR -->
+    <aside class="sidebar" id="sidebar">
+      <div class="sidebar-header">
+        <svg viewBox="0 0 36 36" fill="none">
+          <circle
+            cx="18"
+            cy="18"
+            r="15"
+            stroke="currentColor"
+            stroke-width="2.5"
+          />
+          <path
+            d="M10 22c3-7 13-9 16-2"
+            stroke="currentColor"
+            stroke-width="2.5"
+            stroke-linecap="round"
+          />
+        </svg>
+        <div>
+          <h2>Dinámica</h2>
+          <div class="subtitle">Tema 7 · Teoría interactiva</div>
+        </div>
+      </div>
+
+      <nav>
+        <a href="#leyes-newton" class="nav-link active" onclick="setActive(event)">
+          <span class="icon">①</span>
+          <span>Leyes de Newton</span>
+        </a>
+        <a href="#rozamiento" class="nav-link" onclick="setActive(event)">
+          <span class="icon">②</span>
+          <span>Fuerzas de rozamiento</span>
+        </a>
+        <a href="#elasticas" class="nav-link" onclick="setActive(event)">
+          <span class="icon">③</span>
+          <span>Fuerzas elásticas</span>
+        </a>
+        <a href="#estatica" class="nav-link" onclick="setActive(event)">
+          <span class="icon">④</span>
+          <span>Estática y momentos</span>
+        </a>
+        <a href="#mcu" class="nav-link" onclick="setActive(event)">
+          <span class="icon">⑤</span>
+          <span>Movimiento circular</span>
+        </a>
+        <a href="#momento" class="nav-link" onclick="setActive(event)">
+          <span class="icon">⑥</span>
+          <span>Momento lineal</span>
+        </a>
+        <a href="#gravitacion" class="nav-link" onclick="setActive(event)">
+          <span class="icon">⑦</span>
+          <span>Gravitación universal</span>
+        </a>
+      </nav>
+<button
+  onclick="window.location.href='index.html'"
+  style="
+    margin-top: 0.5rem;
+    width: 100%;
+    padding: 0.7rem 1rem;
+    border-radius: 2rem;
+    border: 1px solid var(--border);
+    background: var(--surface);
+    color: var(--text);
+    cursor: pointer;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.4rem;
+    transition: background 0.2s;
+  "
+  onmouseover="this.style.background='var(--surface2)'"
+  onmouseout="this.style.background='var(--surface)'"
+>
+  ← Inicio
+</button>
+      <div class="theme-row">
+        <span style="font-size:0.8rem;color:var(--muted)">Tema</span>
+        <button class="theme-toggle" id="themeToggle">
+          🌞 Claro
+        </button>
+      </div>
+    </aside>
+
+    <!-- MAIN -->
+    <main class="main-content">
+      <div class="page-header">
+        <div class="breadcrumb">Física 1º Bachillerato · Tema 7</div>
+        <h1>Dinámica: fuerzas y movimiento</h1>
+        <p>
+          Desde las leyes de Newton hasta la gravitación universal. En cada
+          apartado tienes la teoría clave, una simulación sencilla y alguna
+          pregunta rápida tipo examen.
+        </p>
+      </div>
+
+      <!-- LEYES DE NEWTON -->
+      <section id="leyes-newton" class="section">
+        <h3>Leyes de Newton</h3>
+
+        <!-- 1ª Ley -->
+        <div class="card">
+          <h4>1ª ley: inercia</h4>
+          <p>
+            Un cuerpo permanece en reposo o en movimiento rectilíneo uniforme
+            si la <strong>fuerza neta</strong> que actúa sobre él es cero. Es
+            decir, si la suma vectorial de todas las fuerzas es nula, la
+            velocidad no cambia.
+          </p>
+          <div class="formula">
+            \(\sum \vec{F} = 0 \Rightarrow \vec{v} = \text{cte}\)
+          </div>
+          <p>
+            Esto explica por qué al frenar un coche los pasajeros “se van hacia
+            delante”: su cuerpo tiende a conservar la velocidad que llevaba.
+          </p>
+
+          <div class="interactive-box">
+            <h4>Experimento huevo crudo vs huevo duro</h4>
+            <p style="font-size:0.9rem;color:var(--muted)">
+              Haz girar los dos huevos. Al detenerlos con el dedo, observa cuál
+              sigue girando. El interior líquido del huevo crudo conserva mejor
+              el movimiento (inercia rotacional).
+            </p>
+            <canvas id="canvasHuevo" width="520" height="180"></canvas>
+            <div class="control-bar">
+              <button onclick="simHuevo.girar()">Girar ambos</button>
+              <button onclick="simHuevo.detener()">Detener con dedo</button>
+              <button onclick="simHuevo.reset()">Reiniciar</button>
+              <span id="huevoEstado" style="font-size:0.85rem;color:var(--muted);margin-left:auto">
+                Listo
+              </span>
             </div>
-            <nav>
-                <a href="#leyes-newton" class="nav-link active" onclick="setActive(event)"><span class="icon">🍎</span> Leyes de Newton</a>
-                <a href="#rozamiento" class="nav-link" onclick="setActive(event)"><span class="icon">🔻</span> Fuerzas de rozamiento</a>
-                <a href="#elasticas" class="nav-link" onclick="setActive(event)"><span class="icon">🔗</span> Fuerzas elásticas</a>
-                <a href="#estatica" class="nav-link" onclick="setActive(event)"><span class="icon">⚖️</span> Estática y momentos</a>
-                <a href="#mcu" class="nav-link" onclick="setActive(event)"><span class="icon">🔄</span> Movimiento circular</a>
-                <a href="#momento" class="nav-link" onclick="setActive(event)"><span class="icon">💥</span> Momento lineal</a>
-                <a href="#gravitacion" class="nav-link" onclick="setActive(event)"><span class="icon">🌍</span> Gravitación universal</a>
-            </nav>
-            <div class="theme-row">
-                <span style="font-size:0.8rem;color:var(--muted)">Tema</span>
-                <button class="theme-toggle" id="themeToggle">🌓</button>
+          </div>
+
+          <div class="quiz-block">
+            <div class="question">
+              Si la fuerza neta sobre un cuerpo es cero, su velocidad…
             </div>
-        </aside>
-
-        <!-- ══════════ CONTENIDO ══════════ -->
-        <main class="main-content">
-            <div class="page-header">
-                <div class="breadcrumb">Física · 1º Bachillerato · Tema 7</div>
-                <h1>Dinámica: fuerzas y movimiento</h1>
-                <p style="color:var(--muted)">Desde las leyes de Newton hasta la gravitación universal. Teoría interactiva con simulaciones.</p>
+            <div class="options">
+              <div class="option" onclick="selectOption(this,false)">
+                Siempre es cero.
+              </div>
+              <div class="option" onclick="selectOption(this,true)">
+                Puede ser distinta de cero, pero no cambia.
+              </div>
+              <div class="option" onclick="selectOption(this,false)">
+                Aumenta lentamente.
+              </div>
             </div>
+            <div class="feedback hidden"></div>
+          </div>
+        </div>
 
-            <!-- ═══ LEYES DE NEWTON ═══ -->
-            <section id="leyes-newton" class="section">
-                <h3>🍎 Leyes de Newton</h3>
+        <!-- 2ª Ley -->
+        <div class="card">
+          <h4>2ª ley: fuerza, masa y aceleración</h4>
+          <p>
+            La aceleración de un cuerpo es proporcional a la fuerza neta que
+            actúa sobre él e inversamente proporcional a su masa. Es la
+            <strong>ley fundamental</strong> de la dinámica.
+          </p>
+          <div class="formula">
+            \(\vec{F}_{\text{neta}} = m \vec{a}\)
+          </div>
+          <p>
+            Con la misma fuerza, un cuerpo de menor masa acelera más. La unidad
+            de fuerza es el newton (N): \(1\ \text{N} = 1\ \text{kg·m/s}^2\).
+          </p>
 
-                <!-- 1ª Ley -->
-                <div class="card">
-                    <h4 style="color:var(--primary);margin-bottom:0.5rem;">1ª Ley: Inercia</h4>
-                    <p>Todo cuerpo mantiene su estado de reposo o movimiento rectilíneo uniforme si la fuerza neta que actúa sobre él es cero.</p>
-                    <div class="formula">\(\sum \vec{F} = 0 \;\Rightarrow\; \vec{v} = \text{constante}\)</div>
-                    <p>Esto explica por qué al frenar un coche los pasajeros se desplazan hacia delante: sus cuerpos tienden a conservar la velocidad que llevaban.</p>
+          <div class="interactive-box">
+            <h4>Simulación fuerza vs aceleración</h4>
+            <canvas id="canvasFMA" width="520" height="140"></canvas>
+            <div class="control-bar">
+              <label>
+                Fuerza (N)
+                <input
+                  type="range"
+                  id="fuerzaSlider"
+                  min="5"
+                  max="60"
+                  value="25"
+                  oninput="simFMA.actualizar()"
+                />
+                <span
+                  id="fuerzaValor"
+                  style="font-weight:700;color:var(--primary)"
+                  >25 N</span
+                >
+              </label>
+              <span style="margin-left:auto;font-size:0.9rem">
+                a =
+                <strong id="acelValor">5.0 m/s²</strong>
+                (m = 5 kg)
+              </span>
+            </div>
+            <p style="font-size:0.8rem;color:var(--faint);margin-top:0.5rem">
+              Piensa cómo sería este mismo gráfico para otra masa distinta de
+              5 kg.
+            </p>
+          </div>
+        </div>
 
-                    <div class="interactive-box">
-                        <h4>🧪 Experimento: huevo crudo vs. huevo duro</h4>
-                        <p style="font-size:0.9rem;color:var(--muted)">Haz girar ambos huevos. Al detenerlos con el dedo, el huevo crudo sigue girando al soltarlo porque su interior líquido conserva el movimiento (inercia rotacional).</p>
-                        <canvas id="canvasHuevo" width="520" height="180"></canvas>
-                        <div class="control-bar">
-                            <button onclick="simHuevo.girar()">▶ Girar ambos</button>
-                            <button onclick="simHuevo.detener()">🖐 Detener con dedo</button>
-                            <button onclick="simHuevo.reset()">↺ Reiniciar</button>
-                            <span id="huevoEstado" style="font-size:0.85rem;color:var(--muted);margin-left:auto;">Listo</span>
-                        </div>
-                    </div>
-                </div>
+        <!-- 3ª Ley -->
+        <div class="card">
+          <h4>3ª ley: acción y reacción</h4>
+          <p>
+            Si un cuerpo A ejerce una fuerza sobre un cuerpo B, entonces B ejerce
+            sobre A una fuerza de igual módulo, misma dirección y sentido
+            opuesto.
+          </p>
+          <div class="formula">
+            \(\vec{F}_{A\to B} = - \vec{F}_{B\to A}\)
+          </div>
+          <p>
+            Estas fuerzas actúan sobre cuerpos distintos, por eso nunca se
+            compensan entre sí en la segunda ley de Newton.
+          </p>
 
-                <!-- 2ª Ley -->
-                <div class="card">
-                    <h4 style="color:var(--primary);margin-bottom:0.5rem;">2ª Ley: Fuerza, masa y aceleración</h4>
-                    <p>La aceleración de un cuerpo es proporcional a la fuerza neta e inversamente proporcional a su masa.</p>
-                    <div class="formula">\(\vec{F}_{\text{neta}} = m \cdot \vec{a}\)</div>
-                    <p>Con la misma fuerza, un cuerpo de menor masa acelera más. La unidad de fuerza es el Newton: 1 N = 1 kg·m/s².</p>
+          <div class="interactive-box">
+            <h4>Imanes repelíndose</h4>
+            <canvas id="canvasImanes" width="520" height="160"></canvas>
+            <p style="font-size:0.85rem;color:var(--muted);text-align:center;margin-top:0.5rem">
+              La fuerza tiene igual módulo en ambos imanes, pero el más ligero
+              sufre mayor aceleración.
+            </p>
+          </div>
+        </div>
+      </section>
 
-                    <div class="interactive-box">
-                        <h4>🔬 Simulación: fuerza vs. aceleración</h4>
-                        <canvas id="canvasFMA" width="520" height="140"></canvas>
-                        <div class="control-bar">
-                            <label>Fuerza (N): <input type="range" id="fuerzaSlider" min="5" max="60" value="25" oninput="simFMA.actualizar()"></label>
-                            <span id="fuerzaValor" style="font-weight:700;color:var(--primary)">25 N</span>
-                            <span style="margin-left:auto;">→ a = <strong id="acelValor">5.0 m/s²</strong></span>
-                        </div>
-                        <p style="font-size:0.8rem;color:var(--faint);margin-top:0.5rem;">Masa del bloque: 5 kg</p>
-                    </div>
-                </div>
+      <!-- ROZAMIENTO -->
+      <section id="rozamiento" class="section">
+        <h3>Fuerzas de rozamiento</h3>
 
-                <!-- 3ª Ley -->
-                <div class="card">
-                    <h4 style="color:var(--primary);margin-bottom:0.5rem;">3ª Ley: Acción y Reacción</h4>
-                    <p>Si un cuerpo A ejerce una fuerza sobre B, entonces B ejerce sobre A una fuerza igual en módulo, misma dirección y sentido opuesto.</p>
-                    <div class="formula">\(\vec{F}_{AB} = -\vec{F}_{BA}\)</div>
-                    <p>Ambos cuerpos experimentan la misma fuerza, pero el de menor masa sufre mayor aceleración.</p>
+        <div class="card">
+          <p>
+            El rozamiento se opone siempre al deslizamiento relativo entre dos
+            superficies en contacto. Podemos distinguir dos tipos principales:
+          </p>
+          <div class="two-col">
+            <div class="highlight-box">
+              <strong>Rozamiento estático</strong>
+              <p style="font-size:0.9rem;margin-top:0.35rem">
+                Actúa cuando no hay movimiento relativo. Se ajusta para impedir
+                el deslizamiento hasta un valor máximo:
+              </p>
+              <div class="formula">
+                \(F_{re}^{\text{máx}} = \mu_e N\)
+              </div>
+            </div>
+            <div class="highlight-box">
+              <strong>Rozamiento cinético</strong>
+              <p style="font-size:0.9rem;margin-top:0.35rem">
+                Actúa cuando ya hay deslizamiento. Su valor se aproxima a:
+              </p>
+              <div class="formula">
+                \(F_{rc} = \mu_c N\)
+              </div>
+            </div>
+          </div>
+          <p style="font-size:0.9rem;color:var(--muted)">
+            En general, \(\mu_e &gt; \mu_c\): cuesta más iniciar el movimiento
+            que mantenerlo.
+          </p>
 
-                    <div class="interactive-box">
-                        <h4>🧲 Imanes repeliéndose</h4>
-                        <canvas id="canvasImanes" width="520" height="160"></canvas>
-                        <p style="font-size:0.85rem;color:var(--muted);text-align:center;margin-top:0.5rem;">
-                            Fuerza igual en ambos → Aceleración mayor en el imán pequeño
-                        </p>
-                    </div>
-                </div>
-            </section>
+          <div class="interactive-box">
+            <h4>Plano inclinado con rozamiento</h4>
+            <p style="font-size:0.85rem;color:var(--muted)">
+              Ajusta el ángulo y el coeficiente de rozamiento. El bloque desliza
+              si la componente del peso a lo largo del plano supera al valor
+              máximo de rozamiento estático.
+            </p>
+            <canvas id="canvasPlano" width="520" height="280"></canvas>
+            <div class="control-bar">
+              <label>
+                Ángulo (°)
+                <input
+                  type="range"
+                  id="anguloSlider"
+                  min="0"
+                  max="55"
+                  value="25"
+                  oninput="simPlano.actualizar()"
+                />
+                <span id="anguloValor">25</span>
+              </label>
+              <label>
+                μ
+                <input
+                  type="range"
+                  id="muSlider"
+                  min="0"
+                  max="1.0"
+                  step="0.01"
+                  value="0.35"
+                  oninput="simPlano.actualizar()"
+                />
+                <span id="muValor">0.35</span>
+              </label>
+              <button id="btnDeslizar" class="primary" onclick="simPlano.toggle()">
+                Soltar bloque
+              </button>
+            </div>
+            <p
+              id="estadoPlano"
+              style="font-weight:600;text-align:center;margin-top:0.5rem"
+            >
+              En reposo
+            </p>
+          </div>
 
-            <!-- ═══ ROZAMIENTO ═══ -->
-            <section id="rozamiento" class="section">
-                <h3>🔻 Fuerzas de rozamiento</h3>
-                <div class="card">
-                    <p>El rozamiento se opone al deslizamiento relativo entre dos superficies en contacto. Distinguimos dos tipos:</p>
-                    <div class="two-col">
-                        <div class="highlight-box">
-                            <strong>Rozamiento estático</strong>
-                            <p style="font-size:0.9rem;">Actúa cuando no hay movimiento relativo. Su valor máximo es \(f_{e,\max} = \mu_e \cdot N\).</p>
-                        </div>
-                        <div class="highlight-box">
-                            <strong>Rozamiento cinético</strong>
-                            <p style="font-size:0.9rem;">Actúa durante el deslizamiento. Su valor es constante: \(f_c = \mu_c \cdot N\).</p>
-                        </div>
-                    </div>
-                    <p style="font-size:0.9rem;color:var(--muted);">\(\mu_e > \mu_c\) en general: cuesta más iniciar el movimiento que mantenerlo.</p>
+          <div class="quiz-block">
+            <div class="question">
+              ¿Qué sucede con el rozamiento cuando el bloque ya se desliza?
+            </div>
+            <div class="options">
+              <div class="option" onclick="selectOption(this,false)">
+                El rozamiento se hace infinitamente grande.
+              </div>
+              <div class="option" onclick="selectOption(this,true)">
+                El rozamiento pasa a ser cinético y suele ser menor.
+              </div>
+              <div class="option" onclick="selectOption(this,false)">
+                El rozamiento desaparece.
+              </div>
+            </div>
+            <div class="feedback hidden"></div>
+          </div>
+        </div>
+      </section>
 
-                    <div class="interactive-box">
-                        <h4>🔬 Simulación: plano inclinado con rozamiento</h4>
-                        <p style="font-size:0.85rem;color:var(--muted)">Ajusta el ángulo y el coeficiente de rozamiento. El bloque desliza si \(P_x > f_{e,\max}\).</p>
-                        <canvas id="canvasPlano" width="520" height="280"></canvas>
-                        <div class="control-bar">
-                            <label>Ángulo: <input type="range" id="anguloSlider" min="0" max="55" value="25" oninput="simPlano.actualizar()"></label>
-                            <span id="anguloValor">25°</span>
-                            <label>μ: <input type="range" id="muSlider" min="0" max="1.0" value="0.35" step="0.01" oninput="simPlano.actualizar()"></label>
-                            <span id="muValor">0.35</span>
-                            <button id="btnDeslizar" onclick="simPlano.toggle()" class="primary">▶ Soltar bloque</button>
-                        </div>
-                        <p id="estadoPlano" style="font-weight:600;text-align:center;margin-top:0.5rem;">En reposo</p>
-                    </div>
-                </div>
-            </section>
+      <!-- FUERZAS ELÁSTICAS -->
+      <section id="elasticas" class="section">
+        <h3>Fuerzas elásticas · Ley de Hooke</h3>
 
-            <!-- ═══ FUERZAS ELÁSTICAS ═══ -->
-            <section id="elasticas" class="section">
-                <h3>🔗 Fuerzas elásticas: Ley de Hooke</h3>
-                <div class="card">
-                    <p>Un muelle ejerce una fuerza restauradora proporcional a su deformación (dentro del límite elástico).</p>
-                    <div class="formula">\(F = -k \cdot x\)</div>
-                    <p>\(k\) es la constante elástica (N/m). El signo negativo indica que la fuerza se opone a la deformación.</p>
+        <div class="card">
+          <p>
+            Los muelles y otros elementos elásticos se oponen a su deformación.
+            Dentro del límite elástico, la fuerza es proporcional a la
+            deformación:
+          </p>
+          <div class="formula">
+            \(F = -k x\)
+          </div>
+          <p>
+            Donde \(k\) es la constante elástica del muelle (N/m) y \(x\) es la
+            elongación (en metros) medida desde la posición de equilibrio. El
+            signo negativo indica que la fuerza apunta hacia el equilibrio.
+          </p>
 
-                    <div class="interactive-box">
-                        <h4>🔬 Simulación: muelle con masa colgante</h4>
-                        <canvas id="canvasMuelle" width="520" height="200"></canvas>
-                        <div class="control-bar">
-                            <label>Estiramiento (cm): <input type="range" id="xSlider" min="0.5" max="8" value="3" step="0.1" oninput="simMuelle.actualizar()"></label>
-                            <span id="xValor">3.0 cm</span>
-                            <span style="margin-left:auto;">Fuerza elástica: <strong id="feValor">9.8 N</strong></span>
-                        </div>
-                        <p style="font-size:0.8rem;color:var(--faint);margin-top:0.3rem;">Constante k = 32.7 N/m (dinamómetro del ejercicio 18)</p>
-                    </div>
-                </div>
-            </section>
+          <div class="interactive-box">
+            <h4>Muelle con masa colgante</h4>
+            <canvas id="canvasMuelle" width="520" height="200"></canvas>
+            <div class="control-bar">
+              <label>
+                Estiramiento (cm)
+                <input
+                  type="range"
+                  id="xSlider"
+                  min="0.5"
+                  max="8"
+                  step="0.1"
+                  value="3"
+                  oninput="simMuelle.actualizar()"
+                />
+                <span id="xValor">3.0 cm</span>
+              </label>
+              <span style="margin-left:auto;font-size:0.9rem">
+                Fuerza elástica =
+                <strong id="feValor">9.8 N</strong>
+              </span>
+            </div>
+            <p style="font-size:0.8rem;color:var(--faint);margin-top:0.3rem">
+              En equilibrio, la fuerza elástica compensa al peso de la masa.
+            </p>
+          </div>
+        </div>
+      </section>
 
-            <!-- ═══ ESTÁTICA ═══ -->
-            <section id="estatica" class="section">
-                <h3>⚖️ Estática: equilibrio de fuerzas y momentos</h3>
-                <div class="card">
-                    <p>Un cuerpo está en equilibrio cuando se cumplen dos condiciones:</p>
-                    <div class="two-col">
-                        <div class="formula">\(\sum \vec{F} = 0\)<br><small>Equilibrio de traslación</small></div>
-                        <div class="formula">\(\sum \vec{M} = 0\)<br><small>Equilibrio de rotación</small></div>
-                    </div>
+      <!-- ESTÁTICA -->
+      <section id="estatica" class="section">
+        <h3>Estática: equilibrio de fuerzas y momentos</h3>
 
-                    <div class="interactive-box">
-                        <h4>🔬 Simulación: balancín (niño 20 kg, niña 30 kg)</h4>
-                        <p style="font-size:0.85rem;color:var(--muted)">Ajusta la distancia del niño. La niña está a 0.8 m. Busca el equilibrio (momentos iguales).</p>
-                        <canvas id="canvasBalancin" width="520" height="220"></canvas>
-                        <div class="control-bar">
-                            <label>Distancia niño (m): <input type="range" id="d1Slider" min="0.4" max="2.0" value="1.2" step="0.1" oninput="simBalancin.actualizar()"></label>
-                            <span id="d1Valor">1.2 m</span>
-                            <span style="margin-left:auto;font-weight:600;" id="balancinInfo">Torque niño = 235 Nm</span>
-                        </div>
-                    </div>
-                </div>
-            </section>
+        <div class="card">
+          <p>
+            Un cuerpo está en equilibrio cuando no se traslada ni gira. Para
+            ello deben cumplirse simultáneamente:
+          </p>
+          <div class="two-col">
+            <div class="formula">
+              \(\sum \vec{F} = 0\)
+              <br />
+              <small>Equilibrio de traslación</small>
+            </div>
+            <div class="formula">
+              \(\sum M = 0\)
+              <br />
+              <small>Equilibrio de rotación</small>
+            </div>
+          </div>
+          <p>
+            El momento de una fuerza respecto a un punto (torque) se calcula
+            como \(M = F \cdot d_\perp\), donde \(d_\perp\) es la distancia
+            perpendicular desde el punto de giro a la línea de acción de la
+            fuerza.
+          </p>
 
-            <!-- ═══ MOVIMIENTO CIRCULAR ═══ -->
-            <section id="mcu" class="section">
-                <h3>🔄 Dinámica del movimiento circular uniforme</h3>
-                <div class="card">
-                    <p>Un cuerpo en trayectoria circular necesita una fuerza neta dirigida hacia el centro: la <strong>fuerza centrípeta</strong>.</p>
-                    <div class="formula">\(F_c = m \cdot a_c = m \cdot \frac{v^2}{R}\)</div>
-                    <p>Esta fuerza puede ser proporcionada por el rozamiento (coche en curva), la tensión de una cuerda, o la gravedad (órbitas).</p>
+          <div class="interactive-box">
+            <h4>Balancín: niño de 20 kg, niña de 30 kg</h4>
+            <p style="font-size:0.85rem;color:var(--muted)">
+              La niña está fija a 0,8 m del eje. Ajusta la posición del niño
+              hasta lograr equilibrio (\(M_{\text{niño}} = M_{\text{niña}}\)).
+            </p>
+            <canvas id="canvasBalancin" width="520" height="220"></canvas>
+            <div class="control-bar">
+              <label>
+                Distancia niño (m)
+                <input
+                  type="range"
+                  id="d1Slider"
+                  min="0.4"
+                  max="2.0"
+                  step="0.1"
+                  value="1.2"
+                  oninput="simBalancin.actualizar()"
+                />
+                <span id="d1Valor">1.2 m</span>
+              </label>
+              <span
+                id="balancinInfo"
+                style="margin-left:auto;font-weight:600;font-size:0.85rem"
+              >
+                Torque niño ≈ 235 N·m
+              </span>
+            </div>
+          </div>
+        </div>
+      </section>
 
-                    <div class="interactive-box">
-                        <h4>🔬 Simulación: coche en curva</h4>
-                        <canvas id="canvasMCU" width="520" height="280"></canvas>
-                        <div class="control-bar">
-                            <label>Velocidad (m/s): <input type="range" id="vSlider" min="3" max="14" value="6" oninput="simMCU.actualizar()"></label>
-                            <span id="vValor">6 m/s</span>
-                            <span style="margin-left:auto;">Fc = <strong id="fcValor">900 N</strong></span>
-                        </div>
-                        <p style="font-size:0.8rem;color:var(--faint);margin-top:0.3rem;">Masa = 1500 kg, Radio = 60 m</p>
-                    </div>
-                </div>
-            </section>
+      <!-- MCU -->
+      <section id="mcu" class="section">
+        <h3>Dinámica del movimiento circular uniforme</h3>
 
-            <!-- ═══ MOMENTO LINEAL ═══ -->
-            <section id="momento" class="section">
-                <h3>💥 Momento lineal e impulso</h3>
-                <div class="card">
-                    <p>El <strong>momento lineal</strong> o cantidad de movimiento es \(\vec{p} = m \cdot \vec{v}\).</p>
-                    <p>El <strong>impulso mecánico</strong> es la variación del momento: \(\vec{I} = \vec{F} \cdot \Delta t = \Delta \vec{p}\).</p>
-                    <div class="highlight-box">
-                        <strong>Principio de conservación:</strong> En un sistema aislado, el momento total se conserva.
-                    </div>
+        <div class="card">
+          <p>
+            En una trayectoria circular, aunque el módulo de la velocidad sea
+            constante, la dirección cambia continuamente. Por eso la aceleración
+            no es cero: es la <strong>aceleración centrípeta</strong>.
+          </p>
+          <div class="formula">
+            \(a_c = \dfrac{v^2}{R}\)
+          </div>
+          <p>
+            La fuerza que causa esa aceleración se llama fuerza centrípeta:
+            \(F_c = m a_c = m \dfrac{v^2}{R}\). Puede ser debida al rozamiento,
+            a la tensión, a la gravedad…
+          </p>
 
-                    <div class="interactive-box">
-                        <h4>🔬 Simulación: choque unidimensional</h4>
-                        <canvas id="canvasChoque" width="520" height="160"></canvas>
-                        <div class="control-bar">
-                            <button onclick="simChoque.lanzar()" class="primary">▶ Lanzar choque</button>
-                            <button onclick="simChoque.reset()">↺ Reiniciar</button>
-                            <span id="choqueInfo" style="margin-left:auto;font-size:0.85rem;">p₁ + p₂ se conserva</span>
-                        </div>
-                    </div>
-                </div>
-            </section>
+          <div class="interactive-box">
+            <h4>Coche en curva</h4>
+            <canvas id="canvasMCU" width="520" height="280"></canvas>
+            <div class="control-bar">
+              <label>
+                Velocidad (m/s)
+                <input
+                  type="range"
+                  id="vSlider"
+                  min="3"
+                  max="14"
+                  value="6"
+                  oninput="simMCU.actualizar()"
+                />
+                <span id="vValor">6 m/s</span>
+              </label>
+              <span style="margin-left:auto;font-size:0.9rem">
+                \(F_c\) =
+                <strong id="fcValor">900 N</strong>
+              </span>
+            </div>
+            <p style="font-size:0.8rem;color:var(--faint);margin-top:0.3rem">
+              Masa = 1500 kg, radio de la curva = 60 m.
+            </p>
+          </div>
+        </div>
+      </section>
 
-            <!-- ═══ GRAVITACIÓN ═══ -->
-            <section id="gravitacion" class="section">
-                <h3>🌍 Gravitación universal</h3>
-                <div class="card">
-                    <p>Dos masas se atraen con una fuerza proporcional al producto de sus masas e inversamente proporcional al cuadrado de la distancia:</p>
-                    <div class="formula">\(F = G \frac{m_1 m_2}{r^2}\)</div>
-                    <p>La aceleración de la gravedad en la superficie de un planeta es \(g = G \frac{M}{R^2}\).</p>
+      <!-- MOMENTO LINEAL -->
+      <section id="momento" class="section">
+        <h3>Momento lineal e impulso</h3>
 
-                    <div class="interactive-box">
-                        <h4>🔬 Simulación: variación de g con la altura</h4>
-                        <canvas id="canvasOrbita" width="520" height="280"></canvas>
-                        <div class="control-bar">
-                            <label>Altura (km): <input type="range" id="hSlider" min="0" max="36000" value="500" step="100" oninput="simOrbita.actualizar()"></label>
-                            <span id="hValor">500 km</span>
-                            <span style="margin-left:auto;">g = <strong id="gValor">8.43 m/s²</strong></span>
-                        </div>
-                    </div>
-                </div>
-            </section>
+        <div class="card">
+          <p>
+            El momento lineal (o cantidad de movimiento) de un cuerpo es el
+            producto de su masa por su velocidad:
+          </p>
+          <div class="formula">
+            \(\vec{p} = m \vec{v}\)
+          </div>
+          <p>
+            El impulso de una fuerza constante en un intervalo de tiempo
+            \(\Delta t\) viene dado por:
+          </p>
+          <div class="formula">
+            \(\vec{I} = \vec{F} \Delta t = \Delta \vec{p}\)
+          </div>
+          <p>
+            En un sistema aislado, el momento lineal total se conserva incluso
+            durante todos los choques.
+          </p>
 
-            <footer style="text-align:center;padding:2rem;color:var(--faint);font-size:0.85rem;">
-                <p>Dossier interactivo de Física · Dinámica Tema 7 · Complementa al dossier de ejercicios</p>
-            </footer>
-        </main>
-    </div>
+          <div class="interactive-box">
+            <h4>Choque unidimensional</h4>
+            <canvas id="canvasChoque" width="520" height="160"></canvas>
+            <div class="control-bar">
+              <button class="primary" onclick="simChoque.lanzar()">
+                Lanzar choque
+              </button>
+              <button onclick="simChoque.reset()">Reiniciar</button>
+              <span
+                id="choqueInfo"
+                style="margin-left:auto;font-size:0.85rem"
+              >
+                Observa el intercambio de velocidades.
+              </span>
+            </div>
+          </div>
+        </div>
+      </section>
 
-    <!-- ══════════ SCRIPTS ══════════ -->
-    <script>
-        // ── Navegación y tema ──
-        function setActive(e) {
-            document.querySelectorAll('.nav-link').forEach(l => l.classList.remove('active'));
-            e.target.closest('.nav-link').classList.add('active');
+      <!-- GRAVITACIÓN -->
+      <section id="gravitacion" class="section">
+        <h3>Gravitación universal</h3>
+
+        <div class="card">
+          <p>
+            Cualquier par de masas se atrae con una fuerza gravitatoria
+            proporcional al producto de sus masas e inversamente proporcional al
+            cuadrado de la distancia que las separa:
+          </p>
+          <div class="formula">
+            \(F = G \dfrac{m_1 m_2}{r^2}\)
+          </div>
+          <p>
+            La aceleración de la gravedad \(g\) en la superficie de un planeta
+            de masa \(M\) y radio \(R\) es:
+          </p>
+          <div class="formula">
+            \(g = G \dfrac{M}{R^2}\)
+          </div>
+          <p>
+            A medida que nos alejamos del planeta (\(r = R + h\)), la
+            aceleración de la gravedad disminuye.
+          </p>
+
+          <div class="interactive-box">
+            <h4>Variación de g con la altura</h4>
+            <canvas id="canvasOrbita" width="520" height="280"></canvas>
+            <div class="control-bar">
+              <label>
+                Altura (km)
+                <input
+                  type="range"
+                  id="hSlider"
+                  min="0"
+                  max="36000"
+                  value="500"
+                  step="100"
+                  oninput="simOrbita.actualizar()"
+                />
+                <span id="hValor">500 km</span>
+              </label>
+              <span style="margin-left:auto;font-size:0.9rem">
+                g =
+                <strong id="gValor">8.43 m/s²</strong>
+              </span>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <footer>
+        <p>
+          Dossier interactivo de Física · Dinámica (Tema 7). Complementa al
+          dossier de problemas del libro McGrawHill.
+        </p>
+      </footer>
+    </main>
+  </div>
+
+  <!-- SCRIPTS -->
+  <script>
+    // Navegación sidebar activa
+    function setActive(e) {
+      document.querySelectorAll(".nav-link").forEach((l) =>
+        l.classList.remove("active")
+      );
+      e.target.closest(".nav-link").classList.add("active");
+    }
+
+    // Tema claro/oscuro
+    const themeToggle = document.getElementById("themeToggle");
+    let dark = window.matchMedia &&
+      window.matchMedia("(prefers-color-scheme: dark)").matches;
+
+    function applyTheme() {
+      document.documentElement.setAttribute("data-theme", dark ? "dark" : "light");
+      themeToggle.textContent = dark ? "🌙 Oscuro" : "🌞 Claro";
+    }
+
+    themeToggle.addEventListener("click", () => {
+      dark = !dark;
+      applyTheme();
+    });
+
+    applyTheme();
+
+    // Helper para canvas
+    function clearCanvas(canvas) {
+      const ctx = canvas.getContext("2d");
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+    }
+
+    // SIMULACIÓN 1 · HUEVO CRUDO VS DURO
+    const simHuevo = {
+      canvas: document.getElementById("canvasHuevo"),
+      angDuro: 0,
+      angCrudo: 0,
+      angCrudoInt: 0,
+      girando: false,
+      dedo: false,
+      estado: document.getElementById("huevoEstado"),
+      girar() {
+        this.girando = true;
+        this.dedo = false;
+        this.estado.textContent = "Girando...";
+      },
+      detener() {
+        this.girando = false;
+        this.dedo = true;
+        this.angDuro = 0;
+        this.estado.textContent =
+          "Dedo puesto. El huevo crudo sigue un poco al soltarlo.";
+      },
+      reset() {
+        this.girando = false;
+        this.dedo = false;
+        this.angDuro = 0;
+        this.angCrudo = 0;
+        this.angCrudoInt = 0;
+        this.estado.textContent = "Listo";
+      },
+      dibujar() {
+        const ctx = this.canvas.getContext("2d");
+        ctx.clearRect(0, 0, 520, 180);
+
+        // Suelo
+        ctx.fillStyle = "#64748b";
+        ctx.fillRect(40, 150, 440, 6);
+
+        // Huevo duro (izquierda)
+        ctx.save();
+        ctx.translate(150, 125);
+        ctx.rotate(this.angDuro);
+        ctx.fillStyle = "#f5e6c8";
+        ctx.beginPath();
+        ctx.ellipse(0, 0, 32, 22, 0, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.fillStyle = "#e8d5a0";
+        ctx.beginPath();
+        ctx.arc(0, 0, 14, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.restore();
+
+        // Huevo crudo (derecha)
+        const angVis = this.dedo ? this.angCrudoInt : this.angCrudo;
+        ctx.save();
+        ctx.translate(370, 125);
+        ctx.rotate(angVis);
+        ctx.fillStyle = "#f5e6c8";
+        ctx.beginPath();
+        ctx.ellipse(0, 0, 32, 22, 0, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.fillStyle = "rgba(255,255,255,0.6)";
+        ctx.beginPath();
+        ctx.arc(2, 4, 10, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.restore();
+
+        // Etiquetas
+        ctx.fillStyle = "#ffffff";
+        ctx.font = "bold 15px Inter";
+        ctx.textAlign = "center";
+        ctx.fillText("DURO", 150, 170);
+        ctx.fillText("CRUDO", 370, 170);
+
+        // Dedo si está
+        if (this.dedo) {
+          ctx.fillStyle = "#fbbf24";
+          ctx.beginPath();
+          ctx.arc(150, 100, 14, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.beginPath();
+          ctx.arc(370, 100, 14, 0, Math.PI * 2);
+          ctx.fill();
+        }
+      },
+      update() {
+        if (this.girando) {
+          this.angDuro += 0.08;
+          this.angCrudo += 0.08;
+          this.angCrudoInt += 0.08;
+        }
+        if (this.dedo && !this.girando) {
+          this.angCrudoInt += 0.06;
+          if (this.angCrudoInt - this.angCrudo > 0.4) {
+            this.angCrudo = this.angCrudoInt;
+          }
+        }
+        this.dibujar();
+      },
+    };
+
+    setInterval(() => simHuevo.update(), 40);
+    simHuevo.dibujar();
+
+    // SIMULACIÓN 2 · F = m a
+    const simFMA = {
+      canvas: document.getElementById("canvasFMA"),
+      actualizar() {
+        const F = parseFloat(document.getElementById("fuerzaSlider").value);
+        document.getElementById("fuerzaValor").textContent = F + " N";
+        const a = F / 5; // masa fija 5 kg
+        document.getElementById("acelValor").textContent =
+          a.toFixed(2) + " m/s²";
+
+        const ctx = this.canvas.getContext("2d");
+        ctx.clearRect(0, 0, 520, 140);
+
+        // Suelo
+        ctx.fillStyle = "#334155";
+        ctx.fillRect(30, 120, 460, 8);
+
+        // Bloque
+        const ancho = 60 + F * 2.5;
+        ctx.fillStyle = "#60a5fa";
+        ctx.fillRect(100, 85, ancho, 35);
+        ctx.fillStyle = "#ffffff";
+        ctx.font = "bold 14px Inter";
+        ctx.fillText("5 kg", 115, 108);
+
+        // Flecha de fuerza
+        ctx.strokeStyle = "#ef4444";
+        ctx.lineWidth = 3;
+        ctx.beginPath();
+        ctx.moveTo(100 + ancho, 102);
+        ctx.lineTo(100 + ancho + 40, 102);
+        ctx.stroke();
+        ctx.fillStyle = "#ef4444";
+        ctx.fillText("F = " + F + " N", 100 + ancho + 5, 95);
+      },
+    };
+    simFMA.actualizar();
+
+    // SIMULACIÓN 3 · Imanes (acción-reacción)
+    function dibujarImanes() {
+      const c = document.getElementById("canvasImanes");
+      const ctx = c.getContext("2d");
+      ctx.clearRect(0, 0, 520, 160);
+
+      ctx.fillStyle = "#ef4444";
+      ctx.fillRect(40, 60, 70, 40);
+      ctx.fillStyle = "#3b82f6";
+      ctx.fillRect(410, 60, 70, 40);
+
+      ctx.fillStyle = "#ffffff";
+      ctx.font = "12px Inter";
+      ctx.fillText("Masa grande", 30, 50);
+      ctx.fillText("Masa pequeña", 400, 50);
+
+      ctx.strokeStyle = "#ef4444";
+      ctx.lineWidth = 4;
+      ctx.beginPath();
+      ctx.moveTo(110, 80);
+      ctx.lineTo(170, 80);
+      ctx.stroke();
+
+      ctx.strokeStyle = "#3b82f6";
+      ctx.beginPath();
+      ctx.moveTo(410, 80);
+      ctx.lineTo(350, 80);
+      ctx.stroke();
+
+      ctx.fillStyle = "#ffffff";
+      ctx.font = "14px Inter";
+      ctx.fillText("F", 130, 72);
+      ctx.fillText("F", 350, 72);
+      ctx.fillText("a pequeña ↑", 360, 115);
+      ctx.fillText("a grande ↓", 45, 115);
+    }
+    dibujarImanes();
+
+    // SIMULACIÓN 4 · Plano inclinado
+    const simPlano = {
+      canvas: document.getElementById("canvasPlano"),
+      bloqueX: 120,
+      moviendo: false,
+      actualizar() {
+        const ang = parseFloat(document.getElementById("anguloSlider").value);
+        const mu = parseFloat(document.getElementById("muSlider").value);
+        document.getElementById("anguloValor").textContent = ang;
+        document.getElementById("muValor").textContent = mu.toFixed(2);
+
+        const rad = (ang * Math.PI) / 180;
+        const peso = 59.8; // ~6.1 kg * 9.8
+        const Px = peso * Math.sin(rad);
+        const N = peso * Math.cos(rad);
+        const FrMax = mu * N;
+
+        const estado = document.getElementById("estadoPlano");
+        if (!this.moviendo) {
+          if (Px > FrMax) {
+            estado.textContent = "Px > Fr_max → deslizaría al soltar.";
+          } else {
+            estado.textContent = "Px ≤ Fr_max → en reposo, no desliza.";
+          }
+        } else {
+          estado.textContent = "Deslizando…";
         }
 
-        const themeToggle = document.getElementById('themeToggle');
-        let dark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-        function applyTheme() {
-            document.documentElement.setAttribute('data-theme', dark ? 'dark' : 'light');
-            themeToggle.textContent = dark ? '☀️' : '🌙';
+        const ctx = this.canvas.getContext("2d");
+        ctx.clearRect(0, 0, 520, 280);
+
+        ctx.save();
+        ctx.translate(260, 250);
+        ctx.rotate(-rad);
+
+        // Rampa
+        ctx.fillStyle = "#334155";
+        ctx.fillRect(-260, 0, 520, 10);
+
+        // Bloque
+        ctx.fillStyle = "#34d399";
+        ctx.fillRect(-120 + this.bloqueX, -28, 55, 28);
+
+        ctx.restore();
+      },
+      toggle() {
+        const ang = parseFloat(document.getElementById("anguloSlider").value);
+        const mu = parseFloat(document.getElementById("muSlider").value);
+        const rad = (ang * Math.PI) / 180;
+        const peso = 59.8;
+        const Px = peso * Math.sin(rad);
+        const FrMax = mu * peso * Math.cos(rad);
+
+        if (!this.moviendo && Px > FrMax) {
+          this.moviendo = true;
+          document.getElementById("btnDeslizar").textContent = "Parar";
+          const self = this;
+          function anim() {
+            if (!self.moviendo) return;
+            self.bloqueX -= 1.5;
+            if (self.bloqueX < -120) self.bloqueX = 120;
+            self.actualizar();
+            requestAnimationFrame(anim);
+          }
+          anim();
+        } else {
+          this.moviendo = false;
+          document.getElementById("btnDeslizar").textContent = "Soltar bloque";
+          this.actualizar();
         }
-        applyTheme();
-        themeToggle.addEventListener('click', () => { dark = !dark; applyTheme(); });
+      },
+    };
+    simPlano.actualizar();
 
-        // ── Helper canvas ──
-        function clear(canvas) {
-            const ctx = canvas.getContext('2d');
-            ctx.clearRect(0, 0, canvas.width, canvas.height);
+    // SIMULACIÓN 5 · Muelle
+    const simMuelle = {
+      canvas: document.getElementById("canvasMuelle"),
+      actualizar() {
+        const xcm = parseFloat(document.getElementById("xSlider").value);
+        const x = xcm / 100;
+        document.getElementById("xValor").textContent = xcm.toFixed(1) + " cm";
+
+        const k = 32.7; // N/m
+        const F = k * x;
+        document.getElementById("feValor").textContent = F.toFixed(1) + " N";
+
+        const ctx = this.canvas.getContext("2d");
+        ctx.clearRect(0, 0, 520, 200);
+
+        // Soporte superior
+        ctx.fillStyle = "#94a3b8";
+        ctx.fillRect(30, 40, 8, 100);
+
+        // Masa
+        const alt = 40 + x * 400;
+        ctx.fillStyle = "#f59e0b";
+        ctx.fillRect(20, 40 + alt, 28, 18);
+        ctx.fillStyle = "#ffffff";
+        ctx.font = "12px Inter";
+        ctx.fillText("100 g", 10, 40 + alt + 30);
+
+        // Muelle sencillo
+        ctx.strokeStyle = "#cbd5e1";
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        for (let i = 0; i < 8; i++) {
+          ctx.lineTo(34, 45 + i * 5 + alt / 4);
+          ctx.lineTo(44, 47 + i * 5 + alt / 4);
         }
+        ctx.stroke();
+      },
+    };
+    simMuelle.actualizar();
 
-        // ══════════════════════════════════════════
-        // SIMULACIÓN 1: HUEVO CRUDO VS DURO
-        // ══════════════════════════════════════════
-        const simHuevo = {
-            angDuro: 0, angCrudo: 0, angCrudoInt: 0,
-            girando: false, dedo: false,
-            canvas: document.getElementById('canvasHuevo'),
-            estado: document.getElementById('huevoEstado'),
-            
-            girar() {
-                this.girando = true; this.dedo = false;
-                this.estado.textContent = 'Girando...';
-            },
-            detener() {
-                this.girando = false; this.dedo = true;
-                this.angDuro = 0;
-                this.estado.textContent = 'Dedo puesto. El crudo sigue por inercia.';
-            },
-            reset() {
-                this.girando = false; this.dedo = false;
-                this.angDuro = 0; this.angCrudo = 0; this.angCrudoInt = 0;
-                this.estado.textContent = 'Listo';
-            },
-            dibujar() {
-                const ctx = this.canvas.getContext('2d');
-                ctx.clearRect(0, 0, 520, 180);
-                // suelo
-                ctx.fillStyle = '#64748b';
-                ctx.fillRect(40, 150, 440, 6);
-                // huevo duro (izq)
-                ctx.save();
-                ctx.translate(150, 125);
-                ctx.rotate(this.angDuro);
-                ctx.fillStyle = '#f5e6c8';
-                ctx.beginPath(); ctx.ellipse(0, 0, 32, 22, 0, 0, Math.PI*2); ctx.fill();
-                ctx.fillStyle = '#e8d5a0';
-                ctx.beginPath(); ctx.arc(0, 0, 14, 0, Math.PI*2); ctx.fill();
-                ctx.restore();
-                // huevo crudo (der)
-                const angVis = this.dedo ? this.angCrudoInt : this.angCrudo;
-                ctx.save();
-                ctx.translate(370, 125);
-                ctx.rotate(angVis);
-                ctx.fillStyle = '#f5e6c8';
-                ctx.beginPath(); ctx.ellipse(0, 0, 32, 22, 0, 0, Math.PI*2); ctx.fill();
-                ctx.fillStyle = 'rgba(255,255,255,0.6)';
-                ctx.beginPath(); ctx.arc(2, 4, 10, 0, Math.PI*2); ctx.fill();
-                ctx.restore();
-                // etiquetas
-                ctx.fillStyle = '#fff'; ctx.font = 'bold 15px Inter'; ctx.textAlign = 'center';
-                ctx.fillText('DURO', 150, 170);
-                ctx.fillText('CRUDO', 370, 170);
-                // dedo
-                if (this.dedo) {
-                    ctx.fillStyle = '#fbbf24';
-                    ctx.beginPath(); ctx.arc(150, 100, 14, 0, Math.PI*2); ctx.fill();
-                    ctx.beginPath(); ctx.arc(370, 100, 14, 0, Math.PI*2); ctx.fill();
-                }
-            },
-            update() {
-                if (this.girando) {
-                    this.angDuro += 0.08;
-                    this.angCrudo += 0.08;
-                    this.angCrudoInt += 0.08;
-                }
-                if (this.dedo && !this.girando) {
-                    this.angCrudoInt += 0.06;
-                    if (this.angCrudoInt - this.angCrudo > 0.4) this.angCrudo = this.angCrudoInt;
-                }
-                this.dibujar();
-            }
-        };
+    // SIMULACIÓN 6 · Balancín
+    const simBalancin = {
+      canvas: document.getElementById("canvasBalancin"),
+      actualizar() {
+        const d1 = parseFloat(document.getElementById("d1Slider").value);
+        document.getElementById("d1Valor").textContent = d1.toFixed(1) + " m";
 
-        // loop de animación para el huevo
-        setInterval(() => simHuevo.update(), 40);
-        simHuevo.dibujar();
+        const m1 = 20;
+        const m2 = 30;
+        const d2 = 0.8;
+        const g = 9.8;
 
-        // ══════════════════════════════════════════
-        // SIMULACIÓN 2: F = m*a
-        // ══════════════════════════════════════════
-        const simFMA = {
-            canvas: document.getElementById('canvasFMA'),
-            actualizar() {
-                const F = parseFloat(document.getElementById('fuerzaSlider').value);
-                document.getElementById('fuerzaValor').textContent = F + ' N';
-                const a = F / 5;
-                document.getElementById('acelValor').textContent = a.toFixed(2) + ' m/s²';
-                const ctx = this.canvas.getContext('2d');
-                ctx.clearRect(0,0,520,140);
-                ctx.fillStyle = '#334155'; ctx.fillRect(30,120,460,8);
-                const ancho = 60 + F*2.5;
-                ctx.fillStyle = '#60a5fa'; ctx.fillRect(100,85,ancho,35);
-                ctx.fillStyle = '#fff'; ctx.font = 'bold 14px Inter'; ctx.fillText('5 kg',115,108);
-                ctx.strokeStyle = '#ef4444'; ctx.lineWidth=3;
-                ctx.beginPath(); ctx.moveTo(100+ancho,102); ctx.lineTo(100+ancho+40,102); ctx.stroke();
-                ctx.fillStyle = '#ef4444'; ctx.fillText('F='+F+' N',100+ancho+5,97);
-            }
-        };
-        simFMA.actualizar();
+        const T1 = m1 * g * d1;
+        const T2 = m2 * g * d2;
 
-        // ══════════════════════════════════════════
-        // SIMULACIÓN 3: IMANES
-        // ══════════════════════════════════════════
-        (function dibujarImanes() {
-            const c = document.getElementById('canvasImanes');
-            const ctx = c.getContext('2d');
-            ctx.clearRect(0,0,520,160);
-            ctx.fillStyle = '#ef4444'; ctx.fillRect(40,60,70,40);
-            ctx.fillStyle = '#3b82f6'; ctx.fillRect(410,60,70,40);
-            ctx.fillStyle = '#fff'; ctx.font = '12px Inter';
-            ctx.fillText('Masa grande',30,50);
-            ctx.fillText('Masa pequeña',400,50);
-            ctx.strokeStyle = '#ef4444'; ctx.lineWidth = 4;
-            ctx.beginPath(); ctx.moveTo(110,80); ctx.lineTo(170,80); ctx.stroke();
-            ctx.strokeStyle = '#3b82f6';
-            ctx.beginPath(); ctx.moveTo(410,80); ctx.lineTo(350,80); ctx.stroke();
-            ctx.fillStyle = '#fff'; ctx.font='14px Inter';
-            ctx.fillText('F',130,72); ctx.fillText('F',350,72);
-            ctx.fillText('← a pequeña',360,115); ctx.fillText('a grande →',45,115);
-        })();
+        const diff = T1 - T2;
+        const info = document.getElementById("balancinInfo");
+        info.textContent =
+          "Torque niño ≈ " +
+          T1.toFixed(1) +
+          " N·m | Torque niña ≈ " +
+          T2.toFixed(1) +
+          " N·m";
 
-        // ══════════════════════════════════════════
-        // SIMULACIÓN 4: PLANO INCLINADO
-        // ══════════════════════════════════════════
-        const simPlano = {
-            canvas: document.getElementById('canvasPlano'),
-            bloqueX: 120,       // empieza en el centro de la rampa (x=0 local)
-            moviendo: false,
-            actualizar() {
-                const ang = parseFloat(document.getElementById('anguloSlider').value);
-                const mu = parseFloat(document.getElementById('muSlider').value);
-                document.getElementById('anguloValor').textContent = ang+'°';
-                document.getElementById('muValor').textContent = mu.toFixed(2);
-                const rad = ang*Math.PI/180;
-                const Px = 5*9.8*Math.sin(rad);
-                const N = 5*9.8*Math.cos(rad);
-                const FrMax = mu*N;
-                const estado = document.getElementById('estadoPlano');
-                if (this.moviendo) {
-                    estado.textContent = 'Deslizando...';
-                } else {
-                    estado.textContent = Px > FrMax ? '¡Deslizaría al soltar!' : 'En reposo (no desliza)';
-                }
-                // dibujo
-                const ctx = this.canvas.getContext('2d');
-                ctx.clearRect(0,0,520,280);
-                ctx.save();
-                ctx.translate(260, 250);
-                ctx.rotate(-rad);
-                // rampa
-                ctx.fillStyle = '#334155';
-                ctx.fillRect(-260, 0, 520, 10);
-                // bloque (offset para centrarlo)
-                ctx.fillStyle = '#34d399';
-                ctx.fillRect(-120 + this.bloqueX, -28, 55, 28);
-                ctx.restore();
-            },
-            toggle() {
-                const ang = parseFloat(document.getElementById('anguloSlider').value);
-                const mu = parseFloat(document.getElementById('muSlider').value);
-                const rad = ang*Math.PI/180;
-                const Px = 5*9.8*Math.sin(rad);
-                const FrMax = mu*5*9.8*Math.cos(rad);
-                if (!this.moviendo && Px > FrMax) {
-                    this.moviendo = true;
-                    document.getElementById('btnDeslizar').textContent = '⏸ Parar';
-                    const self = this;
-                    function anim() {
-                        if (!self.moviendo) return;
-                        self.bloqueX -= 1.5;              // se mueve hacia la izquierda (bajando)
-                        if (self.bloqueX < -120) self.bloqueX = 120;  // reaparece por la derecha
-                        self.actualizar();
-                        requestAnimationFrame(anim);
-                    }
-                    anim();
-                } else {
-                    this.moviendo = false;
-                    document.getElementById('btnDeslizar').textContent = '▶ Soltar bloque';
-                    this.actualizar();
-                }
-            }
-        };
-        simPlano.actualizar();
+        const ctx = this.canvas.getContext("2d");
+        ctx.clearRect(0, 0, 520, 220);
 
-        // ══════════════════════════════════════════
-        // SIMULACIÓN 5: MUELLE (HOOKE)
-        // ══════════════════════════════════════════
-        const simMuelle = {
-            canvas: document.getElementById('canvasMuelle'),
-            actualizar(){
-                const x = parseFloat(document.getElementById('xSlider').value)/100;
-                document.getElementById('xValor').textContent = (x*100).toFixed(1)+' cm';
-                const F = 32.7*x;
-                document.getElementById('feValor').textContent = F.toFixed(1)+' N';
-                const ctx = this.canvas.getContext('2d');
-                ctx.clearRect(0,0,520,200);
-                ctx.fillStyle = '#94a3b8'; ctx.fillRect(30,40,8,100);
-                const alt = 40 + x*400;
-                ctx.fillStyle = '#f59e0b'; ctx.fillRect(20,40+alt,28,18);
-                ctx.fillStyle = '#fff'; ctx.fillText('100 g',10,40+alt+30);
-                ctx.strokeStyle = '#cbd5e1'; ctx.lineWidth=2;
-                ctx.beginPath();
-                for(let i=0;i<8;i++){ ctx.lineTo(34,45+i*5); ctx.lineTo(44,47+i*5); }
-                ctx.stroke();
-            }
-        };
-        simMuelle.actualizar();
+        const px = 260;
+        const py = 120;
+        const theta = Math.max(-0.35, Math.min(0.35, diff / 300));
 
-        // ══════════════════════════════════════════
-        // SIMULACIÓN 6: BALANCÍN INTERACTIVO
-        // ══════════════════════════════════════════
-        const simBalancin = {
-            canvas: document.getElementById('canvasBalancin'),
-            actualizar(){
-                const d1 = parseFloat(document.getElementById('d1Slider').value);
-                document.getElementById('d1Valor').textContent = d1+' m';
-                const m1 = 20;           // masa del niño (kg)
-                const m2 = 30;           // masa de la niña (kg)
-                const d2 = 0.8;          // distancia fija de la niña (m)
-                const g = 9.8;
-                const T1 = m1*g*d1;      // torque niño
-                const T2 = m2*g*d2;      // torque niña (235.2 Nm)
-                const diff = T1 - T2;
-                const info = document.getElementById('balancinInfo');
-                info.textContent = 'Torque niño = '+T1.toFixed(1)+' Nm  |  Torque niña = '+T2.toFixed(1)+' Nm';
-                
-                // Dibujo
-                const ctx = this.canvas.getContext('2d');
-                ctx.clearRect(0,0,520,220);
-                // Pivote
-                const px = 260, py = 120;
-                // Ángulo de inclinación proporcional a la diferencia (limitado)
-                const theta = Math.max(-0.35, Math.min(0.35, diff / 300));
-                ctx.save();
-                ctx.translate(px, py);
-                ctx.rotate(theta);
-                // Barra
-                ctx.strokeStyle = '#94a3b8'; ctx.lineWidth = 8;
-                ctx.beginPath(); ctx.moveTo(-150,0); ctx.lineTo(150,0); ctx.stroke();
-                // Soportes
-                ctx.fillStyle = '#64748b';
-                ctx.fillRect(-10, 5, 20, 20);
-                // Bloque niño (izquierda, a distancia d1*60 pix)
-                const x1 = -d1*60;
-                ctx.fillStyle = '#60a5fa';
-                ctx.fillRect(x1-15, -20, 30, 25);
-                ctx.fillStyle = '#fff'; ctx.font = 'bold 12px Inter';
-                ctx.fillText(m1+'kg', x1-15, -22);
-                // Bloque niña (derecha, a distancia d2*60)
-                const x2 = d2*60;
-                ctx.fillStyle = '#34d399';
-                ctx.fillRect(x2-15, -20, 30, 25);
-                ctx.fillStyle = '#fff';
-                ctx.fillText(m2+'kg', x2-15, -22);
-                ctx.restore();
-                // Indicación de equilibrio
-                ctx.fillStyle = '#fff'; ctx.font = 'bold 14px Inter'; ctx.textAlign = 'center';
-                if (Math.abs(diff) < 1) {
-                    ctx.fillText('⚖️  ¡Equilibrio!', 260, 40);
-                } else {
-                    ctx.fillText('Rotación hacia ' + (diff>0?'derecha':'izquierda'), 260, 40);
-                }
-            }
-        };
-        simBalancin.actualizar();
+        ctx.save();
+        ctx.translate(px, py);
+        ctx.rotate(theta);
 
-        // ══════════════════════════════════════════
-        // SIMULACIÓN 7: MCU
-        // ══════════════════════════════════════════
-        const simMCU = {
-            canvas: document.getElementById('canvasMCU'), angle: 0,
-            actualizar(){
-                const v = parseFloat(document.getElementById('vSlider').value);
-                document.getElementById('vValor').textContent = v+' m/s';
-                const Fc = 1500*v*v/60;
-                document.getElementById('fcValor').textContent = Fc.toFixed(0)+' N';
-            }
-        };
-        simMCU.actualizar();
-        setInterval(()=>{
-            const v = parseFloat(document.getElementById('vSlider').value);
-            simMCU.angle += v*0.02;
-            const ctx = document.getElementById('canvasMCU').getContext('2d');
-            ctx.clearRect(0,0,520,280);
-            ctx.beginPath(); ctx.arc(260,140,80,0,Math.PI*2);
-            ctx.strokeStyle = '#475569'; ctx.stroke();
-            const x = 260 + 80*Math.cos(simMCU.angle);
-            const y = 140 + 80*Math.sin(simMCU.angle);
-            ctx.fillStyle = '#eab308'; ctx.beginPath(); ctx.arc(x,y,14,0,Math.PI*2); ctx.fill();
-            ctx.strokeStyle = '#ef4444'; ctx.lineWidth = 3;
-            ctx.beginPath(); ctx.moveTo(x,y); ctx.lineTo(260,140); ctx.stroke();
-            ctx.fillStyle = '#ef4444'; ctx.fillText('Fc', (x+260)/2-20, (y+140)/2-10);
-        }, 80);
+        // Barra
+        ctx.strokeStyle = "#94a3b8";
+        ctx.lineWidth = 8;
+        ctx.beginPath();
+        ctx.moveTo(-150, 0);
+        ctx.lineTo(150, 0);
+        ctx.stroke();
 
-        // ══════════════════════════════════════════
-        // SIMULACIÓN 8: CHOQUE
-        // ══════════════════════════════════════════
-        const simChoque = {
-            canvas: document.getElementById('canvasChoque'),
-            izq: {x:80, v:2.5, m:2},
-            der: {x:380, v:-1.2, m:3},
-            activo: false,
-            dibujar(){
-                const ctx = this.canvas.getContext('2d');
-                ctx.clearRect(0,0,520,160);
-                ctx.fillStyle = '#60a5fa'; ctx.fillRect(this.izq.x,70,50,35);
-                ctx.fillStyle = '#f87171'; ctx.fillRect(this.der.x,70,50,35);
-                ctx.fillStyle = '#fff'; ctx.fillText(this.izq.m+'kg',this.izq.x+15,65);
-                ctx.fillText(this.der.m+'kg',this.der.x+15,65);
-            },
-            lanzar(){
-                if(this.activo) return;
-                this.activo = true;
-                const self = this;
-                function anim(){
-                    if(!self.activo) return;
-                    self.izq.x += self.izq.v;
-                    self.der.x += self.der.v;
-                    if(self.izq.x+50 >= self.der.x){
-                        const m1=self.izq.m, m2=self.der.m, v1=self.izq.v, v2=self.der.v;
-                        self.izq.v = ((m1-m2)*v1 + 2*m2*v2)/(m1+m2);
-                        self.der.v = ((m2-m1)*v2 + 2*m1*v1)/(m1+m2);
-                    }
-                    self.dibujar();
-                    if(self.izq.x<-20 || self.der.x>490) self.activo=false;
-                    requestAnimationFrame(anim);
-                }
-                anim();
-            },
-            reset(){
-                this.activo = false;
-                this.izq.x=80; this.izq.v=2.5;
-                this.der.x=380; this.der.v=-1.2;
-                this.dibujar();
-            }
-        };
-        simChoque.dibujar();
+        // Soporte
+        ctx.fillStyle = "#64748b";
+        ctx.fillRect(-10, 5, 20, 20);
 
-        // ══════════════════════════════════════════
-        // SIMULACIÓN 9: GRAVITACIÓN
-        // ══════════════════════════════════════════
-        const simOrbita = {
-            canvas: document.getElementById('canvasOrbita'),
-            actualizar(){
-                const h = parseFloat(document.getElementById('hSlider').value);
-                document.getElementById('hValor').textContent = h+' km';
-                const G=6.67e-11, MT=5.98e24, RT=6371e3;
-                const r = RT + h*1000;
-                const g = G*MT/(r*r);
-                document.getElementById('gValor').textContent = g.toFixed(2)+' m/s²';
-                const ctx = this.canvas.getContext('2d');
-                ctx.clearRect(0,0,520,280);
-                ctx.fillStyle = '#1e3a5f';
-                ctx.beginPath(); ctx.arc(260,140,50,0,Math.PI*2); ctx.fill();
-                ctx.fillStyle = '#eab308'; ctx.font = 'bold 14px Inter';
-                ctx.fillText('Tierra',230,135);
-                const orbR = 80 + h/400;
-                ctx.strokeStyle = '#475569'; ctx.setLineDash([6,4]);
-                ctx.beginPath(); ctx.arc(260,140,orbR,0,Math.PI*2); ctx.stroke();
-                ctx.setLineDash([]);
-                ctx.fillStyle = '#94a3b8';
-                ctx.beginPath(); ctx.arc(260+orbR,140,8,0,Math.PI*2); ctx.fill();
-                ctx.fillStyle = '#fff'; ctx.fillText('Satélite',260+orbR+12,145);
-            }
-        };
-        simOrbita.actualizar();
+        // Niño izquierda
+        const x1 = -d1 * 60;
+        ctx.fillStyle = "#60a5fa";
+        ctx.fillRect(x1 - 15, -20, 30, 25);
+        ctx.fillStyle = "#ffffff";
+        ctx.font = "bold 12px Inter";
+        ctx.fillText("m1", x1 - 10, -22);
 
-        // ── Quiz global ──
-        function selectOption(opt, isCorrect) {
-            const parent = opt.parentElement;
-            parent.querySelectorAll('.option').forEach(o => o.classList.remove('correct','wrong'));
-            if(isCorrect) opt.classList.add('correct');
-            else opt.classList.add('wrong');
-            const fb = parent.nextElementSibling;
-            fb.textContent = isCorrect ? '✅ ¡Correcto!' : '❌ Incorrecto. Repasa el concepto.';
-            fb.classList.remove('hidden');
+        // Niña derecha
+        const x2 = d2 * 60;
+        ctx.fillStyle = "#34d399";
+        ctx.fillRect(x2 - 15, -20, 30, 25);
+        ctx.fillStyle = "#ffffff";
+        ctx.fillText("m2", x2 - 10, -22);
+
+        ctx.restore();
+
+        ctx.fillStyle = "#ffffff";
+        ctx.font = "bold 14px Inter";
+        ctx.textAlign = "center";
+        if (Math.abs(diff) < 1) {
+          ctx.fillText("Equilibrio!", 260, 40);
+        } else {
+          ctx.fillText(
+            "Gira hacia " + (diff > 0 ? "la niña" : "el niño"),
+            260,
+            40
+          );
         }
-    </script>
+      },
+    };
+    simBalancin.actualizar();
+
+    // SIMULACIÓN 7 · MCU
+    const simMCU = {
+      canvas: document.getElementById("canvasMCU"),
+      angle: 0,
+      actualizar() {
+        const v = parseFloat(document.getElementById("vSlider").value);
+        document.getElementById("vValor").textContent = v + " m/s";
+        const Fc = (1500 * v * v) / 60;
+        document.getElementById("fcValor").textContent = Fc.toFixed(0) + " N";
+        this.dibujar();
+      },
+      dibujar() {
+        const v = parseFloat(document.getElementById("vSlider").value);
+        this.angle += v * 0.02;
+
+        const ctx = this.canvas.getContext("2d");
+        ctx.clearRect(0, 0, 520, 280);
+
+        ctx.beginPath();
+        ctx.arc(260, 140, 80, 0, Math.PI * 2);
+        ctx.strokeStyle = "#475569";
+        ctx.stroke();
+
+        const x = 260 + 80 * Math.cos(this.angle);
+        const y = 140 + 80 * Math.sin(this.angle);
+
+        ctx.fillStyle = "#eab308";
+        ctx.beginPath();
+        ctx.arc(x, y, 14, 0, Math.PI * 2);
+        ctx.fill();
+
+        ctx.strokeStyle = "#ef4444";
+        ctx.lineWidth = 3;
+        ctx.beginPath();
+        ctx.moveTo(x, y);
+        ctx.lineTo(260, 140);
+        ctx.stroke();
+      },
+    };
+    simMCU.actualizar();
+    setInterval(() => simMCU.dibujar(), 40);
+
+    // SIMULACIÓN 8 · Choque
+    const simChoque = {
+      canvas: document.getElementById("canvasChoque"),
+      izq: { x: 80, v: 2.5, m: 2 },
+      der: { x: 380, v: -1.2, m: 3 },
+      activo: false,
+      dibujar() {
+        const ctx = this.canvas.getContext("2d");
+        ctx.clearRect(0, 0, 520, 160);
+
+        ctx.fillStyle = "#60a5fa";
+        ctx.fillRect(this.izq.x, 70, 50, 35);
+
+        ctx.fillStyle = "#f87171";
+        ctx.fillRect(this.der.x, 70, 50, 35);
+
+        ctx.fillStyle = "#ffffff";
+        ctx.font = "12px Inter";
+        ctx.fillText(this.izq.m + " kg", this.izq.x + 15, 65);
+        ctx.fillText(this.der.m + " kg", this.der.x + 15, 65);
+      },
+      lanzar() {
+        if (this.activo) return;
+        this.activo = true;
+        const self = this;
+
+        function anim() {
+          if (!self.activo) return;
+
+          self.izq.x += self.izq.v;
+          self.der.x += self.der.v;
+
+          if (self.izq.x + 50 >= self.der.x) {
+            const m1 = self.izq.m;
+            const m2 = self.der.m;
+            const v1 = self.izq.v;
+            const v2 = self.der.v;
+            self.izq.v = ((m1 - m2) * v1 + 2 * m2 * v2) / (m1 + m2);
+            self.der.v = ((m2 - m1) * v2 + 2 * m1 * v1) / (m1 + m2);
+            document.getElementById("choqueInfo").textContent =
+              "Tras el choque, observa el intercambio de velocidades.";
+          }
+
+          self.dibujar();
+          if (self.izq.x < -20 || self.der.x > 490) {
+            self.activo = false;
+          } else {
+            requestAnimationFrame(anim);
+          }
+        }
+        anim();
+      },
+      reset() {
+        this.activo = false;
+        this.izq = { x: 80, v: 2.5, m: 2 };
+        this.der = { x: 380, v: -1.2, m: 3 };
+        document.getElementById("choqueInfo").textContent =
+          "Observa el intercambio de velocidades.";
+        this.dibujar();
+      },
+    };
+    simChoque.dibujar();
+
+    // SIMULACIÓN 9 · Gravitación (variación de g)
+    const simOrbita = {
+      canvas: document.getElementById("canvasOrbita"),
+      actualizar() {
+        const h = parseFloat(document.getElementById("hSlider").value);
+        document.getElementById("hValor").textContent = h + " km";
+
+        const G = 6.67e-11;
+        const MT = 5.98e24;
+        const RT = 6371e3;
+        const r = RT + h * 1000;
+        const g = (G * MT) / (r * r);
+        document.getElementById("gValor").textContent = g.toFixed(2) + " m/s²";
+
+        const ctx = this.canvas.getContext("2d");
+        ctx.clearRect(0, 0, 520, 280);
+
+        ctx.fillStyle = "#1e3a5f";
+        ctx.beginPath();
+        ctx.arc(260, 140, 50, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.fillStyle = "#eab308";
+        ctx.font = "bold 14px Inter";
+        ctx.fillText("Tierra", 230, 135);
+
+        const orbR = 80 + (h / 400);
+        ctx.strokeStyle = "#475569";
+        ctx.setLineDash([6, 4]);
+        ctx.beginPath();
+        ctx.arc(260, 140, orbR, 0, Math.PI * 2);
+        ctx.stroke();
+        ctx.setLineDash([]);
+
+        ctx.fillStyle = "#94a3b8";
+        ctx.beginPath();
+        ctx.arc(260 + orbR, 140, 8, 0, Math.PI * 2);
+        ctx.fill();
+
+        ctx.fillStyle = "#ffffff";
+        ctx.fillText("Satélite", 260 + orbR - 18, 145);
+      },
+    };
+    simOrbita.actualizar();
+
+    // Quiz global
+    function selectOption(opt, isCorrect) {
+      const parent = opt.parentElement;
+      parent.querySelectorAll(".option").forEach((o) =>
+        o.classList.remove("correct", "wrong")
+      );
+      if (isCorrect) {
+        opt.classList.add("correct");
+      } else {
+        opt.classList.add("wrong");
+      }
+      const fb = parent.parentElement.querySelector(".feedback");
+      fb.textContent = isCorrect
+        ? "Correcto. Esta idea es muy típica de examen."
+        : "No es correcto. Revisa la definición del concepto.";
+      fb.classList.remove("hidden");
+    }
+  </script>
 </body>
 </html>

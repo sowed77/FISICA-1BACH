@@ -207,8 +207,9 @@
 <main class="content">
   <div class="topbar">
     <div class="chip-row"><span class="chip">1º Bach</span><span class="chip">Física</span></div>
+    <button onclick="window.location.href='index.html'" class="btn btn-secondary" style="display:flex;align-items:center;gap:0.3rem;">← Inicio</button>
     <button class="theme-toggle" id="themeToggle">◐</button>
-  </div>
+</div>
   <section class="layout" id="exerciseArea">
     <article class="card" id="exerciseCard"></article>
   </section>
@@ -474,7 +475,95 @@
         if (lbl.afterRight&&visibility.momento) a+=drawArrow(320,210,370,210,lbl.afterRight,'right');
         return `<svg viewBox="0 0 420 280">${standardDefs()}<rect x="40" y="220" width="340" height="8" rx="4" fill="#64748b"/><rect x="80" y="150" width="80" height="70" rx="8" fill="#60a5fa" opacity="0.9"/><rect x="260" y="150" width="80" height="70" rx="8" fill="#f87171" opacity="0.9"/><text x="120" y="135" fill="#fff" font-size="12" text-anchor="middle">Antes</text><text x="300" y="135" fill="#fff" font-size="12" text-anchor="middle">Después</text>${a}</svg>`;
     }
+// ── Nuevo tipo: VERTICAL (ascensor, martillo, grúa...) ──
+function verticalFigure(dcl) {
+    const lbl = dcl.labels || {};
+    let a = '';
+    if (lbl.up && visibility.normal) a += drawArrow(210, 110, 210, 40, lbl.up, 'up');
+    if (lbl.down && visibility.peso) a += drawArrow(210, 190, 210, 260, lbl.down, 'down');
+    // Fuerzas laterales (rozamiento, etc.)
+    if (lbl.left && visibility.friccion) a += drawArrow(150, 150, 80, 150, lbl.left, 'left');
+    if (lbl.right && visibility.friccion) a += drawArrow(270, 150, 340, 150, lbl.right, 'right');
+    return `<svg viewBox="0 0 420 280">${standardDefs()}
+        <rect x="40" y="220" width="340" height="10" rx="4" fill="#64748b"/>
+        <rect x="160" y="150" width="100" height="70" rx="10" fill="#fbbf24" opacity="0.9"/>
+        ${a}</svg>`;
+}
 
+// ── Nuevo tipo: TENSION CABLES (ej. 23) ──
+function tensionCablesFigure(dcl) {
+    const lbl = dcl.labels || {};
+    const ang = dcl.angle || 60; // semiángulo con la vertical
+    const rad = ang * Math.PI/180;
+    const L = 100; // longitud visual de los cables
+    const cx = 210, cy = 80; // punto de anclaje al techo (centro)
+    // Puntos de anclaje superiores
+    const leftX = cx - L * Math.sin(rad);
+    const leftY = cy - L * Math.cos(rad);
+    const rightX = cx + L * Math.sin(rad);
+    const rightY = cy - L * Math.cos(rad);
+    let a = '';
+    // Cuerdas
+    a += `<line x1="${cx}" y1="${cy}" x2="${leftX}" y2="${leftY}" stroke="#94a3b8" stroke-width="3"/>`;
+    a += `<line x1="${cx}" y1="${cy}" x2="${rightX}" y2="${rightY}" stroke="#94a3b8" stroke-width="3"/>`;
+    // Tensiones (flechas a lo largo de las cuerdas)
+    const midLeftX = (cx + leftX)/2, midLeftY = (cy + leftY)/2;
+    const midRightX = (cx + rightX)/2, midRightY = (cy + rightY)/2;
+    if (lbl.leftT && visibility.tension) {
+        const angLeft = Math.atan2(cy - leftY, cx - leftX);
+        const tx = midLeftX - 15 * Math.cos(angLeft);
+        const ty = midLeftY - 15 * Math.sin(angLeft);
+        a += `<line x1="${midLeftX}" y1="${midLeftY}" x2="${tx}" y2="${ty}" stroke="#8b5cf6" stroke-width="4" marker-end="url(#arrowPurple)"/>`;
+        a += `<text x="${tx-15}" y="${ty-5}" fill="#8b5cf6" font-size="13" font-weight="700">${lbl.leftT}</text>`;
+    }
+    if (lbl.rightT && visibility.tension) {
+        const angRight = Math.atan2(cy - rightY, cx - rightX);
+        const tx = midRightX + 15 * Math.cos(angRight);
+        const ty = midRightY + 15 * Math.sin(angRight);
+        a += `<line x1="${midRightX}" y1="${midRightY}" x2="${tx}" y2="${ty}" stroke="#8b5cf6" stroke-width="4" marker-end="url(#arrowPurple)"/>`;
+        a += `<text x="${tx+5}" y="${ty-5}" fill="#8b5cf6" font-size="13" font-weight="700">${lbl.rightT}</text>`;
+    }
+    // Bloque colgante
+    a += `<rect x="${cx-18}" y="${cy}" width="36" height="40" rx="6" fill="#f59e0b" opacity="0.9"/>`;
+    a += `<text x="${cx}" y="${cy+25}" fill="#000" font-size="12" text-anchor="middle" font-weight="700">${dcl.mass || 'm'}</text>`;
+    // Peso
+    if (lbl.down && visibility.peso) {
+        a += drawArrow(cx, cy+40, cx, cy+100, lbl.down, 'down');
+    }
+    return `<svg viewBox="0 0 420 280">${standardDefs()}
+        <rect x="40" y="10" width="340" height="8" rx="4" fill="#64748b"/>
+        ${a}</svg>`;
+}
+
+// ── Nuevo tipo: REBOUND (frontón, ej. 30) ──
+function reboundFigure(dcl) {
+    const lbl = dcl.labels || {};
+    let a = '';
+    // Pared (izquierda)
+    a += `<rect x="60" y="60" width="12" height="160" rx="3" fill="#94a3b8"/>`;
+    // Pelota inicial (acercándose)
+    a += `<circle cx="260" cy="140" r="14" fill="#60a5fa" opacity="0.8"/>`;
+    if (lbl.vin && visibility.paralela) a += drawArrow(274, 140, 340, 140, lbl.vin, 'right');
+    // Pelota final (rebotando)
+    a += `<circle cx="140" cy="100" r="14" fill="#f87171" opacity="0.8"/>`;
+    if (lbl.vout && visibility.paralela) a += drawArrow(126, 100, 60, 100, lbl.vout, 'left');
+    // Fuerza de la pared (en el punto de impacto)
+    if (lbl.Fwall && visibility.friccion) a += drawArrow(130, 140, 70, 140, lbl.Fwall, 'left');
+    return `<svg viewBox="0 0 420 220">${standardDefs()}${a}</svg>`;
+}
+function springFigure(dcl) {
+    const lbl = dcl.labels || {};
+    let a = '';
+    // Bloque
+    a += `<rect x="80" y="150" width="60" height="50" rx="8" fill="#60a5fa"/>`;
+    // Muelle (zigzag)
+    a += `<path d="M140 175 L160 155 L180 175 L200 155 L220 175" stroke="#f59e0b" stroke-width="4" fill="none"/>`;
+    // Pared
+    a += `<rect x="230" y="130" width="15" height="90" rx="3" fill="#64748b"/>`;
+    if (lbl.v && visibility.paralela) a += drawArrow(60, 175, 30, 175, lbl.v, 'left'); // velocidad inicial
+    if (lbl.Fe && visibility.tension) a += drawArrow(140, 175, 170, 175, lbl.Fe, 'right'); // fuerza elástica
+    return `<svg viewBox="0 0 420 280">${standardDefs()}<rect x="30" y="230" width="360" height="8" rx="4" fill="#64748b"/>${a}</svg>`;
+}
     function renderFigure(ex) {
         if (!ex.dcl) return;
         let figHtml = '';
@@ -489,6 +578,9 @@
             case 'orbit': figHtml = orbitFigure(ex.dcl); break;
             case 'collision': figHtml = collisionFigure(ex.dcl); break;
             case 'collisionMomentum': figHtml = collisionMomentumFigure(ex.dcl); break;
+            case 'vertical': figHtml = verticalFigure(ex.dcl); break;
+            case 'tension_cables': figHtml = tensionCablesFigure(ex.dcl); break;
+            case 'rebound': figHtml = reboundFigure(ex.dcl); break;
             default: figHtml = horizontalFigure(ex.dcl);
         }
         // Leyenda dinámica

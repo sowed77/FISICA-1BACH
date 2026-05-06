@@ -139,7 +139,10 @@
       "correct": 1,
       "feedback": "Al acelerar hacia arriba, la normal debe vencer el peso y además proporcionar la aceleración extra, por lo que N > mg."
     },
-    "dcl": { "type": "horizontal", "labels": { "up": "N (fuerza del suelo)", "down": "P = mg" } }
+    "dcl": {
+  "type": "vertical",
+  "labels": { "up": "N (suelo)", "down": "P = mg" }
+}
   },
   {
     "id": 5,
@@ -243,7 +246,10 @@
       "correct": 1,
       "feedback": "La aceleración es negativa porque reduce la velocidad del martillo; el clavo ejerce una fuerza que se opone al movimiento."
     },
-    "dcl": { "type": "horizontal", "labels": { "left": "F_oposición" } }
+    "dcl": {
+  "type": "vertical",
+  "labels": { "down": "F_martillo", "up": "F_op (madera)" }
+}
   },
   {
     "id": 8,
@@ -728,7 +734,16 @@
       "correct": 2,
       "feedback": "El cos(90°) es 0. Necesitarías una tensión infinita para evitar que un cable horizontal ceda mínimamente ante un peso."
     },
-    "dcl": {"type": "horizontal", "labels": {"up": "Ty1 + Ty2", "down": "P = 73.5 N"}}
+    "dcl": {
+  "type": "tension_cables",
+  "angle": 60,
+  "mass": "7,5 kg",
+  "labels": {
+    "leftT": "T₁",
+    "rightT": "T₂",
+    "down": "P = 73,5 N"
+  }
+}
   },
   {
     "id": 24,
@@ -922,7 +937,14 @@
       "correct": 0,
       "feedback": "El rebote perfecto duplica el cambio de momento (Δv = 32), requiriendo el doble de impulso y fuerza de la pared."
     },
-    "dcl": {"type": "horizontal", "labels": {"up": "N", "down": "P", "left": "F_pared = 70 N"}}
+    "dcl": {
+  "type": "rebound",
+  "labels": {
+    "vin": "vᵢ = 16 m/s",
+    "vout": "v_f = 12 m/s",
+    "Fwall": "F_pared = 70 N"
+  }
+}
   },
   {
     "id": 31,
@@ -1336,7 +1358,10 @@
       "correct": 1,
       "feedback": "Al descender (a < 0 respecto al movimiento de elevación), T = m(g - a). La tensión requerida es mucho menor que el peso estático."
     },
-    "dcl": {"type": "horizontal", "labels": {"up": "T_max = 30 kN", "down": "P = 20 kN"}}
+    "dcl": {
+  "type": "vertical",
+  "labels": { "up": "T_max = 30 kN", "down": "P = 20 kN" }
+}
   },
   {
     "id": 46,
@@ -1797,7 +1822,10 @@
       "correct": 1,
       "feedback": "En ingravidez, el peso desaparece. La tensión solo tendría que vencer la inercia del objeto: T = m*a."
     },
-    "dcl": {"type": "horizontal", "labels": {"up": "T_max = 6.4 N", "down": "P = 1.96 N"}}
+    "dcl": {
+  "type": "vertical",
+  "labels": { "up": "T_max = 6,4 N", "down": "P = 1,96 N" }
+}
   },
   {
     "id": 61,
