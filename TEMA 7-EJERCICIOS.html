@@ -231,6 +231,17 @@
 </div>
   <section class="layout" id="exerciseArea">
     <article class="card" id="exerciseCard"></article>
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-top: var(--space-8); padding-top: var(--space-6); border-top: 1px solid var(--color-divider);">
+    <button onclick="changeExercise(-1)" class="btn btn-secondary" id="btnPrev">
+        <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M15 19l-7-7 7-7"/></svg>
+        Anterior
+    </button>
+    
+    <button onclick="changeExercise(1)" class="btn btn-primary" id="btnNext">
+        Siguiente
+        <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M9 5l7 7-7 7"/></svg>
+    </button>
+</div>
   </section>
 </main>
 </div>
@@ -707,7 +718,16 @@ function springFigure(dcl) {
         iframeAnimacion.src = ""; // Liberar memoria
         document.body.classList.remove('modal-open');
     }
-    
+    function changeExercise(delta) {
+    const nextIdx = current + delta;
+    if (nextIdx >= 0 && nextIdx < exercises.length) {
+        current = nextIdx;
+        renderList();     // Actualiza la lista lateral (tu función original)
+        renderExercise(); // Dibuja el ejercicio (tu función original)
+        // Scroll suave al inicio del ejercicio
+        document.querySelector('.content').scrollTo({ top: 0, behavior: 'smooth' });
+    }
+}
     // Cerrar con Escape
     document.addEventListener('keydown', (e) => {
         if (e.key === 'Escape' && modalAnimacion.classList.contains('show')) cerrarAnimacion();
