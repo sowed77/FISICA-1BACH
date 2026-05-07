@@ -1,0 +1,397 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Laboratorio: Potencia y Energía del Automóvil</title>
+    <!-- Bibliotecas externas -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <script src="https://unpkg.com/lucide-react@latest"></script>
+
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&family=Fira+Code&display=swap');
+        body { font-family: 'Inter', sans-serif; background-color: #0f172a; }
+        .font-mono { font-family: 'Fira Code', monospace; }
+        input[type=range]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            height: 20px;
+            width: 20px;
+            border-radius: 50%;
+            background: #f43f5e; /* Rose 500 */
+            cursor: pointer;
+            border: 2px solid #ffffff;
+            box-shadow: 0 0 10px rgba(244, 63, 94, 0.5);
+        }
+        .mountain-texture {
+            background: linear-gradient(135deg, #1e293b 25%, transparent 25%) -20px 0,
+                        linear-gradient(225deg, #1e293b 25%, transparent 25%) -20px 0,
+                        linear-gradient(315deg, #1e293b 25%, transparent 25%),
+                        linear-gradient(45deg, #1e293b 25%, transparent 25%);
+            background-size: 40px 40px;
+            background-color: #0f172a;
+        }
+    </style>
+</head>
+<body>
+    <div id="root"></div>
+
+    <script type="text/babel">
+        (() => {
+            const { useState, useEffect } = React;
+            const icons = window.LucideReact || {};
+            
+            // Asignación segura de iconos
+            const getIcon = (name) => icons[name] || (({className}) => <span className={className || ''}></span>);
+            const PlayIcon = getIcon('Play');
+            const RotateCcwIcon = getIcon('RotateCcw');
+            const CalculatorIcon = getIcon('Calculator');
+            const SettingsIcon = getIcon('Settings');
+            const CarIcon = getIcon('Car');
+            const ZapIcon = getIcon('Zap');
+            const MountainIcon = getIcon('Mountain');
+            const BatteryIcon = getIcon('BatteryCharging');
+            const ImagePlusIcon = getIcon('ImagePlus');
+
+            const App = () => {
+                const gravedad = 9.8; // m/s²
+
+                // Estados interactivos
+                const [masaToneladas, setMasaToneladas] = useState(1.4); // t
+                const [velInicialKmh, setVelInicialKmh] = useState(36); // km/h
+                const [velFinalMs, setVelFinalMs] = useState(25); // m/s
+                const [alturaMetros, setAlturaMetros] = useState(20); // m
+                const [tiempoSegundos, setTiempoSegundos] = useState(40); // s
+
+                // Conversiones al SI
+                const masaKilogramos = masaToneladas * 1000;
+                const velInicialMs = velInicialKmh / 3.6;
+
+                // --- CÁLCULOS ENERGÉTICOS ---
+                // Inicial
+                const energiaCinInicial = 0.5 * masaKilogramos * Math.pow(velInicialMs, 2);
+                const energiaPotInicial = 0; // Parte de la base
+                const energiaMecInicial = energiaCinInicial + energiaPotInicial;
+
+                // Final
+                const energiaCinFinal = 0.5 * masaKilogramos * Math.pow(velFinalMs, 2);
+                const energiaPotFinal = masaKilogramos * gravedad * alturaMetros;
+                const energiaMecFinal = energiaCinFinal + energiaPotFinal;
+
+                // Variación y Potencia
+                const variacionEnergiaMec = energiaMecFinal - energiaMecInicial; // Julios
+                // Protección contra divisiones por cero
+                const tiempoSeguro = tiempoSegundos > 0 ? tiempoSegundos : 1;
+                const potenciaWatts = variacionEnergiaMec / tiempoSeguro; // Vatios (W)
+
+                // Valores para mostrar
+                const potenciaKW = potenciaWatts / 1000;
+                const potenciaCV = potenciaWatts / 735.5;
+
+                // --- ANIMACIÓN ---
+                const [tiempoSimulacion, setTiempoSimulacion] = useState(0); 
+                const [estaMoviendose, setEstaMoviendose] = useState(false);
+
+                // Cinemática interpolada para la animación
+                const tNorm = Math.min(1, tiempoSimulacion / tiempoSeguro);
+                
+                // Suponemos aceleración constante para la visualización
+                const aVisual = (velFinalMs - velInicialMs) / tiempoSeguro;
+                const velActual = velInicialMs + aVisual * tiempoSimulacion;
+                
+                // Interpolamos la altura linealmente para que quede bien en el SVG
+                const alturaActual = tNorm * alturaMetros;
+                
+                // Energías instantáneas
+                const energiaCinActual = 0.5 * masaKilogramos * Math.pow(velActual, 2);
+                const energiaPotActual = masaKilogramos * gravedad * alturaActual;
+                const energiaMecActual = energiaCinActual + energiaPotActual;
+
+                useEffect(() => {
+                    let interval;
+                    if (estaMoviendose && tiempoSimulacion < tiempoSegundos) {
+                        interval = setInterval(() => {
+                            setTiempoSimulacion(prev => {
+                                // Aceleramos el tiempo visual para no esperar 40s reales
+                                const nextTime = prev + 0.05 * 8; 
+                                if (nextTime >= tiempoSegundos) {
+                                    setEstaMoviendose(false);
+                                    return tiempoSegundos;
+                                }
+                                return nextTime;
+                            });
+                        }, 50); // 20 fps visuales
+                    }
+                    return () => clearInterval(interval);
+                }, [estaMoviendose, tiempoSimulacion, tiempoSegundos]);
+
+                const iniciarSimulacion = () => {
+                    if (tiempoSimulacion < tiempoSegundos) setEstaMoviendose(true);
+                };
+
+                const reiniciarSimulacion = () => {
+                    setTiempoSimulacion(0);
+                    setEstaMoviendose(false);
+                };
+
+                // Forzar reset si se cambian variables
+                useEffect(() => {
+                    reiniciarSimulacion();
+                }, [masaToneladas, velInicialKmh, velFinalMs, alturaMetros, tiempoSegundos]);
+
+                // Generador de Diagrama de Cuerpo Libre
+                const [imgUrl, setImgUrl] = useState(null);
+                const [imgLoading, setImgLoading] = useState(false);
+
+                const generarDiagrama = async () => {
+                    setImgLoading(true);
+                    const apiKey = "AIzaSyDMyUo-WgmdNkCRW6-YK7h-bnRF_FLAjf0"; // API Key insertada por entorno; 
+                    try {
+                        const response = await fetch(
+                            `https://generativelanguage.googleapis.com/v1beta/models/imagen-4.0-generate-001:predict?key=${apiKey}`,
+                            {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({
+                                    instances: [{ prompt: "Diagrama técnico de física de la conservación de la energía. Un coche subiendo una cuesta empinada. Dos grandes barras de energía superpuestas. En la base: Energía cinética pequeña. En la cima: Energía cinética muy grande y Energía potencial gravitatoria muy grande. Estilo educativo, minimalista, fondo blanco" }],
+                                    parameters: { sampleCount: 1 }
+                                })
+                            }
+                        );
+                        if (!response.ok) throw new Error("Error en red");
+                        const data = await response.json();
+                        setImgUrl(`data:image/png;base64,${data.predictions[0].bytesBase64Encoded}`);
+                    } catch (error) {
+                        console.error(error);
+                    } finally {
+                        setImgLoading(false);
+                    }
+                };
+
+                // Geometría visual de la montaña
+                const svgWidth = 400;
+                const svgHeight = 250;
+                const mountWidth = 350;
+                const mountHeight = 150;
+                const angleRad = Math.atan(mountHeight / mountWidth);
+                const angleDeg = angleRad * (180 / Math.PI);
+                
+                const carX = tNorm * mountWidth;
+                const carY = svgHeight - (tNorm * mountHeight);
+
+                // Barras de energía (Porcentajes relativos al máximo)
+                const maxEnergia = Math.max(energiaMecInicial, energiaMecFinal);
+                const alturaSeguraMax = maxEnergia > 0 ? maxEnergia : 1;
+
+                return (
+                    <div className="min-h-screen bg-slate-900 text-slate-100 p-4 md:p-8">
+                        <header className="max-w-5xl mx-auto mb-8 border-b border-slate-700 pb-6">
+                            <div className="flex items-center gap-3 mb-2">
+                                <span className="bg-rose-600 text-white px-3 py-1 rounded-full text-xs font-black uppercase tracking-widest">Trabajo y Potencia</span>
+                                <h1 className="text-3xl font-black text-rose-400 uppercase tracking-tight tracking-widest">El Motor en la Cuesta</h1>
+                            </div>
+                            <div className="bg-slate-800/50 p-4 rounded-xl border border-slate-700 mt-4">
+                                <p className="text-slate-300 text-sm leading-relaxed">
+                                    <strong>Enunciado:</strong> Un automóvil de 1,4 t inicia el ascenso de una costera con v = 36 km/h. Cuando se ha elevado a una altura vertical de 20 m alcanza una velocidad de 25 m/s, invirtiendo un tiempo de 40 s. Calcula: a) El aumento de energía mecánica. b) La potencia media del motor.
+                                </p>
+                            </div>
+                        </header>
+
+                        <main className="max-w-5xl mx-auto grid md:grid-cols-2 gap-8">
+                            {/* Panel Visual */}
+                            <div className="bg-slate-800 rounded-3xl border border-slate-700 h-[500px] relative overflow-hidden shadow-2xl flex flex-col justify-end">
+                                
+                                {/* Marcadores Flotantes */}
+                                <div className="absolute top-4 w-full px-6 flex justify-between z-30 pointer-events-none">
+                                    <div className="bg-slate-900/90 p-3 rounded-lg border border-slate-700 backdrop-blur-md">
+                                        <p className="text-[10px] text-slate-500 uppercase font-black flex items-center gap-1">
+                                            {BatteryIcon && <BatteryIcon size={12} className="text-emerald-400" />} E. Mecánica (Em)
+                                        </p>
+                                        <p className="text-xl font-mono font-black text-white">{(energiaMecActual / 1000).toFixed(1)} kJ</p>
+                                        <div className="flex gap-2 mt-1">
+                                            <span className="text-[9px] text-blue-400 font-bold">Ec: {(energiaCinActual/1000).toFixed(0)}</span>
+                                            <span className="text-[9px] text-orange-400 font-bold">Ep: {(energiaPotActual/1000).toFixed(0)}</span>
+                                        </div>
+                                    </div>
+                                    <div className="bg-slate-900/90 p-3 rounded-lg border backdrop-blur-md text-right border-b-4 border-b-rose-500 shadow-[0_0_15px_rgba(244,63,94,0.2)]">
+                                        <p className="text-[10px] text-slate-500 uppercase font-black flex items-center justify-end gap-1">
+                                            {ZapIcon && <ZapIcon size={12} className="text-rose-400" />} Potencia Suministrada
+                                        </p>
+                                        <p className="text-2xl font-mono font-black text-rose-500">{tiempoSimulacion > 0 ? potenciaKW.toFixed(2) : "0.00"} <span className="text-sm">kW</span></p>
+                                    </div>
+                                </div>
+
+                                {/* Pilares de Energía Dinámicos */}
+                                <div className="absolute top-24 left-6 flex gap-3 z-30 pointer-events-none">
+                                    <div className="flex flex-col items-center justify-end h-32 w-8 bg-slate-900 border border-slate-700 rounded-lg overflow-hidden relative">
+                                        <div className="w-full bg-blue-500 transition-all duration-100" style={{ height: `${(energiaCinActual / alturaSeguraMax) * 100}%` }}></div>
+                                        <div className="w-full bg-orange-500 transition-all duration-100" style={{ height: `${(energiaPotActual / alturaSeguraMax) * 100}%` }}></div>
+                                    </div>
+                                </div>
+
+                                {/* Cronómetro visual */}
+                                <div className="absolute top-4 left-1/2 -translate-x-1/2 bg-slate-900/80 px-4 py-1.5 rounded-full border border-slate-700 shadow-md z-30">
+                                    <span className="font-mono text-white text-sm font-bold">{tiempoSimulacion.toFixed(1)} s / {tiempoSegundos} s</span>
+                                </div>
+
+                                {/* Escena (Montaña y Coche) */}
+                                <div className="relative w-full h-[300px] flex justify-center items-end bg-sky-900/20">
+                                    <svg width={svgWidth} height={svgHeight} className="overflow-visible absolute bottom-0">
+                                        {/* La Cuesta */}
+                                        <polygon 
+                                            points={`0,${svgHeight} ${mountWidth},${svgHeight - mountHeight} ${mountWidth},${svgHeight}`}
+                                            fill="#334155" stroke="#475569" strokeWidth="4" className="mountain-texture"
+                                        />
+                                        
+                                        {/* Cota de Altura (Derecha) */}
+                                        <line x1={mountWidth + 20} y1={svgHeight} x2={mountWidth + 20} y2={svgHeight - mountHeight} stroke="#94a3b8" strokeWidth="2" strokeDasharray="4 4" />
+                                        <line x1={mountWidth + 15} y1={svgHeight} x2={mountWidth + 25} y2={svgHeight} stroke="#94a3b8" strokeWidth="2" />
+                                        <line x1={mountWidth + 15} y1={svgHeight - mountHeight} x2={mountWidth + 25} y2={svgHeight - mountHeight} stroke="#94a3b8" strokeWidth="2" />
+                                        <text x={mountWidth + 30} y={svgHeight - mountHeight/2} fill="#94a3b8" fontSize="12" fontWeight="bold" className="font-mono">h = {alturaMetros}m</text>
+                                    </svg>
+
+                                    {/* El Coche */}
+                                    <div 
+                                        className="absolute z-20 flex flex-col items-center justify-center transition-transform"
+                                        style={{ 
+                                            left: `calc(50% - ${svgWidth/2}px + ${carX}px)`, 
+                                            top: `calc(100% - ${svgHeight - carY + 30}px)`,
+                                            transform: `translate(-50%, -50%) rotate(${-angleDeg}deg)`
+                                        }}
+                                    >
+                                        <div className="w-16 h-8 bg-rose-600 border-2 border-rose-400 rounded-lg rounded-tr-2xl shadow-lg flex items-center justify-center relative">
+                                            {CarIcon && <CarIcon size={20} className="text-rose-200 opacity-80" />}
+                                            <div className="flex gap-6 absolute -bottom-3 left-1">
+                                                <div className="w-4 h-4 bg-slate-900 rounded-full border border-slate-500"></div>
+                                                <div className="w-4 h-4 bg-slate-900 rounded-full border border-slate-500"></div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* Controles y Resolución */}
+                            <div className="space-y-6">
+                                <div className="bg-slate-800 p-6 rounded-3xl border border-slate-700 shadow-xl">
+                                    <h3 className="text-xl font-bold mb-4 flex items-center gap-2 text-rose-400">
+                                        {SettingsIcon && <SettingsIcon size={20} />} Datos de la Subida
+                                    </h3>
+                                    
+                                    <div className="space-y-4 mb-6">
+                                        <div className="grid grid-cols-2 gap-4">
+                                            <div>
+                                                <div className="flex justify-between text-[10px] mb-1"><span className="text-slate-300 font-bold uppercase">Masa Coche</span></div>
+                                                <input type="range" min="0.5" max="3.0" step="0.1" value={masaToneladas} onChange={e => {setMasaToneladas(Number(e.target.value)); reiniciarSimulacion();}} className="w-full h-1.5 bg-slate-700 rounded-lg appearance-none cursor-pointer accent-slate-400 mb-1" />
+                                                <span className="font-mono text-white text-xs">{masaToneladas.toFixed(1)} t</span>
+                                            </div>
+                                            <div>
+                                                <div className="flex justify-between text-[10px] mb-1"><span className="text-orange-400 font-bold uppercase">Altura (h)</span></div>
+                                                <input type="range" min="5" max="50" step="1" value={alturaMetros} onChange={e => {setAlturaMetros(Number(e.target.value)); reiniciarSimulacion();}} className="w-full h-1.5 bg-slate-700 rounded-lg appearance-none cursor-pointer accent-orange-500 mb-1" />
+                                                <span className="font-mono text-white text-xs">{alturaMetros} m</span>
+                                            </div>
+                                        </div>
+
+                                        <div className="grid grid-cols-2 gap-4 pt-2 border-t border-slate-700">
+                                            <div>
+                                                <div className="flex justify-between text-[10px] mb-1"><span className="text-blue-400 font-bold uppercase">Vel. Inicial (v₀)</span></div>
+                                                <input type="range" min="0" max="100" step="2" value={velInicialKmh} onChange={e => {setVelInicialKmh(Number(e.target.value)); reiniciarSimulacion();}} className="w-full h-1.5 bg-slate-700 rounded-lg appearance-none cursor-pointer accent-blue-500 mb-1" />
+                                                <span className="font-mono text-white text-xs">{velInicialKmh} km/h</span>
+                                            </div>
+                                            <div>
+                                                <div className="flex justify-between text-[10px] mb-1"><span className="text-emerald-400 font-bold uppercase">Vel. Final (v_f)</span></div>
+                                                <input type="range" min="5" max="50" step="1" value={velFinalMs} onChange={e => {setVelFinalMs(Number(e.target.value)); reiniciarSimulacion();}} className="w-full h-1.5 bg-slate-700 rounded-lg appearance-none cursor-pointer accent-emerald-500 mb-1" />
+                                                <span className="font-mono text-white text-xs">{velFinalMs} m/s</span>
+                                            </div>
+                                        </div>
+
+                                        <div className="pt-2 border-t border-slate-700">
+                                            <div className="flex justify-between text-[10px] mb-1"><span className="text-rose-400 font-bold uppercase">Tiempo invertido (t)</span></div>
+                                            <input type="range" min="5" max="120" step="5" value={tiempoSegundos} onChange={e => {setTiempoSegundos(Number(e.target.value)); reiniciarSimulacion();}} className="w-full h-1.5 bg-slate-700 rounded-lg appearance-none cursor-pointer accent-rose-500 mb-1" />
+                                            <span className="font-mono text-white text-xs">{tiempoSegundos} s</span>
+                                        </div>
+                                    </div>
+
+                                    <div className="flex gap-2">
+                                        <button 
+                                            onClick={iniciarSimulacion} 
+                                            disabled={estaMoviendose || tiempoSimulacion >= tiempoSegundos}
+                                            className="flex-1 bg-rose-600 hover:bg-rose-500 text-white font-black py-3 rounded-xl shadow-lg flex justify-center items-center gap-2 disabled:opacity-50 transition-all active:scale-95"
+                                        >
+                                            {PlayIcon && <PlayIcon size={18} />} SIMULAR ASCENSO
+                                        </button>
+                                        <button onClick={reiniciarSimulacion} className="bg-slate-700 hover:bg-slate-600 text-white font-bold px-4 rounded-xl transition-all shadow-md">
+                                            {RotateCcwIcon && <RotateCcwIcon size={18} />}
+                                        </button>
+                                    </div>
+                                </div>
+
+                                <div className="bg-rose-950/20 p-6 rounded-3xl border border-rose-500/20">
+                                    <div className="flex justify-between items-center mb-4 border-b border-rose-500/30 pb-2">
+                                        <h4 className="font-bold text-rose-300 flex items-center gap-2">
+                                            {CalculatorIcon && <CalculatorIcon size={18} />} Resolución Matemática
+                                        </h4>
+                                        <button onClick={generarDiagrama} className="text-[10px] uppercase font-bold bg-slate-800 hover:bg-slate-700 text-slate-300 px-3 py-1.5 rounded flex items-center gap-1 border border-slate-600">
+                                            {imgLoading ? <span className="animate-pulse">Cargando...</span> : <>{ImagePlusIcon && <ImagePlusIcon size={14}/>} Ver Gráfico</>}
+                                        </button>
+                                    </div>
+
+                                    {imgUrl && (
+                                        <div className="mb-4 bg-slate-900 p-2 rounded-xl border border-slate-700 text-center">
+                                            <img src={imgUrl} alt="Gráfico de Energía" className="mx-auto max-h-40 rounded-lg" />
+                                        </div>
+                                    )}
+
+                                    <div className="text-[11px] text-slate-300 space-y-3 leading-relaxed">
+                                        <p><strong>1. Pasar unidades al S.I.:</strong><br/>
+                                        m = {masaToneladas} t = <strong>{masaKilogramos} kg</strong><br/>
+                                        v₀ = {velInicialKmh} km/h / 3.6 = <strong>{velInicialMs.toFixed(2)} m/s</strong></p>
+                                        
+                                        <p className="mt-2"><strong>2. Energía Mecánica Inicial (Abajo):</strong><br/>
+                                        Al estar abajo, altura = 0, por lo que Ep₀ = 0. Solo hay energía cinética.</p>
+                                        <div className="bg-slate-900/80 p-2 rounded-lg border-l-4 border-blue-500 font-mono text-blue-200">
+                                            Em₀ = Ec₀ = ½ · m · v₀²<br/>
+                                            Em₀ = 0.5 · {masaKilogramos} · {velInicialMs.toFixed(2)}² = <strong>{energiaMecInicial.toFixed(0)} J</strong>
+                                        </div>
+
+                                        <p className="mt-2"><strong>3. Energía Mecánica Final (Arriba):</strong><br/>
+                                        Arriba tiene tanto velocidad como altura.</p>
+                                        <div className="bg-slate-900/80 p-2 rounded-lg border-l-4 border-orange-500 font-mono text-orange-200">
+                                            Em_f = Ec_f + Ep_f = ½ · m · v_f² + m · g · h<br/>
+                                            Em_f = (0.5 · {masaKilogramos} · {velFinalMs}²) + ({masaKilogramos} · 9.8 · {alturaMetros})<br/>
+                                            Em_f = {energiaCinFinal.toFixed(0)} + {energiaPotFinal.toFixed(0)} = <strong>{energiaMecFinal.toFixed(0)} J</strong>
+                                        </div>
+
+                                        <p className="mt-2 text-rose-300 font-bold border-t border-slate-700 pt-2">a) Aumento de Energía (Trabajo del Motor)</p>
+                                        <div className="bg-slate-900/80 p-2 rounded-lg border-l-4 border-rose-500 font-mono text-rose-200">
+                                            ΔEm = Em_f - Em₀ = {energiaMecFinal.toFixed(0)} - {energiaMecInicial.toFixed(0)} = <strong>{variacionEnergiaMec.toFixed(0)} J</strong>
+                                        </div>
+
+                                        <p className="mt-2 text-rose-300 font-bold">b) Potencia Media</p>
+                                        <p>La potencia es el ritmo al que se entrega esa energía ($P = \Delta Em / t$).</p>
+                                        <div className="bg-slate-900/80 p-3 rounded-lg border-l-4 border-rose-500 font-mono text-rose-200 shadow-inner">
+                                            P = {variacionEnergiaMec.toFixed(0)} / {tiempoSegundos}<br/>
+                                            <strong>P = {potenciaWatts.toFixed(1)} W = {potenciaKW.toFixed(2)} kW</strong><br/>
+                                            <span className="text-[10px] text-slate-400">(Equivale a {potenciaCV.toFixed(1)} Caballos de Vapor - CV)</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </main>
+
+                        <footer className="max-w-5xl mx-auto mt-12 pt-6 border-t border-slate-800 text-center text-slate-500 text-[10px] font-bold uppercase tracking-widest">
+                            Profe Física | Teorema del Trabajo y la Energía Mecánica
+                        </footer>
+                    </div>
+                );
+            };
+
+            const container = document.getElementById('root');
+            const root = ReactDOM.createRoot(container);
+            root.render(<App />);
+        })();
+    </script>
+</body>
+</html>

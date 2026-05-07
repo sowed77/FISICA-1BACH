@@ -1,0 +1,429 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Laboratorio: Descenso en Plano Inclinado con Rozamiento</title>
+    <!-- Bibliotecas externas -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <script src="https://unpkg.com/lucide-react@latest"></script>
+
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&family=Fira+Code&display=swap');
+        body { font-family: 'Inter', sans-serif; background-color: #0f172a; }
+        .font-mono { font-family: 'Fira Code', monospace; }
+        input[type=range]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            height: 24px;
+            width: 24px;
+            border-radius: 50%;
+            background: #8b5cf6; /* Violet 500 */
+            cursor: pointer;
+            border: 3px solid #ffffff;
+            box-shadow: 0 0 10px rgba(139, 92, 246, 0.5);
+        }
+        .ramp-pattern {
+            background-color: #334155;
+            background-image: repeating-linear-gradient(45deg, #1e293b 0, #1e293b 2px, transparent 2px, transparent 10px);
+        }
+        /* Efecto de calor / chispas */
+        .heat-sparks {
+            animation: flicker 0.2s infinite alternate;
+        }
+        @keyframes flicker {
+            0% { opacity: 0.5; transform: scale(0.9); }
+            100% { opacity: 1; transform: scale(1.1); }
+        }
+    </style>
+</head>
+<body>
+    <div id="root"></div>
+
+    <script type="text/babel">
+        (() => {
+            var { useState, useEffect } = React;
+            var icons = window.LucideReact || {};
+            
+            // Asignación segura de iconos
+            var getIcon = (name) => icons[name] || (({className}) => <span className={className || ''}></span>);
+            var PlayIcon = getIcon('Play');
+            var RotateCcwIcon = getIcon('RotateCcw');
+            var CalculatorIcon = getIcon('Calculator');
+            var SettingsIcon = getIcon('Settings');
+            var InfoIcon = getIcon('Info');
+            var FlameIcon = getIcon('Flame');
+            var ArrowRightIcon = getIcon('ArrowRight');
+            var ArrowLeftIcon = getIcon('ArrowLeft');
+            var BatteryChargingIcon = getIcon('BatteryCharging');
+            var ImagePlusIcon = getIcon('ImagePlus');
+            var MountainIcon = getIcon('Mountain');
+
+            var App = () => {
+                // Parámetros fijos
+                const g = 9.8; // m/s^2
+
+                // Estados interactivos (Inicializados con el enunciado del usuario)
+                const [masa, setMasa] = useState(5.0); // kg
+                const [angulo, setAngulo] = useState(30); // grados
+                const [distanciaTotal, setDistanciaTotal] = useState(10.0); // m
+                const [mu, setMu] = useState(0.10); // Coeficiente de rozamiento
+
+                // Animación
+                const [time, setTime] = useState(0);
+                const [isMoving, setIsMoving] = useState(false);
+
+                // --- CÁLCULOS FÍSICOS TEÓRICOS ---
+                const anguloRad = angulo * (Math.PI / 180);
+                const senA = Math.sin(anguloRad);
+                const cosA = Math.cos(anguloRad);
+                
+                // Altura inicial
+                const alturaInicial = distanciaTotal * senA; // m
+                
+                // Dinámica
+                const peso = masa * g; // N
+                const px = peso * senA; // N
+                const py = peso * cosA; // N
+                const normal = py; // N
+                
+                const fr_max = mu * normal; // N
+                const canMove = px > fr_max; // Condición de deslizamiento
+                const fr_real = canMove ? fr_max : px; // Si no se mueve, el rozamiento equilibra a Px
+                
+                // Aceleración
+                const fNeta = canMove ? px - fr_real : 0;
+                const aceleracion = fNeta / masa; // m/s²
+                
+                // Cinemática (Tiempo total de bajada)
+                const tStop = canMove ? Math.sqrt((2 * distanciaTotal) / aceleracion) : 0;
+
+                // Energías Totales
+                const ep0 = masa * g * alturaInicial; // J (Energía Mecánica Inicial)
+                const perdidaEnergia = fr_real * distanciaTotal; // J (Trabajo de rozamiento en valor absoluto)
+                const ecFinal = canMove ? ep0 - perdidaEnergia : 0; // J
+                const vFinal = canMove ? Math.sqrt((2 * ecFinal) / masa) : 0; // m/s
+
+                // --- CINEMÁTICA INSTANTÁNEA PARA LA ANIMACIÓN ---
+                const currentT = Math.min(time, tStop);
+                const currentPos = canMove ? 0.5 * aceleracion * Math.pow(currentT, 2) : 0; // m
+                const currentV = canMove ? aceleracion * currentT : 0; // m/s
+                
+                const currentH = (distanciaTotal - currentPos) * senA; // m
+                const currentEp = masa * g * currentH; // J
+                const currentEc = 0.5 * masa * Math.pow(currentV, 2); // J
+                const currentLoss = fr_real * currentPos; // J (Calor disipado acumulado)
+
+                // Escala visual
+                // Distancia total -> se mapea a un ancho de unos 300px
+                const rampLengthPx = 350;
+                const pxPerMeter = rampLengthPx / Math.max(5, distanciaTotal + 1);
+                const visualPos = currentPos * pxPerMeter;
+
+                useEffect(() => {
+                    let interval;
+                    if (isMoving && time < tStop) {
+                        interval = setInterval(() => {
+                            setTime(prev => {
+                                const nextTime = prev + 0.05; // dt
+                                if (nextTime >= tStop) {
+                                    setIsMoving(false);
+                                    return tStop;
+                                }
+                                return nextTime;
+                            });
+                        }, 50); // 1x real time
+                    }
+                    return () => clearInterval(interval);
+                }, [isMoving, time, tStop]);
+
+                const handlePlay = () => {
+                    if (canMove && time < tStop) setIsMoving(true);
+                };
+
+                const reset = () => {
+                    setTime(0);
+                    setIsMoving(false);
+                };
+
+                // Si cambiamos los inputs, resetear la animación
+                useEffect(() => {
+                    reset();
+                }, [masa, angulo, distanciaTotal, mu]);
+
+                // Generador de Diagrama de Cuerpo Libre
+                const [imgUrl, setImgUrl] = useState(null);
+                const [imgLoading, setImgLoading] = useState(false);
+
+                const generarDiagrama = async () => {
+                    setImgLoading(true);
+                    const apiKey = "AIzaSyDMyUo-WgmdNkCRW6-YK7h-bnRF_FLAjf0"; // API Key insertada por entorno; 
+                    try {
+                        const response = await fetch(
+                            `https://generativelanguage.googleapis.com/v1beta/models/imagen-4.0-generate-001:predict?key=${apiKey}`,
+                            {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({
+                                    instances: [{ prompt: "Diagrama técnico de física del teorema de conservación de la energía con fricción. Un bloque cayendo por un plano inclinado. Vectores Px y Fr. Tres gráficos de barras de energía: Ep disminuyendo, Ec aumentando, y Calor (Trabajo de rozamiento) aumentando. Estilo educativo minimalista, fondo blanco" }],
+                                    parameters: { sampleCount: 1 }
+                                })
+                            }
+                        );
+                        if (!response.ok) throw new Error("Error en red");
+                        const data = await response.json();
+                        setImgUrl(`data:image/png;base64,${data.predictions[0].bytesBase64Encoded}`);
+                    } catch (error) {
+                        console.error(error);
+                    } finally {
+                        setImgLoading(false);
+                    }
+                };
+
+                return (
+                    <div className="min-h-screen bg-slate-900 text-slate-100 p-4 md:p-8">
+                        <header className="max-w-5xl mx-auto mb-8 border-b border-slate-700 pb-6">
+                            <div className="flex items-center gap-3 mb-2">
+                                <span className="bg-violet-600 text-white px-3 py-1 rounded-full text-xs font-black uppercase tracking-widest">Trabajo y Energía Mecánica</span>
+                                <h1 className="text-3xl font-black text-violet-400 uppercase tracking-tight tracking-widest">Descenso con Fricción</h1>
+                            </div>
+                            <div className="bg-slate-800/50 p-4 rounded-xl border border-slate-700 mt-4">
+                                <p className="text-slate-300 text-sm leading-relaxed">
+                                    <strong>Enunciado:</strong> Un bloque de 5,0 kg desciende desde el reposo por un plano inclinado 30° con la horizontal. La longitud del plano es 10 m, y el coeficiente de rozamiento 0,10. Determina la pérdida de energía debido al rozamiento y la velocidad del bloque en la base.
+                                </p>
+                            </div>
+                        </header>
+
+                        <main className="max-w-5xl mx-auto grid md:grid-cols-2 gap-8">
+                            {/* Panel Visual */}
+                            <div className="bg-slate-800 rounded-3xl border border-slate-700 h-[550px] relative overflow-hidden shadow-2xl flex flex-col justify-end pb-8">
+                                
+                                {/* HUD de Energías (Barras) */}
+                                <div className="absolute top-4 w-full px-6 flex justify-between z-30 pointer-events-none">
+                                    <div className="bg-slate-900/90 p-4 rounded-xl border border-slate-700 backdrop-blur-md flex flex-col gap-2 w-64 shadow-lg">
+                                        <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest text-center border-b border-slate-700 pb-1 flex items-center justify-center gap-1">
+                                            {BatteryChargingIcon && <BatteryChargingIcon size={12}/>} Balance Energético
+                                        </p>
+                                        
+                                        {/* Barra Ep */}
+                                        <div className="flex items-center gap-2 mt-1">
+                                            <span className="text-[9px] font-bold text-blue-400 w-6">Ep</span>
+                                            <div className="flex-1 h-2 bg-slate-800 rounded-full overflow-hidden border border-slate-700">
+                                                <div className="h-full bg-blue-500 transition-all duration-75" style={{ width: `${(currentEp / ep0) * 100}%` }}></div>
+                                            </div>
+                                            <span className="text-[9px] font-mono text-blue-300 w-10 text-right">{currentEp.toFixed(1)}J</span>
+                                        </div>
+
+                                        {/* Barra Ec */}
+                                        <div className="flex items-center gap-2">
+                                            <span className="text-[9px] font-bold text-emerald-400 w-6">Ec</span>
+                                            <div className="flex-1 h-2 bg-slate-800 rounded-full overflow-hidden border border-slate-700">
+                                                <div className="h-full bg-emerald-500 transition-all duration-75" style={{ width: `${(currentEc / ep0) * 100}%` }}></div>
+                                            </div>
+                                            <span className="text-[9px] font-mono text-emerald-300 w-10 text-right">{currentEc.toFixed(1)}J</span>
+                                        </div>
+
+                                        {/* Barra Calor (Rozamiento) */}
+                                        <div className="flex items-center gap-2">
+                                            <span className="text-[9px] font-bold text-orange-400 w-6">Calor</span>
+                                            <div className="flex-1 h-2 bg-slate-800 rounded-full overflow-hidden border border-slate-700">
+                                                <div className="h-full bg-orange-500 transition-all duration-75" style={{ width: `${(currentLoss / ep0) * 100}%` }}></div>
+                                            </div>
+                                            <span className="text-[9px] font-mono text-orange-300 w-10 text-right">{currentLoss.toFixed(1)}J</span>
+                                        </div>
+                                    </div>
+                                    
+                                    <div className={`bg-slate-900/90 p-3 rounded-lg border backdrop-blur-md text-right border-b-4 ${time === tStop && canMove ? 'border-b-emerald-500 shadow-[0_0_15px_rgba(16,185,129,0.3)]' : 'border-b-violet-500'} h-16`}>
+                                        <p className="text-[10px] text-slate-500 uppercase font-black">Velocidad Actual (v)</p>
+                                        <p className={`text-xl font-mono font-black ${time === tStop && canMove ? 'text-emerald-400' : 'text-violet-400'}`}>{currentV.toFixed(2)} m/s</p>
+                                    </div>
+                                </div>
+
+                                {!canMove && (
+                                    <div className="absolute top-28 left-1/2 -translate-x-1/2 z-40 bg-red-900/90 text-red-200 px-6 py-2 rounded-full border border-red-500 text-xs font-bold uppercase tracking-widest shadow-lg animate-pulse whitespace-nowrap">
+                                        Bloqueado por la Fricción
+                                    </div>
+                                )}
+
+                                {/* Escena de la Rampa */}
+                                <div className="relative w-full h-80">
+                                    <div className="absolute bottom-10 left-10 w-[400px] h-full pointer-events-none">
+                                        
+                                        {/* Rampa Rotada (Origen bottom-right. Bajada visual hacia la derecha) */}
+                                        {/* Si rotamos bottom-left negativo, sube la derecha. Queremos que caiga de izquierda a derecha. */}
+                                        <div 
+                                            className="absolute bottom-0 left-0 w-full h-full origin-bottom-right transition-transform duration-300 z-20"
+                                            style={{ transform: `rotate(${angulo}deg)` }}
+                                        >
+                                            {/* La Rampa */}
+                                            <div className="absolute bottom-0 left-0 w-[400px] h-4 ramp-pattern shadow-xl rounded-l-full border-t-2 border-slate-500"></div>
+
+                                            {/* Meta / Base de la rampa */}
+                                            <div className="absolute bottom-4 border-l-2 border-dashed border-emerald-500 h-16 z-10" style={{ left: `${distanciaTotal * pxPerMeter + 40}px` }}>
+                                                <span className="text-[8px] text-emerald-300 absolute -top-4 -left-3 font-black bg-slate-900 px-1 rounded">{distanciaTotal}m</span>
+                                            </div>
+
+                                            {/* El Bloque */}
+                                            <div 
+                                                className="absolute bottom-4 w-14 h-14 bg-indigo-600 border-4 border-indigo-400 rounded-lg flex items-center justify-center shadow-lg transition-transform z-30"
+                                                style={{ left: `${40 + visualPos}px` }}
+                                            >
+                                                <span className="font-black text-indigo-100 text-[10px]">{masa.toFixed(1)}kg</span>
+
+                                                {/* Efecto Calor por Fricción */}
+                                                {currentV > 0 && mu > 0 && (
+                                                    <div className="absolute -bottom-2 left-1/2 -translate-x-1/2 text-orange-500 heat-sparks">
+                                                        {FlameIcon && <FlameIcon size={16} />}
+                                                    </div>
+                                                )}
+
+                                                {/* Vectores (Sólo visibles en reposo o al inicio) */}
+                                                {!isMoving && time === 0 && (
+                                                    <>
+                                                        {/* Px (Verde, empuja hacia abajo de la rampa -> Derecha local) */}
+                                                        <div className="absolute top-1/3 left-full flex items-center pl-1 opacity-80" style={{ width: Math.max(30, px * 0.8) }}>
+                                                            <div className="h-1 bg-green-400 w-full relative">
+                                                                <div className="absolute right-0 -top-1.5">{ArrowRightIcon && <ArrowRightIcon className="text-green-400" size={16} />}</div>
+                                                            </div>
+                                                            <span className="ml-1 text-[8px] font-black text-green-300">P_x</span>
+                                                        </div>
+
+                                                        {/* Fr (Rojo, frena hacia arriba de la rampa -> Izquierda local) */}
+                                                        <div className="absolute bottom-1/3 right-full flex items-center pr-1 opacity-80" style={{ width: Math.max(30, fr_max * 0.8) }}>
+                                                            <span className="mr-1 text-[8px] font-black text-red-300">F_r</span>
+                                                            <div className="h-1 bg-red-400 w-full relative">
+                                                                <div className="absolute left-0 -top-1.5">{ArrowLeftIcon && <ArrowLeftIcon className="text-red-400" size={16} />}</div>
+                                                            </div>
+                                                        </div>
+                                                    </>
+                                                )}
+                                            </div>
+                                        </div>
+
+                                        {/* Suelo Base y Arco */}
+                                        <div className="absolute bottom-0 left-0 w-full border-b-2 border-slate-600 border-dashed"></div>
+                                        {angulo > 0 && (
+                                            <div className="absolute bottom-0 left-0 w-24 h-24 border-r-2 border-t-2 border-violet-500/50 rounded-tr-full flex items-end justify-end pb-2 pr-2">
+                                                <span className="text-violet-300 font-mono text-sm font-bold">{angulo}º</span>
+                                            </div>
+                                        )}
+                                        
+                                        {/* Cota Altura Inicial */}
+                                        <div className="absolute border-r-2 border-dashed border-blue-400/50 w-4 z-10 flex flex-col justify-center items-end pr-1" style={{ left: '10px', bottom: '0', height: `${alturaInicial * pxPerMeter}px` }}>
+                                            <span className="text-[10px] font-black text-blue-300 bg-slate-900/80 px-1 rounded shadow whitespace-nowrap">h₀ = {alturaInicial.toFixed(1)}m</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* Controles y Resolución */}
+                            <div className="space-y-6">
+                                <div className="bg-slate-800 p-6 rounded-3xl border border-slate-700 shadow-xl">
+                                    <h3 className="text-xl font-bold mb-4 flex items-center gap-2 text-violet-400">
+                                        {MountainIcon && <MountainIcon size={20} />} Parámetros Físicos
+                                    </h3>
+                                    
+                                    <div className="space-y-5 mb-6">
+                                        <div className="grid grid-cols-2 gap-4">
+                                            <div>
+                                                <div className="flex justify-between text-xs mb-1"><span className="text-slate-300 font-bold uppercase">Masa (m)</span></div>
+                                                <input type="range" min="1" max="20" step="1" value={masa} onChange={e => setMasa(Number(e.target.value))} className="w-full h-1.5 bg-slate-700 rounded-lg appearance-none cursor-pointer accent-slate-400 mb-1" />
+                                                <span className="font-mono text-white text-xs">{masa.toFixed(1)} kg</span>
+                                            </div>
+                                            <div>
+                                                <div className="flex justify-between text-xs mb-1"><span className="text-blue-400 font-bold uppercase">Ángulo (α)</span></div>
+                                                <input type="range" min="5" max="75" step="1" value={angulo} onChange={e => setAngulo(Number(e.target.value))} className="w-full h-1.5 bg-slate-700 rounded-lg appearance-none cursor-pointer accent-blue-500 mb-1" />
+                                                <span className="font-mono text-white text-xs">{angulo}º</span>
+                                            </div>
+                                        </div>
+
+                                        <div className="grid grid-cols-2 gap-4 pt-2 border-t border-slate-700">
+                                            <div>
+                                                <div className="flex justify-between text-[10px] mb-1"><span className="text-emerald-400 font-bold uppercase">Longitud Plano (d)</span></div>
+                                                <input type="range" min="2" max="20" step="0.5" value={distanciaTotal} onChange={e => setDistanciaTotal(Number(e.target.value))} className="w-full h-1.5 bg-slate-700 rounded-lg appearance-none cursor-pointer accent-emerald-500 mb-1" />
+                                                <span className="font-mono text-white text-xs">{distanciaTotal.toFixed(1)} m</span>
+                                            </div>
+                                            <div>
+                                                <div className="flex justify-between text-[10px] mb-1"><span className="text-orange-400 font-bold uppercase">Fricción (μ)</span></div>
+                                                <input type="range" min="0" max="0.8" step="0.05" value={mu} onChange={e => setMu(Number(e.target.value))} className="w-full h-1.5 bg-slate-700 rounded-lg appearance-none cursor-pointer accent-orange-500 mb-1" />
+                                                <span className="font-mono text-white text-xs">{mu.toFixed(2)}</span>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div className="flex gap-2">
+                                        <button 
+                                            onClick={handlePlay} 
+                                            disabled={isMoving || time >= tStop || !canMove}
+                                            className={`flex-1 font-black py-3 rounded-xl shadow-lg flex justify-center items-center gap-2 disabled:opacity-50 transition-all active:scale-95 ${!canMove ? 'bg-slate-600 text-slate-400' : 'bg-violet-600 hover:bg-violet-500 text-white'}`}
+                                        >
+                                            {PlayIcon && <PlayIcon size={18} />} {!canMove ? 'DEMASIADA FRICCIÓN' : time >= tStop ? 'EN LA BASE' : 'DEJAR CAER'}
+                                        </button>
+                                        <button onClick={reset} className="bg-slate-700 hover:bg-slate-600 text-white font-bold px-4 rounded-xl transition-all shadow-md">
+                                            {RotateCcwIcon && <RotateCcwIcon size={18} />}
+                                        </button>
+                                    </div>
+                                </div>
+
+                                <div className="bg-violet-950/20 p-6 rounded-3xl border border-violet-500/20">
+                                    <div className="flex justify-between items-center mb-4 border-b border-violet-500/30 pb-2">
+                                        <h4 className="font-bold text-violet-300 flex items-center gap-2">
+                                            {CalculatorIcon && <CalculatorIcon size={18} />} Resolución por Energías
+                                        </h4>
+                                        <button onClick={generarDiagrama} className="text-[10px] uppercase font-bold bg-slate-800 hover:bg-slate-700 text-slate-300 px-3 py-1.5 rounded flex items-center gap-1 border border-slate-600">
+                                            {imgLoading ? <span className="animate-pulse">Cargando...</span> : <>{ImagePlusIcon && <ImagePlusIcon size={14}/>} Generar DCL</>}
+                                        </button>
+                                    </div>
+
+                                    {imgUrl && (
+                                        <div className="mb-4 bg-slate-900 p-2 rounded-xl border border-slate-700 text-center">
+                                            <img src={imgUrl} alt="Diagrama de Energía" className="mx-auto max-h-40 rounded-lg" />
+                                        </div>
+                                    )}
+
+                                    <div className="text-xs text-slate-300 space-y-3 leading-relaxed">
+                                        <p><strong>1. Altura Inicial (h₀):</strong><br/>
+                                        Por trigonometría, la altura es el cateto opuesto del triángulo rectángulo.</p>
+                                        <div className="bg-slate-900/80 p-2 rounded-lg border-l-4 border-blue-500 font-mono text-blue-200">
+                                            h₀ = d · sin(α) = {distanciaTotal.toFixed(1)} · sin({angulo}º) = <strong>{alturaInicial.toFixed(2)} m</strong><br/>
+                                            E_m_inicial = E_p0 = m · g · h₀ = {masa} · 9.8 · {alturaInicial.toFixed(2)} = <strong>{ep0.toFixed(1)} J</strong>
+                                        </div>
+
+                                        <p className="mt-3"><strong>2. Trabajo de Rozamiento (Pérdida de Energía):</strong><br/>
+                                        Calculamos primero la fuerza de rozamiento usando la componente Normal (Y).</p>
+                                        <div className="bg-slate-900/80 p-2 rounded-lg border-l-4 border-orange-500 font-mono text-orange-200">
+                                            F_r = μ · m · g · cos(α) = {mu} · {masa} · 9.8 · cos({angulo}º) = {fr_max.toFixed(2)} N<br/>
+                                            W_r = -F_r · d = -{fr_max.toFixed(2)} · {distanciaTotal.toFixed(1)} = <strong>-{perdidaEnergia.toFixed(2)} J</strong>
+                                        </div>
+                                        <p className="text-[10px] text-slate-400 italic">La "pérdida de energía" es {perdidaEnergia.toFixed(2)} J (Calor disipado).</p>
+
+                                        <p className="mt-3"><strong>3. Conservación de la Energía (Generalizada):</strong><br/>
+                                        La energía mecánica final (solo Cinética al llegar a la base) es la inicial menos la pérdida por rozamiento.</p>
+                                        <div className="bg-slate-900/80 p-3 rounded-lg border-l-4 border-emerald-500 font-mono text-emerald-200 shadow-inner overflow-x-auto">
+                                            E_mf = E_m0 + W_r<br/>
+                                            E_cf = {ep0.toFixed(2)} - {perdidaEnergia.toFixed(2)} = <strong>{ecFinal.toFixed(2)} J</strong><br/><br/>
+                                            E_cf = ½ · m · v²  ⇒  v = √(2 · E_cf / m)<br/>
+                                            v = √(2 · {ecFinal.toFixed(2)} / {masa}) = <strong>{vFinal.toFixed(2)} m/s</strong>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </main>
+
+                        <footer className="max-w-5xl mx-auto mt-12 pt-6 border-t border-slate-800 text-center text-slate-500 text-[10px] font-bold uppercase tracking-widest">
+                            Profe Física | Dinámica y Trabajo de Fuerzas no Conservativas
+                        </footer>
+                    </div>
+                );
+            };
+
+            const container = document.getElementById('root');
+            const root = ReactDOM.createRoot(container);
+            root.render(<App />);
+        })();
+    </script>
+</body>
+</html>

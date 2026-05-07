@@ -1,0 +1,432 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Laboratorio: Teorema del Trabajo y la Energía Cinética</title>
+    <!-- Bibliotecas externas -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <script src="https://unpkg.com/lucide-react@latest"></script>
+
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&family=Fira+Code&display=swap');
+        body { font-family: 'Inter', sans-serif; background-color: #0f172a; }
+        .font-mono { font-family: 'Fira Code', monospace; }
+        input[type=range]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            height: 20px;
+            width: 20px;
+            border-radius: 50%;
+            background: #14b8a6; /* Teal 500 */
+            cursor: pointer;
+            border: 2px solid #ffffff;
+            box-shadow: 0 0 10px rgba(20, 184, 166, 0.5);
+        }
+        .graph-grid {
+            background-image: 
+                linear-gradient(rgba(255,255,255,0.05) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(255,255,255,0.05) 1px, transparent 1px);
+            background-size: 20px 20px; 
+        }
+        .road-pattern {
+            background-image: repeating-linear-gradient(90deg, #334155 0, #334155 20px, transparent 20px, transparent 40px);
+            background-size: 40px 4px;
+            background-position: bottom;
+            background-repeat: repeat-x;
+        }
+    </style>
+</head>
+<body>
+    <div id="root"></div>
+
+    <script type="text/babel">
+        (() => {
+            var { useState, useEffect } = React;
+            var icons = window.LucideReact || {};
+            
+            var getIcon = (name) => icons[name] || (({className}) => <span className={className || ''}></span>);
+            var PlayIcon = getIcon('Play');
+            var RotateCcwIcon = getIcon('RotateCcw');
+            var CalculatorIcon = getIcon('Calculator');
+            var SettingsIcon = getIcon('Settings');
+            var AreaChartIcon = getIcon('AreaChart');
+            var ZapIcon = getIcon('Zap');
+            var ArrowRightIcon = getIcon('ArrowRight');
+            var FastForwardIcon = getIcon('FastForward');
+            var ImagePlusIcon = getIcon('ImagePlus');
+
+            var App = () => {
+                // Estados interactivos - Datos del objeto
+                const [masa, setMasa] = useState(3.0); // kg
+                const [v0, setV0] = useState(5.0); // m/s
+                
+                // Estados interactivos - Forma de la gráfica (Figura)
+                const [fMax, setFMax] = useState(15); // N (Fuerza máxima)
+                const [d1, setD1] = useState(10.0); // m (Fin del tramo constante)
+                const [d2, setD2] = useState(20.0); // m (Fin del recorrido)
+
+                // Forzar coherencia en los deslizadores
+                useEffect(() => { if (d1 > d2) setD2(d1); }, [d1]);
+                useEffect(() => { if (d2 < d1) setD1(d2); }, [d2]);
+
+                // Estados de animación
+                const [pos, setPos] = useState(0); 
+                const [isMoving, setIsMoving] = useState(false);
+
+                // Función de Fuerza F(x)
+                const getForceAt = (x) => {
+                    if (x <= d1) return fMax;
+                    if (x > d1 && x <= d2) {
+                        return fMax * (1 - (x - d1) / (d2 - d1));
+                    }
+                    return 0;
+                };
+
+                // Cálculo del Trabajo W(x) = Área bajo la curva
+                const getWorkAt = (x) => {
+                    if (x <= d1) {
+                        return fMax * x;
+                    } else if (x <= d2) {
+                        const rectArea = fMax * d1;
+                        const currentF = getForceAt(x);
+                        const trapArea = ((fMax + currentF) / 2) * (x - d1);
+                        return rectArea + trapArea;
+                    } else {
+                        return (fMax * d1) + ((fMax * (d2 - d1)) / 2);
+                    }
+                };
+
+                // Teorema de las Fuerzas Vivas: W = \Delta Ec = Ecf - Ec0
+                const ec0 = 0.5 * masa * v0 * v0;
+                
+                const getKineticEnergyAt = (x) => {
+                    return ec0 + getWorkAt(x);
+                };
+
+                const getVelocityAt = (x) => {
+                    const ec = getKineticEnergyAt(x);
+                    return Math.sqrt((2 * ec) / masa);
+                };
+
+                // Variables instantáneas
+                const currentF = getForceAt(pos);
+                const currentW = getWorkAt(pos);
+                const currentEc = getKineticEnergyAt(pos);
+                const currentV = getVelocityAt(pos);
+
+                // Áreas Totales (Para la explicación)
+                const areaRectangulo = fMax * d1;
+                const areaTriangulo = d1 < d2 ? (fMax * (d2 - d1)) / 2 : 0;
+                const trabajoTotal = areaRectangulo + areaTriangulo;
+                const ecFinalTotal = ec0 + trabajoTotal;
+                const vFinalTotal = Math.sqrt((2 * ecFinalTotal) / masa);
+
+                // Animación Física (Avanzamos pos en función de la velocidad dt)
+                useEffect(() => {
+                    let interval;
+                    if (isMoving && pos < d2) {
+                        interval = setInterval(() => {
+                            setPos(p => {
+                                const v = getVelocityAt(p);
+                                const timeScale = 0.05; // Ajuste visual de tiempo
+                                const newP = p + (v * timeScale); 
+                                if (newP >= d2) {
+                                    setIsMoving(false);
+                                    return d2;
+                                }
+                                return newP;
+                            });
+                        }, 20); // 50 fps
+                    }
+                    return () => clearInterval(interval);
+                }, [isMoving, pos, d2, masa]);
+
+                const handlePlay = () => {
+                    if (pos < d2) setIsMoving(true);
+                };
+
+                const reset = () => {
+                    setPos(0);
+                    setIsMoving(false);
+                };
+
+                // Si cambiamos parámetros, reseteamos la animación
+                useEffect(() => {
+                    reset();
+                }, [masa, v0, fMax, d1, d2]);
+
+                // PARÁMETROS DEL SVG (Gráfica)
+                const svgWidth = 400;
+                const svgHeight = 200;
+                const maxX = 30; // Fijado a 30m para tener margen
+                const maxY = 50; // Fijado a 50N para tener margen
+
+                const mapX = (x) => (x / maxX) * svgWidth;
+                const mapY = (y) => svgHeight - ((y / maxY) * svgHeight);
+
+                const graphPath = `M ${mapX(0)} ${mapY(fMax)} L ${mapX(d1)} ${mapY(fMax)} L ${mapX(d2)} ${mapY(0)}`;
+                
+                const getAreaPolygon = () => {
+                    if (pos === 0) return "";
+                    let points = `0,${svgHeight} 0,${mapY(fMax)} `;
+                    
+                    if (pos <= d1) {
+                        points += `${mapX(pos)},${mapY(fMax)} ${mapX(pos)},${svgHeight}`;
+                    } else {
+                        points += `${mapX(d1)},${mapY(fMax)} `;
+                        points += `${mapX(pos)},${mapY(currentF)} ${mapX(pos)},${svgHeight}`;
+                    }
+                    return points;
+                };
+
+                // Generador de DCL IA
+                const [imgUrl, setImgUrl] = useState(null);
+                const [imgLoading, setImgLoading] = useState(false);
+
+                const generarDiagrama = async () => {
+                    setImgLoading(true);
+                    const apiKey = "AIzaSyDMyUo-WgmdNkCRW6-YK7h-bnRF_FLAjf0"; // API Key insertada por entorno; 
+                    try {
+                        const response = await fetch(
+                            `https://generativelanguage.googleapis.com/v1beta/models/imagen-4.0-generate-001:predict?key=${apiKey}`,
+                            {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({
+                                    instances: [{ prompt: "Diagrama técnico de física. Teorema de las fuerzas vivas. Un bloque en movimiento. Vectores v0 y v_f para la velocidad inicial y final. Un gran vector W representando el Trabajo que añade energía cinética al sistema. Fondo blanco, minimalista, educativo" }],
+                                    parameters: { sampleCount: 1 }
+                                })
+                            }
+                        );
+                        if (!response.ok) throw new Error("Error en red");
+                        const data = await response.json();
+                        setImgUrl(`data:image/png;base64,${data.predictions[0].bytesBase64Encoded}`);
+                    } catch (error) {
+                        console.error(error);
+                    } finally {
+                        setImgLoading(false);
+                    }
+                };
+
+                return (
+                    <div className="min-h-screen bg-slate-900 text-slate-100 p-4 md:p-8">
+                        <header className="max-w-5xl mx-auto mb-8 border-b border-slate-700 pb-6">
+                            <div className="flex items-center gap-3 mb-2">
+                                <span className="bg-teal-600 text-white px-3 py-1 rounded-full text-xs font-black uppercase tracking-widest">Trabajo y Energía</span>
+                                <h1 className="text-3xl font-black text-teal-400 uppercase tracking-tight tracking-widest">El Teorema de las Fuerzas Vivas</h1>
+                            </div>
+                            <div className="bg-slate-800/50 p-4 rounded-xl border border-slate-700 mt-4">
+                                <p className="text-slate-300 text-sm leading-relaxed">
+                                    <strong>Enunciado:</strong> Una masa de 3,0 kg se mueve a 5,0 m/s. Sobre esta actúa una fuerza que varía según una figura. ¿Cuánto valdrá su velocidad cuando haya recorrido 20 m?
+                                    <br/><br/>
+                                    <span className="text-teal-300 font-bold">¡Atención!</span> Ajusta los controles de <strong>"La Figura (Gráfica de Fuerza)"</strong> para que el dibujo coincida con el de tu libro. He preconfigurado un trapecio de ejemplo.
+                                </p>
+                            </div>
+                        </header>
+
+                        <main className="max-w-5xl mx-auto grid md:grid-cols-2 gap-8">
+                            {/* Panel Visual */}
+                            <div className="bg-slate-800 rounded-3xl border border-slate-700 h-[500px] relative overflow-hidden shadow-2xl flex flex-col justify-between pt-4">
+                                
+                                {/* HUD Superior */}
+                                <div className="px-6 flex justify-between z-30 pointer-events-none mb-2">
+                                    <div className="bg-slate-900/90 p-3 rounded-lg border border-slate-700 backdrop-blur-md">
+                                        <p className="text-[10px] text-slate-500 uppercase font-black">Distancia (x)</p>
+                                        <p className="text-xl font-mono font-black text-emerald-400">{pos.toFixed(1)} m</p>
+                                    </div>
+                                    <div className="bg-slate-900/90 p-3 rounded-lg border border-slate-700 backdrop-blur-md text-right border-b-4 border-b-teal-500 shadow-[0_0_15px_rgba(20,184,166,0.2)]">
+                                        <p className="text-[10px] text-slate-500 uppercase font-black flex items-center justify-end gap-1">
+                                            {FastForwardIcon && <FastForwardIcon size={12} className="text-teal-400" />} Velocidad Actual (v)
+                                        </p>
+                                        <p className="text-3xl font-mono font-black text-teal-400">
+                                            {currentV.toFixed(2)} <span className="text-sm">m/s</span>
+                                        </p>
+                                    </div>
+                                </div>
+
+                                {/* Gráfica de Trabajo (F vs x) */}
+                                <div className="relative w-full flex justify-center mt-2 px-8">
+                                    <div className="relative" style={{ width: svgWidth, height: svgHeight }}>
+                                        {/* Cuadrícula de fondo */}
+                                        <div className="absolute inset-0 graph-grid opacity-30 border-l-2 border-b-2 border-slate-400"></div>
+                                        
+                                        {/* Ejes Etiquetas */}
+                                        <span className="absolute -left-6 top-0 text-[10px] text-slate-400 font-bold">{maxY}N</span>
+                                        <span className="absolute -left-4 bottom-0 text-[10px] text-slate-400 font-bold">0</span>
+                                        <span className="absolute -bottom-5 left-[33%] text-[10px] text-slate-400 font-bold">10m</span>
+                                        <span className="absolute -bottom-5 left-[66%] text-[10px] text-slate-400 font-bold">20m</span>
+                                        <span className="absolute -bottom-5 right-0 text-[10px] text-slate-400 font-bold">{maxX}m</span>
+
+                                        <svg width="100%" height="100%" className="absolute inset-0">
+                                            <polygon points={`0,${svgHeight} 0,${mapY(fMax)} ${mapX(d1)},${mapY(fMax)} ${mapX(d2)},${mapY(0)}`} fill="rgba(45, 212, 191, 0.1)" stroke="none" />
+                                            {d1 < d2 && <line x1={mapX(d1)} y1={mapY(fMax)} x2={mapX(d1)} y2={svgHeight} stroke="#475569" strokeWidth="2" strokeDasharray="4 4" />}
+                                            
+                                            {pos > 0 && <polygon points={getAreaPolygon()} fill="rgba(20, 184, 166, 0.5)" stroke="none" />}
+
+                                            <path d={graphPath} fill="none" stroke="#818cf8" strokeWidth="4" />
+
+                                            <circle cx={mapX(pos)} cy={mapY(currentF)} r="5" fill="#facc15" stroke="#ca8a04" strokeWidth="2" />
+                                            <line x1={mapX(pos)} y1={mapY(currentF)} x2={mapX(pos)} y2={svgHeight} stroke="#facc15" strokeWidth="2" strokeDasharray="2 2" />
+                                        </svg>
+
+                                        {/* Etiqueta Área (Trabajo) */}
+                                        <div className="absolute top-1/2 left-1/4 text-teal-300 font-black text-sm pointer-events-none">
+                                            Área = W = {trabajoTotal} J
+                                        </div>
+                                    </div>
+                                </div>
+
+                                {/* Escena del bloque móvil */}
+                                <div className="relative w-full h-32 flex flex-col justify-end pb-8 px-8 mt-4">
+                                    <div className="absolute w-[400px] left-1/2 -translate-x-1/2 border-b-2 border-slate-600 road-pattern h-2 z-0"></div>
+                                    
+                                    <div className="relative w-[400px] left-1/2 -translate-x-1/2">
+                                        <div 
+                                            className="absolute bottom-1 w-12 h-10 bg-slate-400 border-2 border-slate-300 rounded shadow-lg flex items-center justify-center z-10 transition-transform"
+                                            style={{ left: `${mapX(pos)}px`, transform: 'translateX(-50%)' }}
+                                        >
+                                            {/* Vector Fuerza */}
+                                            {currentF > 0 && (
+                                                <div className="absolute left-full top-1/2 -translate-y-1/2 flex items-center pl-1 pointer-events-none" style={{ width: (currentF / maxY) * 100 }}>
+                                                    <div className="h-1 bg-indigo-400 w-full relative shadow-[0_0_5px_rgba(129,140,248,0.8)]">
+                                                        <div className="absolute right-0 -top-1">{ArrowRightIcon && <ArrowRightIcon size={12} className="text-indigo-400" />}</div>
+                                                    </div>
+                                                </div>
+                                            )}
+                                            {/* Vector Velocidad (creciente) */}
+                                            {currentV > 0 && (
+                                                <div className="absolute bottom-full left-1/2 flex items-center pb-1 pointer-events-none" style={{ width: currentV * 5 }}>
+                                                    <div className="h-1 bg-emerald-400 w-full relative border-t border-dashed border-emerald-500">
+                                                        <div className="absolute right-0 -top-1.5">{ArrowRightIcon && <ArrowRightIcon size={16} className="text-emerald-500" />}</div>
+                                                    </div>
+                                                </div>
+                                            )}
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* Controles y Resolución */}
+                            <div className="space-y-6">
+                                <div className="bg-slate-800 p-6 rounded-3xl border border-slate-700 shadow-xl">
+                                    <h3 className="text-xl font-bold mb-4 flex items-center gap-2 text-teal-400">
+                                        {SettingsIcon && <SettingsIcon size={20} />} Datos Iniciales
+                                    </h3>
+                                    
+                                    <div className="grid grid-cols-2 gap-4 mb-6">
+                                        <div>
+                                            <div className="flex justify-between text-xs mb-1"><span className="text-slate-300 font-bold uppercase">Masa (m)</span></div>
+                                            <input type="range" min="1" max="10" step="0.5" value={masa} onChange={e => {setMasa(Number(e.target.value)); reset();}} className="w-full h-1.5 bg-slate-700 rounded-lg appearance-none cursor-pointer" />
+                                            <span className="font-mono text-white text-xs">{masa.toFixed(1)} kg</span>
+                                        </div>
+                                        <div>
+                                            <div className="flex justify-between text-xs mb-1"><span className="text-teal-400 font-bold uppercase">Vel. Inicial (v₀)</span></div>
+                                            <input type="range" min="0" max="15" step="0.5" value={v0} onChange={e => {setV0(Number(e.target.value)); reset();}} className="w-full h-1.5 bg-slate-700 rounded-lg appearance-none cursor-pointer accent-teal-500" />
+                                            <span className="font-mono text-white text-xs">{v0.toFixed(1)} m/s</span>
+                                        </div>
+                                    </div>
+
+                                    <h3 className="text-xl font-bold mb-4 flex items-center gap-2 text-indigo-400 pt-4 border-t border-slate-700">
+                                        {AreaChartIcon && <AreaChartIcon size={20} />} La Figura (Gráfica de Fuerza)
+                                    </h3>
+
+                                    <div className="space-y-4 mb-6">
+                                        <div className="bg-indigo-900/20 p-3 rounded-xl border border-indigo-500/20">
+                                            <div className="flex justify-between text-xs mb-1"><span className="text-indigo-400 font-bold uppercase">Fuerza Máxima (Eje Y)</span><span className="font-mono text-white">{fMax.toFixed(1)} N</span></div>
+                                            <input type="range" min="5" max="50" step="1" value={fMax} onChange={e => {setFMax(Number(e.target.value)); reset();}} className="w-full h-2 bg-slate-700 rounded-lg appearance-none cursor-pointer accent-indigo-500" />
+                                        </div>
+
+                                        <div className="grid grid-cols-2 gap-4">
+                                            <div>
+                                                <div className="flex justify-between text-[10px] mb-1"><span className="text-emerald-400 font-bold uppercase">Fin tramo cte.</span></div>
+                                                <input type="range" min="0" max="30" step="1" value={d1} onChange={e => {setD1(Number(e.target.value)); reset();}} className="w-full h-1.5 bg-slate-700 rounded-lg appearance-none cursor-pointer accent-emerald-500 mb-1" />
+                                                <span className="font-mono text-white text-xs">{d1.toFixed(1)} m</span>
+                                            </div>
+                                            <div>
+                                                <div className="flex justify-between text-[10px] mb-1"><span className="text-emerald-400 font-bold uppercase">Distancia Total</span></div>
+                                                <input type="range" min="1" max="30" step="1" value={d2} onChange={e => {setD2(Number(e.target.value)); reset();}} className="w-full h-1.5 bg-slate-700 rounded-lg appearance-none cursor-pointer accent-emerald-500 mb-1" />
+                                                <span className="font-mono text-white text-xs">{d2.toFixed(1)} m</span>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div className="flex gap-2">
+                                        <button 
+                                            onClick={handlePlay} 
+                                            disabled={isMoving || pos >= d2}
+                                            className="flex-1 bg-teal-600 hover:bg-teal-500 text-white font-black py-3 rounded-xl shadow-lg flex justify-center items-center gap-2 disabled:opacity-50 transition-all active:scale-95"
+                                        >
+                                            {PlayIcon && <PlayIcon size={18} />} CALCULAR VISUALMENTE
+                                        </button>
+                                        <button onClick={reset} className="bg-slate-700 hover:bg-slate-600 text-white font-bold px-4 rounded-xl transition-all shadow-md">
+                                            {RotateCcwIcon && <RotateCcwIcon size={18} />}
+                                        </button>
+                                    </div>
+                                </div>
+
+                                <div className="bg-teal-950/20 p-6 rounded-3xl border border-teal-500/20">
+                                    <div className="flex justify-between items-center mb-4 border-b border-teal-500/30 pb-2">
+                                        <h4 className="font-bold text-teal-300 flex items-center gap-2">
+                                            {CalculatorIcon && <CalculatorIcon size={18} />} Resolución Matemática
+                                        </h4>
+                                        <button onClick={generarDiagrama} className="text-[10px] uppercase font-bold bg-slate-800 hover:bg-slate-700 text-slate-300 px-3 py-1.5 rounded flex items-center gap-1 border border-slate-600">
+                                            {imgLoading ? <span className="animate-pulse">Cargando...</span> : <>{ImagePlusIcon && <ImagePlusIcon size={14}/>} Generar DCL</>}
+                                        </button>
+                                    </div>
+
+                                    {imgUrl && (
+                                        <div className="mb-4 bg-slate-900 p-2 rounded-xl border border-slate-700 text-center">
+                                            <img src={imgUrl} alt="Diagrama de Física" className="mx-auto max-h-40 rounded-lg" />
+                                        </div>
+                                    )}
+
+                                    <div className="text-xs text-slate-300 space-y-4 leading-relaxed">
+                                        <div className="bg-slate-900/80 p-2 rounded-lg border-l-4 border-indigo-500 font-mono text-indigo-300 shadow-inner text-sm font-bold text-center">
+                                            W = ΔE_c = E_cf - E_c0
+                                        </div>
+
+                                        <p><strong>1. Energía Cinética Inicial (E_c0):</strong><br/>
+                                        Como el cuerpo ya se movía a {v0} m/s, ya tenía energía acumulada.</p>
+                                        <div className="bg-slate-900/80 p-2 rounded-lg border-l-4 border-slate-500 font-mono text-slate-200">
+                                            E_c0 = ½ · m · v₀² = 0.5 · {masa.toFixed(1)} · {v0.toFixed(1)}² = <strong>{ec0.toFixed(1)} J</strong>
+                                        </div>
+
+                                        <p><strong>2. Calcular el Trabajo (W) = Área de la Gráfica:</strong><br/>
+                                        El trabajo es el área bajo la curva. Si tu dibujo es diferente, ajusta los controles arriba. Con los datos actuales ({d2} m totales):</p>
+                                        <div className="bg-slate-900/80 p-2 rounded-lg border-l-4 border-emerald-500 font-mono text-emerald-200">
+                                            W = Área_Rectángulo + Área_Triángulo<br/>
+                                            W = ({d1} · {fMax}) + ({(d2 - d1).toFixed(1)} · {fMax} / 2)<br/>
+                                            W = {areaRectangulo} + {areaTriangulo} = <strong>{trabajoTotal} J</strong>
+                                        </div>
+
+                                        <p><strong>3. Energía Cinética Final y Velocidad:</strong><br/>
+                                        El trabajo añade energía al cuerpo. Sumamos y despejamos v_f.</p>
+                                        <div className="bg-slate-900/80 p-3 rounded-lg border-l-4 border-teal-500 font-mono text-teal-200 shadow-[inset_0_0_15px_rgba(20,184,166,0.1)]">
+                                            E_cf = E_c0 + W = {ec0.toFixed(1)} + {trabajoTotal} = <strong>{ecFinalTotal.toFixed(1)} J</strong><br/><br/>
+                                            E_cf = ½ · m · v_f²<br/>
+                                            {ecFinalTotal.toFixed(1)} = 0.5 · {masa.toFixed(1)} · v_f²<br/>
+                                            v_f = √({ecFinalTotal.toFixed(1)} / {(0.5 * masa).toFixed(2)}) = <strong>{vFinalTotal.toFixed(2)} m/s</strong>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </main>
+
+                        <footer className="max-w-5xl mx-auto mt-12 pt-6 border-t border-slate-800 text-center text-slate-500 text-[10px] font-bold uppercase tracking-widest">
+                            Profe Física | Teorema del Trabajo y la Energía Cinética
+                        </footer>
+                    </div>
+                );
+            };
+
+            const container = document.getElementById('root');
+            const root = ReactDOM.createRoot(container);
+            root.render(<App />);
+        })();
+    </script>
+</body>
+</html>

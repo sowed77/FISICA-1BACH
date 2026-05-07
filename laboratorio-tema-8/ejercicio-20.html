@@ -1,0 +1,402 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Laboratorio: Salto con Pértiga y Energía</title>
+    <!-- Bibliotecas externas -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <script src="https://unpkg.com/lucide-react@latest"></script>
+
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&family=Fira+Code&display=swap');
+        body { font-family: 'Inter', sans-serif; background-color: #0f172a; }
+        .font-mono { font-family: 'Fira Code', monospace; }
+        input[type=range]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            height: 20px;
+            width: 20px;
+            border-radius: 50%;
+            background: #3b82f6; /* Blue 500 */
+            cursor: pointer;
+            border: 2px solid #ffffff;
+            box-shadow: 0 0 10px rgba(59, 130, 246, 0.5);
+        }
+        .sky-bg {
+            background-image: linear-gradient(to bottom, #0284c7, #38bdf8, #e0f2fe);
+        }
+        .mat-texture {
+            background-color: #1e40af;
+            background-image: 
+                radial-gradient(#1e3a8a 2px, transparent 2px),
+                radial-gradient(#1e3a8a 2px, transparent 2px);
+            background-size: 20px 20px;
+            background-position: 0 0, 10px 10px;
+        }
+    </style>
+</head>
+<body>
+    <div id="root"></div>
+
+    <script type="text/babel">
+        (() => {
+            const { useState, useEffect } = React;
+            const icons = window.LucideReact || {};
+            
+            const getIcon = (name) => icons[name] || (({className}) => <span className={className || ''}></span>);
+            const PlayIcon = getIcon('Play');
+            const RotateCcwIcon = getIcon('RotateCcw');
+            const CalculatorIcon = getIcon('Calculator');
+            const SettingsIcon = getIcon('Settings');
+            const InfoIcon = getIcon('Info');
+            const ArrowDownIcon = getIcon('ArrowDown');
+            const ImagePlusIcon = getIcon('ImagePlus');
+            const UserIcon = getIcon('User');
+            const ActivityIcon = getIcon('Activity');
+
+            const App = () => {
+                // Constantes Físicas
+                const g = 9.8; // m/s^2
+
+                // Estados Interactivos (Inicializados con el enunciado)
+                const [masa, setMasa] = useState(72); // kg
+                const [h0, setH0] = useState(6.05); // m (Altura del listón)
+                const [hfCm, setHfCm] = useState(75.0); // cm (Altura del colchón)
+
+                // Asegurar que la altura del colchón no supere al listón
+                const hf = hfCm / 100; // m
+                if (hf >= h0 && h0 > 0) {
+                    setHfCm((h0 - 0.5) * 100);
+                }
+
+                // Cálculos Físicos Teóricos
+                const ePotencialTop = masa * g * h0; // J
+                const ePotencialImpacto = masa * g * hf; // J
+                const eCineticaImpacto = ePotencialTop - ePotencialImpacto; // J
+                const velImpacto = Math.sqrt(2 * g * (h0 - hf)); // m/s
+
+                // Animación
+                const [time, setTime] = useState(0); 
+                const [isFalling, setIsFalling] = useState(false);
+
+                // Cinemática de caída
+                // y = h0 - 0.5 * g * t^2
+                // Llegada al colchón: hf = h0 - 0.5 * g * t^2 => t = sqrt(2*(h0 - hf)/g)
+                const tCaida = Math.sqrt((2 * (h0 - hf)) / g);
+
+                let currentY = h0;
+                let currentV = 0;
+
+                if (time > 0 && time < tCaida) {
+                    currentY = h0 - 0.5 * g * Math.pow(time, 2);
+                    currentV = g * time; // magnitud de velocidad
+                } else if (time >= tCaida) {
+                    currentY = hf;
+                    currentV = velImpacto;
+                }
+
+                // Energías instantáneas
+                const currentEp = masa * g * currentY;
+                const currentEc = ePotencialTop - currentEp;
+
+                useEffect(() => {
+                    let interval;
+                    if (isFalling && time < tCaida) {
+                        interval = setInterval(() => {
+                            setTime(prev => {
+                                const nextTime = prev + 0.02; // A tiempo real
+                                if (nextTime >= tCaida) {
+                                    setIsFalling(false);
+                                    return tCaida;
+                                }
+                                return nextTime;
+                            });
+                        }, 20); // 50 fps
+                    }
+                    return () => clearInterval(interval);
+                }, [isFalling, time, tCaida]);
+
+                const handlePlay = () => {
+                    if (time < tCaida) setIsFalling(true);
+                };
+
+                const reset = () => {
+                    setTime(0);
+                    setIsFalling(false);
+                };
+
+                // Si se cambian las variables, reiniciamos la animación
+                useEffect(() => {
+                    reset();
+                }, [masa, h0, hfCm]);
+
+                // Escala visual
+                const maxVisualH = 8; // metros visuales máximos
+                const pxPerMeter = 350 / maxVisualH; 
+                
+                // Generador de DCL IA
+                const [imgUrl, setImgUrl] = useState(null);
+                const [imgLoading, setImgLoading] = useState(false);
+
+                const generarDiagrama = async () => {
+                    setImgLoading(true);
+                    const apiKey = "AIzaSyDMyUo-WgmdNkCRW6-YK7h-bnRF_FLAjf0"; // API Key insertada por entorno; 
+                    try {
+                        const response = await fetch(
+                            `https://generativelanguage.googleapis.com/v1beta/models/imagen-4.0-generate-001:predict?key=${apiKey}`,
+                            {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({
+                                    instances: [{ prompt: "Diagrama técnico de física de la conservación de la energía. Un saltador cayendo verticalmente desde una barra alta. Barras de energía laterales mostrando la energía potencial convirtiéndose en energía cinética. Vector de velocidad hacia abajo. Estilo educativo minimalista, fondo blanco" }],
+                                    parameters: { sampleCount: 1 }
+                                })
+                            }
+                        );
+                        if (!response.ok) throw new Error("Error en red");
+                        const data = await response.json();
+                        setImgUrl(`data:image/png;base64,${data.predictions[0].bytesBase64Encoded}`);
+                    } catch (error) {
+                        console.error(error);
+                    } finally {
+                        setImgLoading(false);
+                    }
+                };
+
+                return (
+                    <div className="min-h-screen bg-slate-900 text-slate-100 p-4 md:p-8">
+                        <header className="max-w-5xl mx-auto mb-8 border-b border-slate-700 pb-6">
+                            <div className="flex items-center gap-3 mb-2">
+                                <span className="bg-blue-600 text-white px-3 py-1 rounded-full text-xs font-black uppercase tracking-widest">Conservación de la Energía</span>
+                                <h1 className="text-3xl font-black text-blue-400 uppercase tracking-tight tracking-widest">Salto con Pértiga</h1>
+                            </div>
+                            <div className="bg-slate-800/50 p-4 rounded-xl border border-slate-700 mt-4">
+                                <p className="text-slate-300 text-sm leading-relaxed">
+                                    <strong>Enunciado:</strong> Un saltador de pértiga de 72 kg sobrepasa el listón colocado a 6,05 m de altura. a) ¿Cuál es su energía potencial gravitatoria en ese instante? b) ¿Con qué velocidad llega al colchón, cuya superficie superior está situada a 75,0 cm del suelo?
+                                </p>
+                            </div>
+                        </header>
+
+                        <main className="max-w-5xl mx-auto grid md:grid-cols-2 gap-8">
+                            {/* Panel Visual */}
+                            <div className="bg-slate-800 rounded-3xl border border-slate-700 h-[550px] relative overflow-hidden shadow-2xl flex flex-col justify-end">
+                                
+                                {/* HUD Superior de Energía */}
+                                <div className="absolute top-4 w-full px-6 flex justify-between z-30 pointer-events-none">
+                                    <div className="bg-slate-900/90 p-3 rounded-lg border border-slate-700 backdrop-blur-md flex items-end gap-3">
+                                        <div className="flex flex-col items-center w-10">
+                                            <div className="h-20 w-4 bg-slate-800 rounded-sm overflow-hidden flex flex-col justify-end border border-slate-600 mb-1">
+                                                <div className="w-full bg-amber-500 transition-all duration-75" style={{ height: `${(currentEp / ePotencialTop) * 100}%` }}></div>
+                                            </div>
+                                            <span className="text-[9px] font-black text-amber-400">Ep</span>
+                                        </div>
+                                        <div className="pb-1">
+                                            <p className="text-lg font-mono font-black text-amber-400">{currentEp.toFixed(0)} J</p>
+                                        </div>
+                                    </div>
+
+                                    <div className="bg-slate-900/90 p-3 rounded-lg border border-slate-700 backdrop-blur-md text-right flex items-end gap-3 border-b-4 border-b-emerald-500">
+                                        <div className="pb-1 text-right">
+                                            <p className="text-lg font-mono font-black text-emerald-400">{currentEc.toFixed(0)} J</p>
+                                        </div>
+                                        <div className="flex flex-col items-center w-10">
+                                            <div className="h-20 w-4 bg-slate-800 rounded-sm overflow-hidden flex flex-col justify-end border border-slate-600 mb-1">
+                                                <div className="w-full bg-emerald-500 transition-all duration-75" style={{ height: `${(currentEc / ePotencialTop) * 100}%` }}></div>
+                                            </div>
+                                            <span className="text-[9px] font-black text-emerald-400">Ec</span>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div className="absolute top-36 w-full flex justify-center z-30">
+                                    <div className="bg-slate-900/80 px-4 py-1.5 rounded-full border border-slate-700 backdrop-blur-md">
+                                        <p className="text-xs font-black text-slate-300">
+                                            Energía Mecánica Total: <span className="text-white">{ePotencialTop.toFixed(0)} J</span>
+                                        </p>
+                                    </div>
+                                </div>
+
+                                {/* Escenario del Salto */}
+                                <div className="relative w-full h-[400px] sky-bg flex justify-center items-end border-b-4 border-slate-600">
+                                    
+                                    {/* Soportes del listón */}
+                                    <div className="absolute w-2 h-full bg-slate-300 border-x border-slate-400" style={{ left: '30%' }}></div>
+                                    <div className="absolute w-2 h-full bg-slate-300 border-x border-slate-400" style={{ right: '30%' }}></div>
+
+                                    {/* El Listón */}
+                                    <div 
+                                        className="absolute w-[45%] h-2 bg-yellow-400 border-y border-yellow-600 z-10 shadow-lg rounded-full"
+                                        style={{ bottom: `${h0 * pxPerMeter}px` }}
+                                    >
+                                        <span className="absolute -top-5 left-1/2 -translate-x-1/2 text-[10px] font-black text-slate-800 bg-white/80 px-1 rounded shadow">Listón: {h0} m</span>
+                                    </div>
+
+                                    {/* El Colchón */}
+                                    <div 
+                                        className="absolute w-[60%] bg-blue-800 mat-texture border-t-8 border-blue-600 rounded-t-xl z-20 shadow-2xl flex items-center justify-center"
+                                        style={{ height: `${hf * pxPerMeter}px` }}
+                                    >
+                                        <span className="font-black text-blue-300 text-xs bg-slate-900/50 px-2 py-1 rounded">Colchón: {hf.toFixed(2)} m</span>
+                                    </div>
+
+                                    {/* El Saltador */}
+                                    <div 
+                                        className="absolute z-30 flex flex-col items-center transition-transform"
+                                        style={{ bottom: `${currentY * pxPerMeter}px` }}
+                                    >
+                                        <div className="w-12 h-12 bg-slate-100 rounded-full border-4 border-slate-300 shadow-xl flex items-center justify-center overflow-hidden relative">
+                                            <UserIcon size={24} className="text-slate-800" />
+                                        </div>
+                                        <span className="font-black text-white text-[10px] bg-slate-900/80 px-1 rounded mt-1">{masa} kg</span>
+
+                                        {/* Vector Velocidad (Verde) */}
+                                        {currentV > 0 && (
+                                            <div className="absolute top-1/2 left-full flex flex-col items-center pl-2" style={{ height: Math.min(100, currentV * 8) }}>
+                                                <span className="text-[10px] font-black text-emerald-300 whitespace-nowrap bg-slate-900/80 px-1 rounded shadow mb-1">v = {currentV.toFixed(1)} m/s</span>
+                                                <div className="w-1 bg-emerald-400 h-full relative">
+                                                    <div className="absolute bottom-0 -translate-x-1.5">{ArrowDownIcon && <ArrowDownIcon size={16} className="text-emerald-400" />}</div>
+                                                </div>
+                                            </div>
+                                        )}
+                                    </div>
+                                    
+                                    {/* Regla de alturas lateral */}
+                                    <div className="absolute left-6 h-full flex flex-col justify-between items-start py-4 border-l-2 border-slate-700/50">
+                                        {[8, 6, 4, 2, 0].map(h => (
+                                            <div key={h} className="relative w-4 border-b-2 border-slate-700/50">
+                                                <span className="absolute left-6 -top-2 text-[10px] font-mono text-slate-500 font-bold">{h}m</span>
+                                            </div>
+                                        ))}
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* Controles y Resolución */}
+                            <div className="space-y-6">
+                                <div className="bg-slate-800 p-6 rounded-3xl border border-slate-700 shadow-xl">
+                                    <h3 className="text-xl font-bold mb-4 flex items-center gap-2 text-blue-400">
+                                        {SettingsIcon && <SettingsIcon size={20} />} Ajustar Salto
+                                    </h3>
+                                    
+                                    <div className="space-y-5 mb-6">
+                                        <div>
+                                            <div className="flex justify-between text-xs mb-2">
+                                                <span className="text-slate-300 font-bold uppercase">Masa del Saltador (m)</span>
+                                                <span className="font-mono bg-slate-900 px-2 py-0.5 rounded text-white">{masa} kg</span>
+                                            </div>
+                                            <input 
+                                                type="range" min="40" max="100" step="1" value={masa} 
+                                                onChange={e => {setMasa(Number(e.target.value)); reset();}} 
+                                                className="w-full h-2 bg-slate-700 rounded-lg appearance-none cursor-pointer accent-slate-400" 
+                                            />
+                                        </div>
+
+                                        <div className="grid grid-cols-2 gap-4 pt-2 border-t border-slate-700">
+                                            <div>
+                                                <div className="flex justify-between text-[10px] mb-1">
+                                                    <span className="text-amber-400 font-bold uppercase">Altura Listón (h₀)</span>
+                                                    <span className="font-mono text-white">{h0.toFixed(2)} m</span>
+                                                </div>
+                                                <input 
+                                                    type="range" min="3.00" max="7.00" step="0.05" value={h0} 
+                                                    onChange={e => {setH0(Number(e.target.value)); reset();}} 
+                                                    className="w-full h-1.5 bg-slate-700 rounded-lg appearance-none cursor-pointer accent-amber-500" 
+                                                />
+                                            </div>
+                                            <div>
+                                                <div className="flex justify-between text-[10px] mb-1">
+                                                    <span className="text-blue-400 font-bold uppercase">Altura Colchón (h_f)</span>
+                                                    <span className="font-mono text-white">{hfCm.toFixed(0)} cm</span>
+                                                </div>
+                                                <input 
+                                                    type="range" min="10" max="150" step="5" value={hfCm} 
+                                                    onChange={e => {setHfCm(Number(e.target.value)); reset();}} 
+                                                    className="w-full h-1.5 bg-slate-700 rounded-lg appearance-none cursor-pointer accent-blue-500" 
+                                                />
+                                            </div>
+                                        </div>
+                                        <p className="text-[10px] text-slate-500 italic text-center">Fíjate que cambiar la masa cambia la Energía (Julios), pero no la velocidad de caída.</p>
+                                    </div>
+
+                                    <div className="flex gap-2">
+                                        <button 
+                                            onClick={handlePlay} 
+                                            disabled={isFalling || time >= tCaida}
+                                            className={`flex-1 font-black py-3 rounded-xl shadow-lg flex justify-center items-center gap-2 disabled:opacity-50 transition-all active:scale-95 ${time >= tCaida ? 'bg-slate-600 text-slate-400' : 'bg-blue-600 hover:bg-blue-500 text-white'}`}
+                                        >
+                                            {PlayIcon && <PlayIcon size={18} />} {time >= tCaida ? 'EN EL COLCHÓN' : 'INICIAR CAÍDA LIBRE'}
+                                        </button>
+                                        <button onClick={reset} className="bg-slate-700 hover:bg-slate-600 text-white font-bold px-4 rounded-xl transition-all shadow-md">
+                                            {RotateCcwIcon && <RotateCcwIcon size={18} />}
+                                        </button>
+                                    </div>
+                                </div>
+
+                                <div className="bg-blue-950/20 p-6 rounded-3xl border border-blue-500/20">
+                                    <div className="flex justify-between items-center mb-4 border-b border-blue-500/30 pb-2">
+                                        <h4 className="font-bold text-blue-300 flex items-center gap-2">
+                                            {CalculatorIcon && <CalculatorIcon size={18} />} Resolución Paso a Paso
+                                        </h4>
+                                        <button onClick={generarDiagrama} className="text-[10px] uppercase font-bold bg-slate-800 hover:bg-slate-700 text-slate-300 px-3 py-1.5 rounded flex items-center gap-1 border border-slate-600">
+                                            {imgLoading ? <span className="animate-pulse">Cargando...</span> : <>{ImagePlusIcon && <ImagePlusIcon size={14}/>} Generar Gráfico</>}
+                                        </button>
+                                    </div>
+
+                                    {imgUrl && (
+                                        <div className="mb-4 bg-slate-900 p-2 rounded-xl border border-slate-700 text-center">
+                                            <img src={imgUrl} alt="Diagrama de Energía" className="mx-auto max-h-40 rounded-lg" />
+                                        </div>
+                                    )}
+
+                                    <div className="text-xs text-slate-300 space-y-4 leading-relaxed">
+                                        <p><strong>a) Energía Potencial en el listón:</strong><br/>
+                                        Depende de su masa y la altura a la que está respecto al suelo.</p>
+                                        <div className="bg-slate-900/80 p-2 rounded-lg border-l-4 border-amber-500 font-mono text-amber-200">
+                                            Ep₀ = m · g · h₀<br/>
+                                            Ep₀ = {masa} · 9.8 · {h0.toFixed(2)} = <strong>{ePotencialTop.toFixed(2)} J</strong>
+                                        </div>
+
+                                        <p className="mt-3"><strong>b) Velocidad de impacto:</strong><br/>
+                                        Aplicamos el Principio de Conservación de la Energía Mecánica. En el punto más alto suponemos v=0, así que toda su energía es potencial. Al chocar, tiene energía cinética más la energía potencial residual de la altura del colchón.</p>
+                                        
+                                        <div className="bg-slate-900/80 p-2 rounded-lg border-l-4 border-blue-500 font-mono text-blue-200 overflow-x-auto shadow-inner">
+                                            Em₀ = Em_f<br/>
+                                            Ep₀ + Ec₀ = Ep_f + Ec_f<br/>
+                                            m·g·h₀ + 0 = m·g·h_f + ½·m·v_f²
+                                        </div>
+                                        
+                                        <p className="mt-2 text-emerald-300 font-bold flex items-center gap-2">
+                                            <ActivityIcon size={14}/> ¡Ojo! La masa se cancela en todos los términos.
+                                        </p>
+                                        
+                                        <div className="bg-slate-900/80 p-3 rounded-lg border-l-4 border-emerald-500 font-mono text-emerald-200 shadow-inner">
+                                            g·h₀ - g·h_f = ½·v_f²<br/>
+                                            g·(h₀ - h_f) = ½·v_f²<br/>
+                                            v_f = √(2 · g · (h₀ - h_f))<br/>
+                                            v_f = √(2 · 9.8 · ({h0.toFixed(2)} - {hf.toFixed(2)}))<br/>
+                                            v_f = √(19.6 · {(h0 - hf).toFixed(2)}) = √({(19.6 * (h0 - hf)).toFixed(2)})<br/>
+                                            <strong>v_f = {velImpacto.toFixed(3)} m/s</strong>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </main>
+
+                        <footer className="max-w-5xl mx-auto mt-12 pt-6 border-t border-slate-800 text-center text-slate-500 text-[10px] font-bold uppercase tracking-widest">
+                            Profe Física | Trabajo y Energía: Conservación de la Energía Mecánica
+                        </footer>
+                    </div>
+                );
+            };
+
+            const container = document.getElementById('root');
+            const root = ReactDOM.createRoot(container);
+            root.render(<App />);
+        })();
+    </script>
+</body>
+</html>

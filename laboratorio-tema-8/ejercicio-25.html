@@ -1,0 +1,401 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Laboratorio: Balística y Trabajo Mecánico</title>
+    <!-- Bibliotecas externas -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <script src="https://unpkg.com/lucide-react@latest"></script>
+
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&family=Fira+Code&display=swap');
+        body { font-family: 'Inter', sans-serif; background-color: #0f172a; }
+        .font-mono { font-family: 'Fira Code', monospace; }
+        input[type=range]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            height: 20px;
+            width: 20px;
+            border-radius: 50%;
+            background: #ef4444; /* Red 500 */
+            cursor: pointer;
+            border: 2px solid #ffffff;
+            box-shadow: 0 0 10px rgba(239, 68, 68, 0.5);
+        }
+        .wall-pattern {
+            background-color: #713f12; /* yellow-900 */
+            background-image: 
+                linear-gradient(335deg, rgba(255,255,255,0.1) 10px, transparent 10px),
+                linear-gradient(155deg, rgba(255,255,255,0.1) 10px, transparent 10px),
+                linear-gradient(335deg, rgba(255,255,255,0.1) 10px, transparent 10px),
+                linear-gradient(155deg, rgba(255,255,255,0.1) 10px, transparent 10px);
+            background-size: 20px 20px;
+            background-position: 0px 0px, 2px 14px, 10px 10px, 12px 4px;
+        }
+    </style>
+</head>
+<body>
+    <div id="root"></div>
+
+    <script type="text/babel">
+        (() => {
+            var { useState, useEffect } = React;
+            var icons = window.LucideReact || {};
+            
+            // Asignación segura de iconos
+            var getIcon = (name) => icons[name] || (({className}) => <span className={className || ''}></span>);
+            var PlayIcon = getIcon('Play');
+            var RotateCcwIcon = getIcon('RotateCcw');
+            var CalculatorIcon = getIcon('Calculator');
+            var SettingsIcon = getIcon('Settings');
+            var InfoIcon = getIcon('Info');
+            var TargetIcon = getIcon('Target');
+            var ArrowRightIcon = getIcon('ArrowRight');
+            var ArrowLeftIcon = getIcon('ArrowLeft');
+            var FlameIcon = getIcon('Flame');
+            var ImagePlusIcon = getIcon('ImagePlus');
+            var BatteryChargingIcon = getIcon('BatteryCharging');
+
+            var App = () => {
+                // Parámetros interactivos del problema
+                const [mBalaGramos, setMBalaGramos] = useState(20); // g
+                const [espesorCm, setEspesorCm] = useState(12); // cm
+                const [v0, setV0] = useState(250); // m/s
+                const [vf, setVf] = useState(120); // m/s
+
+                // Lógica de seguridad para evitar datos imposibles
+                useEffect(() => {
+                    if (vf >= v0) setVf(Math.max(0, v0 - 10));
+                }, [v0, vf]);
+
+                // Cálculos Físicos
+                const mKg = mBalaGramos / 1000; // kg
+                const dM = espesorCm / 100; // m
+                
+                const ec0 = 0.5 * mKg * Math.pow(v0, 2); // J
+                const ecf = 0.5 * mKg * Math.pow(vf, 2); // J
+                
+                const variacionEc = ecf - ec0; // J (Siempre negativa, pérdida de energía)
+                const trabajoFriccion = variacionEc; // W_nc = Delta_Ec
+                
+                // Trabajo = Fuerza * distancia * cos(180º) = - F_r * d
+                // - F_r * d = trabajoFriccion  => F_r = - trabajoFriccion / d
+                const fuerzaResistencia = Math.abs(trabajoFriccion) / dM; // N
+
+                // Animación Visual (Cámara súper lenta fingida)
+                const [progress, setProgress] = useState(0); // 0 a 100%
+                const [isShooting, setIsShooting] = useState(false);
+
+                // Mapeo del progreso a la posición de la bala
+                let phase = "PREPARADO";
+                let currentV = v0;
+                let currentEc = ec0;
+                let posX = 0; // Porcentaje visual (0 al 100 de la pantalla)
+                
+                // Zonas visuales
+                const wallStart = 35; // %
+                const wallWidth = Math.max(10, Math.min(30, espesorCm)); // Ancho visual del muro (max 30%)
+                const wallEnd = wallStart + wallWidth;
+
+                if (progress === 0) {
+                    phase = "PREPARADO";
+                    currentV = v0;
+                    currentEc = ec0;
+                    posX = 10;
+                } else if (progress < 30) {
+                    phase = "VUELO LIBRE (ANTES)";
+                    currentV = v0;
+                    currentEc = ec0;
+                    // Mapeo: 0-30 de progress = 10% a wallStart
+                    posX = 10 + (progress / 30) * (wallStart - 10);
+                } else if (progress <= 70) {
+                    phase = "IMPACTO Y PENETRACIÓN";
+                    const penetracion = (progress - 30) / 40; // 0 a 1 dentro del muro
+                    currentV = v0 - (v0 - vf) * penetracion; // Interpolación simple para visualización
+                    currentEc = ec0 - (ec0 - ecf) * penetracion;
+                    posX = wallStart + penetracion * wallWidth;
+                } else {
+                    phase = "VUELO LIBRE (DESPUÉS)";
+                    currentV = vf;
+                    currentEc = ecf;
+                    // Mapeo: 70-100 de progress = wallEnd a 90%
+                    const extra = (progress - 70) / 30;
+                    posX = wallEnd + extra * (90 - wallEnd);
+                }
+
+                useEffect(() => {
+                    let interval;
+                    if (isShooting && progress < 100) {
+                        interval = setInterval(() => {
+                            setProgress(prev => {
+                                // En el interior del muro (30-70) va a cámara "súper súper lenta"
+                                let delta = 1;
+                                if (prev >= 30 && prev <= 70) delta = 0.5; // Ralentizado
+                                
+                                const nextP = prev + delta;
+                                if (nextP >= 100) {
+                                    setIsShooting(false);
+                                    return 100;
+                                }
+                                return nextP;
+                            });
+                        }, 20);
+                    }
+                    return () => clearInterval(interval);
+                }, [isShooting, progress]);
+
+                const handleShoot = () => {
+                    setProgress(0);
+                    setIsShooting(true);
+                };
+
+                const reset = () => {
+                    setProgress(0);
+                    setIsShooting(false);
+                };
+
+                // Si se cambian las variables, reiniciar la animación
+                useEffect(() => {
+                    reset();
+                }, [mBalaGramos, espesorCm, v0, vf]);
+
+                // Generador de DCL IA
+                const [imgUrl, setImgUrl] = useState(null);
+                const [imgLoading, setImgLoading] = useState(false);
+
+                const generarDiagrama = async () => {
+                    setImgLoading(true);
+                    const apiKey = "AIzaSyDMyUo-WgmdNkCRW6-YK7h-bnRF_FLAjf0"; // API Key insertada por entorno; 
+                    try {
+                        const response = await fetch(
+                            `https://generativelanguage.googleapis.com/v1beta/models/imagen-4.0-generate-001:predict?key=${apiKey}`,
+                            {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({
+                                    instances: [{ prompt: "Diagrama técnico de física del Teorema de las Fuerzas Vivas. Una bala entrando a alta velocidad v0 en un muro y saliendo a menor velocidad vf. Dentro del muro, un gran vector de Fuerza de Rozamiento Fr apuntando en dirección contraria al movimiento de la bala. Fondo blanco, minimalista, educativo" }],
+                                    parameters: { sampleCount: 1 }
+                                })
+                            }
+                        );
+                        if (!response.ok) throw new Error("Error en red");
+                        const data = await response.json();
+                        setImgUrl(`data:image/png;base64,${data.predictions[0].bytesBase64Encoded}`);
+                    } catch (error) {
+                        console.error(error);
+                    } finally {
+                        setImgLoading(false);
+                    }
+                };
+
+                return (
+                    <div className="min-h-screen bg-slate-900 text-slate-100 p-4 md:p-8">
+                        <header className="max-w-5xl mx-auto mb-8 border-b border-slate-700 pb-6">
+                            <div className="flex items-center gap-3 mb-2">
+                                <span className="bg-red-600 text-white px-3 py-1 rounded-full text-xs font-black uppercase tracking-widest">Trabajo y Energía</span>
+                                <h1 className="text-3xl font-black text-red-400 uppercase tracking-tight tracking-widest">Balística e Impacto</h1>
+                            </div>
+                            <div className="bg-slate-800/50 p-4 rounded-xl border border-slate-700 mt-4">
+                                <p className="text-slate-300 text-sm leading-relaxed">
+                                    <strong>Enunciado:</strong> Una bala de 20 g de masa atraviesa una pared de 12 cm de espesor. La bala incide con una velocidad de 250 m/s y sale a 120 m/s. ¿Qué resistencia media (fuerza de rozamiento) opone la pared?
+                                </p>
+                            </div>
+                        </header>
+
+                        <main className="max-w-5xl mx-auto grid md:grid-cols-2 gap-8">
+                            {/* Panel Visual */}
+                            <div className="bg-slate-800 rounded-3xl border border-slate-700 h-[500px] relative overflow-hidden shadow-2xl flex flex-col justify-end">
+                                
+                                {/* HUD de Telemetría */}
+                                <div className="absolute top-4 w-full px-6 flex justify-between z-30 pointer-events-none">
+                                    <div className={`bg-slate-900/90 p-3 rounded-lg border backdrop-blur-md text-left transition-all ${progress >= 30 && progress <= 70 ? 'border-red-500 shadow-[0_0_15px_rgba(239,68,68,0.3)]' : 'border-slate-700'}`}>
+                                        <p className="text-[10px] text-slate-500 uppercase font-black">Fase</p>
+                                        <p className={`text-sm font-black uppercase ${progress >= 30 && progress <= 70 ? 'text-red-400' : 'text-slate-300'}`}>{phase}</p>
+                                    </div>
+                                    <div className="bg-slate-900/90 p-3 rounded-lg border border-slate-700 backdrop-blur-md text-right border-b-4 border-b-emerald-500 shadow-[0_0_15px_rgba(16,185,129,0.2)]">
+                                        <p className="text-[10px] text-slate-500 uppercase font-black flex items-center justify-end gap-1">
+                                            {BatteryChargingIcon && <BatteryChargingIcon size={12} className="text-emerald-400" />} Energía Cinética
+                                        </p>
+                                        <p className="text-2xl font-mono font-black text-emerald-400">
+                                            {currentEc.toFixed(0)} <span className="text-sm">J</span>
+                                        </p>
+                                    </div>
+                                </div>
+
+                                {/* Escena (Muro y Bala) */}
+                                <div className="relative w-full h-80 flex items-center justify-start">
+                                    
+                                    {/* Muro */}
+                                    <div 
+                                        className="absolute h-full wall-pattern border-x-4 border-slate-900 z-10 opacity-90 shadow-2xl"
+                                        style={{ left: `${wallStart}%`, width: `${wallWidth}%` }}
+                                    >
+                                        {/* Cotas del muro */}
+                                        <div className="absolute -top-6 w-full text-center">
+                                            <div className="border-t-2 border-x-2 border-slate-500 h-2 mx-auto" style={{ width: '100%' }}></div>
+                                            <span className="text-[10px] font-bold text-slate-400 font-mono bg-slate-800 px-1 relative -top-3">{espesorCm} cm</span>
+                                        </div>
+                                    </div>
+
+                                    {/* La Bala */}
+                                    <div 
+                                        className="absolute w-8 h-3 bg-gradient-to-r from-slate-400 to-slate-200 rounded-l-md rounded-r-full flex items-center shadow-[0_0_10px_rgba(255,255,255,0.8)] z-20"
+                                        style={{ left: `${posX}%` }}
+                                    >
+                                        {/* Rastro de velocidad (Si no está en el muro) */}
+                                        {(progress < 30 || progress > 70) && currentV > 0 && (
+                                            <div className="absolute right-full w-24 h-full bg-gradient-to-r from-transparent to-white/50 blur-sm pr-1"></div>
+                                        )}
+
+                                        {/* Efecto de chispas en el interior del muro */}
+                                        {progress >= 30 && progress <= 70 && (
+                                            <div className="absolute left-1/2 -translate-x-1/2 -translate-y-1/2 top-1/2 text-orange-500 animate-spin">
+                                                <FlameIcon size={32} />
+                                            </div>
+                                        )}
+
+                                        {/* Vector Velocidad */}
+                                        {currentV > 0 && (
+                                            <div className="absolute bottom-full left-1/2 flex items-center mb-2 pointer-events-none" style={{ width: (currentV / v0) * 100 }}>
+                                                <div className="h-0.5 bg-emerald-400 w-full relative">
+                                                    <div className="absolute right-0 -top-1.5">{ArrowRightIcon && <ArrowRightIcon size={14} className="text-emerald-400" />}</div>
+                                                </div>
+                                                <span className="ml-1 text-[10px] font-black text-emerald-300 bg-slate-900/80 px-1 rounded shadow whitespace-nowrap">v={currentV.toFixed(0)}</span>
+                                            </div>
+                                        )}
+
+                                        {/* Vector Resistencia del Muro (Rozamiento, hacia la izquierda) */}
+                                        {progress >= 30 && progress <= 70 && (
+                                            <div className="absolute top-full left-1/2 flex items-center pr-1 flex-row-reverse mt-2 pointer-events-none" style={{ width: 120 }}>
+                                                <div className="h-1.5 bg-red-500 w-full relative shadow-[0_0_10px_rgba(239,68,68,0.8)]">
+                                                    <div className="absolute left-0 -top-1.5">{ArrowLeftIcon && <ArrowLeftIcon size={16} className="text-red-500" />}</div>
+                                                </div>
+                                                <span className="mr-1 text-[10px] font-black text-red-300 bg-slate-900/80 px-1 rounded shadow whitespace-nowrap">F_r={fuerzaResistencia.toFixed(0)}N</span>
+                                            </div>
+                                        )}
+                                    </div>
+
+                                </div>
+                            </div>
+
+                            {/* Controles y Resolución */}
+                            <div className="space-y-6">
+                                <div className="bg-slate-800 p-6 rounded-3xl border border-slate-700 shadow-xl">
+                                    <h3 className="text-xl font-bold mb-4 flex items-center gap-2 text-red-400">
+                                        {TargetIcon && <TargetIcon size={20} />} Parámetros del Disparo
+                                    </h3>
+                                    
+                                    <div className="space-y-5 mb-6">
+                                        <div className="grid grid-cols-2 gap-4">
+                                            <div>
+                                                <div className="flex justify-between text-xs mb-1">
+                                                    <span className="text-slate-300 font-bold uppercase">Masa de la Bala (m)</span>
+                                                </div>
+                                                <input type="range" min="5" max="50" step="1" value={mBalaGramos} onChange={e => {setMBalaGramos(Number(e.target.value)); reset();}} className="w-full h-1.5 bg-slate-700 rounded-lg appearance-none cursor-pointer accent-slate-400 mb-1" />
+                                                <span className="font-mono text-white text-xs">{mBalaGramos} g</span>
+                                            </div>
+                                            <div>
+                                                <div className="flex justify-between text-xs mb-1">
+                                                    <span className="text-orange-400 font-bold uppercase">Espesor Pared (d)</span>
+                                                </div>
+                                                <input type="range" min="5" max="50" step="1" value={espesorCm} onChange={e => {setEspesorCm(Number(e.target.value)); reset();}} className="w-full h-1.5 bg-slate-700 rounded-lg appearance-none cursor-pointer accent-orange-500 mb-1" />
+                                                <span className="font-mono text-white text-xs">{espesorCm} cm</span>
+                                            </div>
+                                        </div>
+
+                                        <div className="grid grid-cols-2 gap-4 pt-2 border-t border-slate-700">
+                                            <div>
+                                                <div className="flex justify-between text-xs mb-1">
+                                                    <span className="text-emerald-400 font-bold uppercase">Velocidad Incidencia (v₀)</span>
+                                                </div>
+                                                <input type="range" min="100" max="800" step="10" value={v0} onChange={e => {setV0(Number(e.target.value)); reset();}} className="w-full h-1.5 bg-slate-700 rounded-lg appearance-none cursor-pointer accent-emerald-500 mb-1" />
+                                                <span className="font-mono text-white text-xs">{v0} m/s</span>
+                                            </div>
+                                            <div>
+                                                <div className="flex justify-between text-xs mb-1">
+                                                    <span className="text-blue-400 font-bold uppercase">Velocidad Salida (v_f)</span>
+                                                </div>
+                                                <input type="range" min="0" max={v0 - 10} step="10" value={vf} onChange={e => {setVf(Number(e.target.value)); reset();}} className="w-full h-1.5 bg-slate-700 rounded-lg appearance-none cursor-pointer accent-blue-500 mb-1" />
+                                                <span className="font-mono text-white text-xs">{vf} m/s</span>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div className="flex gap-2">
+                                        <button 
+                                            onClick={handleShoot} 
+                                            disabled={isShooting || progress >= 100}
+                                            className="flex-1 bg-red-600 hover:bg-red-500 text-white font-black py-4 rounded-xl shadow-[0_0_15px_rgba(239,68,68,0.4)] flex justify-center items-center gap-2 disabled:opacity-50 transition-all active:scale-95"
+                                        >
+                                            {PlayIcon && <PlayIcon size={18} />} SIMULAR IMPACTO
+                                        </button>
+                                        <button onClick={reset} className="bg-slate-700 hover:bg-slate-600 text-white font-bold px-5 rounded-xl transition-all shadow-md">
+                                            {RotateCcwIcon && <RotateCcwIcon size={18} />}
+                                        </button>
+                                    </div>
+                                </div>
+
+                                <div className="bg-red-950/20 p-6 rounded-3xl border border-red-500/20">
+                                    <div className="flex justify-between items-center mb-4 border-b border-red-500/30 pb-2">
+                                        <h4 className="font-bold text-red-300 flex items-center gap-2">
+                                            {CalculatorIcon && <CalculatorIcon size={18} />} Resolución Matemática
+                                        </h4>
+                                        <button onClick={generarDiagrama} className="text-[10px] uppercase font-bold bg-slate-800 hover:bg-slate-700 text-slate-300 px-3 py-1.5 rounded flex items-center gap-1 border border-slate-600">
+                                            {imgLoading ? <span className="animate-pulse">Cargando...</span> : <>{ImagePlusIcon && <ImagePlusIcon size={14}/>} Generar DCL</>}
+                                        </button>
+                                    </div>
+
+                                    {imgUrl && (
+                                        <div className="mb-4 bg-slate-900 p-2 rounded-xl border border-slate-700 text-center">
+                                            <img src={imgUrl} alt="Diagrama de Fuerza y Trabajo" className="mx-auto max-h-40 rounded-lg" />
+                                        </div>
+                                    )}
+
+                                    <div className="text-xs text-slate-300 space-y-4 leading-relaxed">
+                                        <p><strong>1. Pasar Unidades al S.I.:</strong><br/>
+                                        La masa debe ir en kg y la distancia en metros.</p>
+                                        <div className="bg-slate-900/80 p-2 rounded-lg border-l-4 border-slate-500 font-mono text-slate-300">
+                                            m = {mBalaGramos} g = <strong>{mKg.toFixed(3)} kg</strong><br/>
+                                            d = {espesorCm} cm = <strong>{dM.toFixed(3)} m</strong>
+                                        </div>
+
+                                        <p className="mt-3"><strong>2. Variación de Energía Cinética (ΔEc):</strong><br/>
+                                        Es la energía que la bala "pierde" dentro de la pared al frenarse.</p>
+                                        <div className="bg-slate-900/80 p-2 rounded-lg border-l-4 border-emerald-500 font-mono text-emerald-200">
+                                            Ec₀ = ½·m·v₀² = 0.5 · {mKg.toFixed(3)} · {v0}² = {ec0.toFixed(1)} J<br/>
+                                            Ecf = ½·m·vf² = 0.5 · {mKg.toFixed(3)} · {vf}² = {ecf.toFixed(1)} J<br/>
+                                            ΔEc = Ecf - Ec₀ = {ecf.toFixed(1)} - {ec0.toFixed(1)} = <strong>{variacionEc.toFixed(1)} J</strong>
+                                        </div>
+
+                                        <p className="mt-3"><strong>3. Teorema de las Fuerzas Vivas (W_nc = ΔEc):</strong><br/>
+                                        El Trabajo realizado por la fuerza de rozamiento del muro (W_nc) equivale a esa pérdida de energía. Como la fuerza se opone al movimiento, su ángulo es 180º (cos(180º) = -1).</p>
+                                        <div className="bg-slate-900/80 p-3 rounded-lg border-l-4 border-red-500 font-mono text-red-200 shadow-inner">
+                                            W = F_r · d · cos(180º) = - F_r · d<br/>
+                                            - F_r · d = ΔEc<br/>
+                                            - F_r · {dM.toFixed(3)} = {variacionEc.toFixed(1)}<br/>
+                                            F_r = {Math.abs(variacionEc).toFixed(1)} / {dM.toFixed(3)}<br/>
+                                            <strong>F_r = {fuerzaResistencia.toFixed(2)} N</strong>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </main>
+
+                        <footer className="max-w-5xl mx-auto mt-12 pt-6 border-t border-slate-800 text-center text-slate-500 text-[10px] font-bold uppercase tracking-widest">
+                            Profe Física | Teorema del Trabajo y la Energía (Fuerzas no conservativas)
+                        </footer>
+                    </div>
+                );
+            };
+
+            const container = document.getElementById('root');
+            const root = ReactDOM.createRoot(container);
+            root.render(<App />);
+        })();
+    </script>
+</body>
+</html>

@@ -1,0 +1,258 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Laboratorio: El Rizo de la Muerte</title>
+    <!-- Bibliotecas externas -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <script src="https://unpkg.com/lucide-react@latest"></script>
+
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&family=Fira+Code&display=swap');
+        body { font-family: 'Inter', sans-serif; background-color: #0f172a; }
+        .font-mono { font-family: 'Fira Code', monospace; }
+        input[type=range]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            height: 20px;
+            width: 20px;
+            border-radius: 50%;
+            background: #10b981; /* Emerald 500 */
+            cursor: pointer;
+            border: 2px solid #ffffff;
+            box-shadow: 0 0 10px rgba(16, 185, 129, 0.5);
+        }
+        .bg-grid {
+            background-image: 
+                linear-gradient(rgba(255,255,255,0.05) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(255,255,255,0.05) 1px, transparent 1px);
+            background-size: 20px 20px;
+        }
+    </style>
+</head>
+<body>
+    <div id="root"></div>
+
+    <script type="text/babel">
+        (() => {
+            const { useState, useEffect, useRef } = React;
+            const icons = window.LucideReact || {};
+            
+            const getIcon = (name) => icons[name] || (({className}) => <span className={className || ''}></span>);
+            const PlayIcon = getIcon('Play');
+            const RotateCcwIcon = getIcon('RotateCcw');
+            const CalculatorIcon = getIcon('Calculator');
+            const SettingsIcon = getIcon('Settings');
+            const InfoIcon = getIcon('Info');
+            const AlertTriangleIcon = getIcon('AlertTriangle');
+            const ImagePlusIcon = getIcon('ImagePlus');
+            const ZapIcon = getIcon('Zap');
+            const CheckCircleIcon = getIcon('CheckCircle2');
+
+            const App = () => {
+                const g = 9.8; 
+                const rampWidth = 20;
+
+                // Estados de configuración
+                const [h0, setH0] = useState(25);
+                const [R, setR] = useState(6);
+
+                // Estado de simulación (propiedades físicas puras)
+                const [sim, setSim] = useState({ 
+                    s: 0, status: 'ready', 
+                    x: 0, y: h0, 
+                    v: 0, normal: 0,
+                    fallX: 0, fallY: 0, fallVx: 0, fallVy: 0
+                });
+
+                const requestRef = useRef();
+                const lastTimeRef = useRef();
+
+                // Cálculos teóricos estáticos
+                const vA = Math.sqrt(2 * g * h0);
+                const eTotal = g * h0;
+                const hCritica = 2.5 * R;
+
+                const updatePhysics = (time) => {
+                    if (lastTimeRef.current !== undefined) {
+                        const deltaTime = Math.min((time - lastTimeRef.current) / 1000, 0.03); 
+                        
+                        setSim(prev => {
+                            if (prev.status !== 'moving' && prev.status !== 'fallen') return prev;
+
+                            if (prev.status === 'moving') {
+                                const L_ramp = Math.sqrt(rampWidth * rampWidth + h0 * h0);
+                                const nextS = prev.s + (prev.v * deltaTime) + 0.5 * g * (h0/L_ramp) * deltaTime * deltaTime; 
+                                
+                                let x, y, v2, N, status = 'moving';
+
+                                if (nextS <= L_ramp) {
+                                    // Tramo Rampa
+                                    y = h0 - nextS * (h0 / L_ramp);
+                                    x = nextS * (rampWidth / L_ramp);
+                                    v2 = 2 * g * (h0 - y);
+                                    N = g * (rampWidth / L_ramp);
+                                } else {
+                                    // Tramo Rizo
+                                    const theta = (nextS - L_ramp) / R;
+                                    y = R - R * Math.cos(theta);
+                                    x = rampWidth + R * Math.sin(theta);
+                                    v2 = 2 * g * (h0 - y);
+                                    
+                                    // Dinámica circular: N = m*(v^2/R + g*cos(theta))
+                                    N = (v2 / R) + g * Math.cos(theta);
+
+                                    if (N < 0 || v2 < 0) {
+                                        const v = v2 > 0 ? Math.sqrt(v2) : 0;
+                                        return { 
+                                            ...prev, 
+                                            status: 'fallen', 
+                                            fallX: x, fallY: y, 
+                                            fallVx: v * Math.cos(theta), 
+                                            fallVy: v * Math.sin(theta) 
+                                        };
+                                    }
+
+                                    if (theta >= 2 * Math.PI) {
+                                        status = 'finished';
+                                    }
+                                }
+
+                                return { 
+                                    ...prev, 
+                                    s: nextS, x, y, 
+                                    v: Math.sqrt(Math.max(0, v2)), 
+                                    normal: N, 
+                                    status 
+                                };
+                            }
+
+                            if (prev.status === 'fallen') {
+                                const newVy = prev.fallVy - g * deltaTime;
+                                const newY = prev.fallY + newVy * deltaTime;
+                                const newX = prev.fallX + prev.fallVx * deltaTime;
+                                
+                                if (newY <= 0) return { ...prev, status: 'crashed', x: newX, y: 0, v: 0 };
+                                return { ...prev, x: newX, y: newY, fallX: newX, fallY: newY, fallVy: newVy };
+                            }
+                            return prev;
+                        });
+                    }
+                    lastTimeRef.current = time;
+                    requestRef.current = requestAnimationFrame(updatePhysics);
+                };
+
+                useEffect(() => {
+                    requestRef.current = requestAnimationFrame(updatePhysics);
+                    return () => cancelAnimationFrame(requestRef.current);
+                }, [h0, R]);
+
+                const handlePlay = () => {
+                    lastTimeRef.current = performance.now();
+                    setSim({ 
+                        s: 0, status: 'moving', x: 0, y: h0, v: 0.1, normal: 0,
+                        fallX: 0, fallY: 0, fallVx: 0, fallVy: 0
+                    });
+                };
+
+                const reset = () => {
+                    setSim({ 
+                        s: 0, status: 'ready', x: 0, y: h0, v: 0, normal: 0,
+                        fallX: 0, fallY: 0, fallVx: 0, fallVy: 0
+                    });
+                };
+
+                // SVG Drawing constants
+                const scale = 6; 
+                const marginX = 40;
+                const groundY = 280;
+                const trackPath = `M ${marginX} ${groundY - h0 * scale} L ${marginX + rampWidth * scale} ${groundY} A ${R * scale} ${R * scale} 0 1 0 ${marginX + rampWidth * scale} ${groundY - 0.1}`;
+
+                return (
+                    <div className="min-h-screen bg-slate-900 text-slate-100 p-4 md:p-8">
+                        <header className="max-w-5xl mx-auto mb-8 border-b border-slate-700 pb-6">
+                            <div className="flex items-center gap-3 mb-2">
+                                <span className="bg-emerald-600 text-white px-3 py-1 rounded-full text-xs font-black uppercase tracking-widest">Dinámica y Energía</span>
+                                <h1 className="text-3xl font-black text-emerald-400 uppercase tracking-tight">El Rizo de la Muerte</h1>
+                            </div>
+                        </header>
+
+                        <main className="max-w-5xl mx-auto grid md:grid-cols-2 gap-8">
+                            <div className="bg-slate-800 rounded-3xl border border-slate-700 h-[500px] relative overflow-hidden shadow-2xl bg-grid flex flex-col justify-end">
+                                
+                                <div className="absolute top-4 w-full px-6 flex justify-between z-30 pointer-events-none">
+                                    <div className="bg-slate-900/90 p-3 rounded-lg border border-slate-700 backdrop-blur-md">
+                                        <p className="text-[10px] text-slate-500 uppercase font-black tracking-tighter">Velocidad</p>
+                                        <p className="text-xl font-mono font-black text-emerald-400">{sim.v.toFixed(1)} m/s</p>
+                                    </div>
+                                    <div className={`bg-slate-900/90 p-3 rounded-lg border backdrop-blur-md text-right border-b-4 ${sim.status === 'fallen' ? 'border-b-red-500' : 'border-b-blue-500'}`}>
+                                        <p className="text-[10px] text-slate-500 uppercase font-black tracking-tighter">Fuerza Normal</p>
+                                        <p className="text-xl font-mono font-black text-blue-400">{(sim.normal).toFixed(1)} N/kg</p>
+                                    </div>
+                                </div>
+
+                                <div className="relative w-full h-[400px] flex justify-center items-end pb-8">
+                                    <svg width="400" height="300" className="overflow-visible absolute z-10">
+                                        <path d={trackPath} fill="none" stroke="#475569" strokeWidth="6" strokeLinecap="round" />
+                                        <line x1="0" y1={groundY - hCritica * scale} x2="400" y2={groundY - hCritica * scale} stroke="#f43f5e" strokeWidth="1" strokeDasharray="4 4" />
+                                        <text x="10" y={groundY - hCritica * scale - 5} fill="#fb7185" fontSize="10" fontWeight="bold">Límite (2.5R)</text>
+                                        
+                                        <circle cx={marginX + sim.x * scale} cy={groundY - sim.y * scale} r="8" fill="#f59e0b" stroke="#fef08a" strokeWidth="2" />
+                                    </svg>
+                                </div>
+
+                                {(sim.status === 'fallen' || sim.status === 'crashed') && (
+                                    <div className="absolute top-24 left-1/2 -translate-x-1/2 z-40 bg-red-600 text-white px-6 py-2 rounded-full font-black text-xs uppercase animate-bounce">
+                                        ¡Ha caído del rizo!
+                                    </div>
+                                )}
+                            </div>
+
+                            <div className="space-y-6">
+                                <div className="bg-slate-800 p-6 rounded-3xl border border-slate-700 shadow-xl">
+                                    <h3 className="text-xl font-bold mb-6 flex items-center gap-2 text-emerald-400">
+                                        <SettingsIcon size={20} /> Parámetros
+                                    </h3>
+                                    <div className="space-y-6 mb-6">
+                                        <div>
+                                            <div className="flex justify-between text-xs mb-2"><span className="text-slate-300 font-bold uppercase">Altura Inicial (h₀)</span><span className="font-mono text-white">{h0} m</span></div>
+                                            <input type="range" min="5" max="50" value={h0} onChange={e => {setH0(Number(e.target.value)); reset();}} className="w-full h-2 rounded-lg appearance-none cursor-pointer bg-slate-700 accent-emerald-500" />
+                                        </div>
+                                        <div>
+                                            <div className="flex justify-between text-xs mb-2"><span className="text-blue-400 font-bold uppercase">Radio Rizo (R)</span><span className="font-mono text-blue-300">{R} m</span></div>
+                                            <input type="range" min="2" max="15" value={R} onChange={e => {setR(Number(e.target.value)); reset();}} className="w-full h-2 rounded-lg appearance-none cursor-pointer bg-slate-700 accent-blue-500" />
+                                        </div>
+                                    </div>
+                                    <div className="flex gap-2">
+                                        <button onClick={handlePlay} disabled={sim.status === 'moving'} className="flex-1 bg-emerald-600 hover:bg-emerald-500 text-white font-black py-4 rounded-xl shadow-lg flex justify-center items-center gap-2">
+                                            <PlayIcon size={18} /> LANZAR
+                                        </button>
+                                        <button onClick={reset} className="bg-slate-700 hover:bg-slate-600 text-white font-bold px-6 rounded-xl">
+                                            <RotateCcwIcon size={18} />
+                                        </button>
+                                    </div>
+                                </div>
+
+                                <div className="bg-emerald-950/20 p-6 rounded-3xl border border-emerald-500/20 text-xs space-y-4">
+                                    <h4 className="font-bold text-emerald-300 flex items-center gap-2"><CalculatorIcon size={18} /> Resumen Matemático</h4>
+                                    <p><strong>a) Vel. en la base (A):</strong> v = √(2·g·h₀) = <strong>{vA.toFixed(2)} m/s</strong></p>
+                                    <p><strong>b) Vel. en la cima (B):</strong> v = √(2·g·(h₀ - 2R)) = <strong>{h0 > 2*R ? Math.sqrt(2*g*(h0-2*R)).toFixed(2) : 0} m/s</strong></p>
+                                    <p><strong>c) Altura Crítica:</strong> Para que N=0 en B, h₀ debe ser 2.5·R = <strong>{(2.5*R).toFixed(1)} m</strong>.</p>
+                                </div>
+                            </div>
+                        </main>
+                    </div>
+                );
+            };
+
+            const container = document.getElementById('root');
+            const root = ReactDOM.createRoot(container);
+            root.render(<App />);
+        })();
+    </script>
+</body>
+</html>

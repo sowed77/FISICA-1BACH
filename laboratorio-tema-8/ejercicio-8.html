@@ -1,0 +1,368 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Laboratorio: Trabajo de Rozamiento (Calor)</title>
+    <!-- Bibliotecas externas -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <script src="https://unpkg.com/lucide-react@latest"></script>
+
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&family=Fira+Code&display=swap');
+        body { font-family: 'Inter', sans-serif; background-color: #0f172a; }
+        .font-mono { font-family: 'Fira Code', monospace; }
+        input[type=range]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            height: 20px;
+            width: 20px;
+            border-radius: 50%;
+            background: #f97316; /* Orange 500 */
+            cursor: pointer;
+            border: 2px solid #ffffff;
+            box-shadow: 0 0 10px rgba(249, 115, 22, 0.5);
+        }
+        .floor-texture {
+            background-color: #334155;
+            background-image: repeating-linear-gradient(45deg, #1e293b 0, #1e293b 2px, transparent 2px, transparent 10px);
+        }
+        /* Rastro de calor */
+        .heat-trail {
+            background: linear-gradient(90deg, transparent, #ef4444, #f97316, #facc15);
+            opacity: 0.7;
+            filter: blur(4px);
+            animation: pulse-heat 1s infinite alternate;
+        }
+        @keyframes pulse-heat {
+            0% { opacity: 0.5; }
+            100% { opacity: 0.8; }
+        }
+    </style>
+</head>
+<body>
+    <div id="root"></div>
+
+    <script type="text/babel">
+        (() => {
+            var { useState, useEffect } = React;
+            var icons = window.LucideReact || {};
+            
+            var getIcon = (name) => icons[name] || (({className}) => <span className={className || ''}></span>);
+            var PlayIcon = getIcon('Play');
+            var RotateCcwIcon = getIcon('RotateCcw');
+            var InfoIcon = getIcon('Info');
+            var CalculatorIcon = getIcon('Calculator');
+            var FlameIcon = getIcon('Flame');
+            var ArrowLeftIcon = getIcon('ArrowLeft');
+            var ArrowDownIcon = getIcon('ArrowDown');
+            var SettingsIcon = getIcon('Settings');
+            var ImagePlusIcon = getIcon('ImagePlus');
+            var BoxIcon = getIcon('Box');
+
+            var App = () => {
+                // Parámetros fijos
+                const g = 9.8; // m/s^2
+
+                // Estados interactivos (Inicializados con el enunciado)
+                const [masa, setMasa] = useState(150); // kg
+                const [distanciaTotal, setDistanciaTotal] = useState(12.0); // m
+                const [mu, setMu] = useState(0.25); // Coeficiente rozamiento
+                const [angulo, setAngulo] = useState(0); // grados
+
+                // Animación
+                const [pos, setPos] = useState(0); // distancia actual en metros
+                const [isMoving, setIsMoving] = useState(false);
+
+                // --- CÁLCULOS FÍSICOS ---
+                const anguloRad = angulo * (Math.PI / 180);
+                const peso = masa * g;
+                
+                // Normal en un plano inclinado: N = P * cos(a)
+                const normal = peso * Math.cos(anguloRad);
+                
+                // Fricción constante
+                const fr = mu * normal;
+                
+                // Trabajo de fricción: W = Fr * d * cos(180º) = - Fr * d
+                // El calor disipado es el valor absoluto del trabajo de fricción
+                const trabajoTotal = -fr * distanciaTotal;
+                const calorTotal = Math.abs(trabajoTotal);
+                
+                // Calor instantáneo para la animación
+                const calorActual = fr * pos;
+
+                // Escala visual
+                const pxPerMeter = 20; // 12m * 20px = 240px
+
+                useEffect(() => {
+                    let interval;
+                    if (isMoving && pos < distanciaTotal) {
+                        interval = setInterval(() => {
+                            setPos(p => {
+                                const newP = p + 0.1; // Velocidad visual constante
+                                if (newP >= distanciaTotal) {
+                                    setIsMoving(false);
+                                    return distanciaTotal;
+                                }
+                                return newP;
+                            });
+                        }, 20); // 50 fps
+                    }
+                    return () => clearInterval(interval);
+                }, [isMoving, pos, distanciaTotal]);
+
+                const handlePlay = () => {
+                    if (pos < distanciaTotal && distanciaTotal > 0) setIsMoving(true);
+                };
+
+                const reset = () => {
+                    setPos(0);
+                    setIsMoving(false);
+                };
+
+                // Si se cambian las variables, reiniciar la animación
+                useEffect(() => {
+                    reset();
+                }, [masa, distanciaTotal, mu, angulo]);
+
+                // Generador de Diagrama de Cuerpo Libre
+                const [imgUrl, setImgUrl] = useState(null);
+                const [imgLoading, setImgLoading] = useState(false);
+
+                const generarDiagrama = async () => {
+                    setImgLoading(true);
+                    const apiKey = "AIzaSyDMyUo-WgmdNkCRW6-YK7h-bnRF_FLAjf0"; // API Key insertada por entorno; 
+                    try {
+                        const response = await fetch(
+                            `https://generativelanguage.googleapis.com/v1beta/models/imagen-4.0-generate-001:predict?key=${apiKey}`,
+                            {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({
+                                    instances: [{ prompt: "Diagrama técnico de física de cuerpo libre. Un bloque deslizándose por una superficie con chispas de fuego o calor debajo. Vector de desplazamiento delta x hacia la derecha. Vector Fuerza de Rozamiento Fr hacia la izquierda. Vector Normal N hacia arriba, Vector Peso P hacia abajo. Estilo educativo minimalista, fondo blanco" }],
+                                    parameters: { sampleCount: 1 }
+                                })
+                            }
+                        );
+                        if (!response.ok) throw new Error("Error en red");
+                        const data = await response.json();
+                        setImgUrl(`data:image/png;base64,${data.predictions[0].bytesBase64Encoded}`);
+                    } catch (error) {
+                        console.error(error);
+                    } finally {
+                        setImgLoading(false);
+                    }
+                };
+
+                return (
+                    <div className="min-h-screen bg-slate-900 text-slate-100 p-4 md:p-8">
+                        <header className="max-w-5xl mx-auto mb-8 border-b border-slate-700 pb-6">
+                            <div className="flex items-center gap-3 mb-2">
+                                <span className="bg-orange-600 text-white px-3 py-1 rounded-full text-xs font-black uppercase tracking-widest">Trabajo y Energía</span>
+                                <h1 className="text-3xl font-black text-orange-400 uppercase tracking-tight tracking-widest">Trabajo de Rozamiento (Calor)</h1>
+                            </div>
+                            <div className="bg-slate-800/50 p-4 rounded-xl border border-slate-700 mt-4">
+                                <p className="text-slate-300 text-sm leading-relaxed">
+                                    <strong>Enunciado:</strong> Calcula el trabajo de rozamiento desprendido en forma de calor por un objeto de masa 150 kg que desliza 12,0 m por el suelo de una nave industrial (μ = 0,25). ¿Y si el suelo estuviera inclinado exactamente 5°?
+                                </p>
+                            </div>
+                        </header>
+
+                        <main className="max-w-5xl mx-auto grid md:grid-cols-2 gap-8">
+                            {/* Panel Visual */}
+                            <div className="bg-slate-800 rounded-3xl border border-slate-700 h-[500px] relative overflow-hidden shadow-2xl flex flex-col justify-end pb-12">
+                                
+                                {/* HUD Superior */}
+                                <div className="absolute top-4 w-full px-6 flex justify-between z-30 pointer-events-none">
+                                    <div className="bg-slate-900/90 p-3 rounded-lg border border-slate-700 backdrop-blur-md">
+                                        <p className="text-[10px] text-slate-500 uppercase font-black">Distancia Arrastrada (Δx)</p>
+                                        <p className="text-xl font-mono font-black text-emerald-400">{pos.toFixed(1)} m</p>
+                                    </div>
+                                    <div className="bg-slate-900/90 p-3 rounded-lg border border-slate-700 backdrop-blur-md text-right border-b-4 border-b-orange-500 shadow-[0_0_15px_rgba(249,115,22,0.2)]">
+                                        <p className="text-[10px] text-slate-500 uppercase font-black flex items-center justify-end gap-1">
+                                            {FlameIcon && <FlameIcon size={12} className="text-orange-400" />} Calor Disipado
+                                        </p>
+                                        <p className="text-2xl font-mono font-black text-orange-400">
+                                            {calorActual.toFixed(0)} <span className="text-sm">J</span>
+                                        </p>
+                                    </div>
+                                </div>
+
+                                {/* Escena del arrastre */}
+                                <div className="relative w-full h-80 flex items-center justify-center">
+                                    <div className="absolute bottom-10 left-10 w-[400px] h-full pointer-events-none">
+                                        
+                                        {/* Plano (se inclina si el ángulo > 0) */}
+                                        <div 
+                                            className="absolute bottom-0 left-0 w-full h-full origin-bottom-left transition-transform duration-300 z-20"
+                                            style={{ transform: `rotate(${-angulo}deg)` }}
+                                        >
+                                            {/* Suelo */}
+                                            <div className="absolute bottom-0 left-0 w-[400px] h-6 floor-texture shadow-xl rounded-r-full border-t-2 border-slate-500"></div>
+
+                                            {/* Meta (Línea de detención) */}
+                                            <div className="absolute bottom-6 border-l-2 border-dashed border-emerald-500 h-16 z-10" style={{ left: `${40 + (distanciaTotal * pxPerMeter) + 60}px` }}>
+                                                <span className="text-[8px] text-emerald-300 absolute -top-4 -left-3 font-black bg-slate-900 px-1 rounded">{distanciaTotal}m</span>
+                                            </div>
+
+                                            {/* Rastro de Calor (Se dibuja detrás de la caja) */}
+                                            {pos > 0 && (
+                                                <div 
+                                                    className="absolute bottom-5 h-2 heat-trail rounded-full"
+                                                    style={{ left: '40px', width: `${pos * pxPerMeter + 20}px` }}
+                                                ></div>
+                                            )}
+
+                                            {/* La Caja / Objeto */}
+                                            <div 
+                                                className="absolute bottom-6 w-20 h-16 bg-slate-400 border-4 border-slate-300 rounded-lg flex items-center justify-center shadow-lg transition-transform z-30"
+                                                style={{ transform: `translateX(${40 + pos * pxPerMeter}px)` }}
+                                            >
+                                                <span className="font-black text-slate-800 text-xs">{masa}kg</span>
+
+                                                {/* Vector Fricción (Izquierda, opuesto al movimiento) */}
+                                                <div className="absolute top-1/2 right-full flex items-center pr-1" style={{ width: Math.max(30, fr * 0.15) }}>
+                                                    <span className="mr-1 text-[10px] font-black text-red-300 bg-slate-900/80 px-1 rounded shadow">Fr</span>
+                                                    <div className="h-1.5 bg-red-500 w-full relative shadow-[0_0_8px_rgba(239,68,68,0.8)]">
+                                                        <div className="absolute left-0 -top-1.5">{ArrowLeftIcon && <ArrowLeftIcon size={16} className="text-red-500" />}</div>
+                                                    </div>
+                                                </div>
+
+                                                {/* Vector Peso (Hacia abajo GLOBAL, contrarresta la rotación) */}
+                                                <div 
+                                                    className="absolute top-full left-1/2 -translate-x-1/2 flex flex-col items-center pt-1 opacity-70 origin-top" 
+                                                    style={{ height: 60, transform: `rotate(${angulo}deg)` }}
+                                                >
+                                                    <div className="w-1.5 bg-yellow-500 h-full relative">
+                                                        <div className="absolute bottom-0 -translate-x-[6px]">{ArrowDownIcon && <ArrowDownIcon size={16} className="text-yellow-500" />}</div>
+                                                    </div>
+                                                    <span className="mt-1 text-[10px] font-black text-yellow-400 bg-slate-900/80 px-1 rounded shadow">P</span>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        {/* Arco del Ángulo (Solo visible si angulo > 0) */}
+                                        <div className="absolute bottom-0 left-0 w-full border-b-2 border-slate-600 border-dashed"></div>
+                                        {angulo > 0 && (
+                                            <div className="absolute bottom-0 left-0 w-24 h-24 border-r-2 border-t-2 border-orange-500/50 rounded-tr-full flex items-end justify-end pb-2 pr-2">
+                                                <span className="text-orange-300 font-mono text-sm font-bold">{angulo}º</span>
+                                            </div>
+                                        )}
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* Controles y Resolución */}
+                            <div className="space-y-6">
+                                <div className="bg-slate-800 p-6 rounded-3xl border border-slate-700 shadow-xl">
+                                    <h3 className="text-xl font-bold mb-4 flex items-center gap-2 text-orange-400">
+                                        {SettingsIcon && <SettingsIcon size={20} />} Configurar Arrastre
+                                    </h3>
+                                    
+                                    <div className="grid grid-cols-2 gap-2 mb-6">
+                                        <button onClick={() => {setAngulo(0); reset();}} className={`text-xs font-bold py-3 rounded-xl border transition-all ${angulo === 0 ? 'bg-orange-600 border-orange-400 text-white' : 'bg-slate-700 border-slate-600 text-slate-300 hover:bg-slate-600'}`}>
+                                            SUELO HORIZONTAL (0º)
+                                        </button>
+                                        <button onClick={() => {setAngulo(5); reset();}} className={`text-xs font-bold py-3 rounded-xl border transition-all ${angulo === 5 ? 'bg-emerald-600 border-emerald-400 text-white' : 'bg-slate-700 border-slate-600 text-slate-300 hover:bg-slate-600'}`}>
+                                            SUELO INCLINADO (5º)
+                                        </button>
+                                    </div>
+
+                                    <div className="space-y-5 mb-6">
+                                        <div>
+                                            <div className="flex justify-between text-xs mb-1">
+                                                <span className="text-slate-300 font-bold uppercase">Masa del Objeto (m)</span>
+                                                <span className="font-mono bg-slate-900 px-2 py-0.5 rounded text-white">{masa} kg</span>
+                                            </div>
+                                            <input type="range" min="10" max="300" step="10" value={masa} onChange={e => {setMasa(Number(e.target.value)); reset();}} className="w-full h-2 bg-slate-700 rounded-lg appearance-none cursor-pointer accent-slate-400" />
+                                        </div>
+
+                                        <div className="grid grid-cols-2 gap-4">
+                                            <div>
+                                                <div className="flex justify-between text-[10px] mb-1"><span className="text-red-400 font-bold uppercase">Rozamiento (μ)</span><span className="font-mono text-white">{mu.toFixed(2)}</span></div>
+                                                <input type="range" min="0" max="0.8" step="0.05" value={mu} onChange={e => {setMu(Number(e.target.value)); reset();}} className="w-full h-1.5 bg-slate-700 rounded-lg appearance-none cursor-pointer accent-red-500" />
+                                            </div>
+                                            <div>
+                                                <div className="flex justify-between text-[10px] mb-1"><span className="text-emerald-400 font-bold uppercase">Distancia (d)</span><span className="font-mono text-white">{distanciaTotal.toFixed(1)} m</span></div>
+                                                <input type="range" min="1" max="25" step="0.5" value={distanciaTotal} onChange={e => {setDistanciaTotal(Number(e.target.value)); reset();}} className="w-full h-1.5 bg-slate-700 rounded-lg appearance-none cursor-pointer accent-emerald-500" />
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div className="flex gap-2">
+                                        <button 
+                                            onClick={handlePlay} 
+                                            disabled={isMoving || pos >= distanciaTotal}
+                                            className={`flex-1 font-black py-3 rounded-xl shadow-lg flex justify-center items-center gap-2 disabled:opacity-50 transition-all active:scale-95 bg-orange-600 hover:bg-orange-500 text-white`}
+                                        >
+                                            {PlayIcon && <PlayIcon size={18} />} ARRASTRAR CAJA
+                                        </button>
+                                        <button onClick={reset} className="bg-slate-700 hover:bg-slate-600 text-white font-bold px-4 rounded-xl transition-all shadow-md">
+                                            {RotateCcwIcon && <RotateCcwIcon size={18} />}
+                                        </button>
+                                    </div>
+                                </div>
+
+                                <div className="bg-orange-950/20 p-6 rounded-3xl border border-orange-500/20">
+                                    <div className="flex justify-between items-center mb-4 border-b border-orange-500/30 pb-2">
+                                        <h4 className="font-bold text-orange-300 flex items-center gap-2">
+                                            {CalculatorIcon && <CalculatorIcon size={18} />} Resolución Paso a Paso
+                                        </h4>
+                                        <button onClick={generarDiagrama} className="text-[10px] uppercase font-bold bg-slate-800 hover:bg-slate-700 text-slate-300 px-3 py-1.5 rounded flex items-center gap-1 border border-slate-600">
+                                            {imgLoading ? <span className="animate-pulse">Cargando...</span> : <>{ImagePlusIcon && <ImagePlusIcon size={14}/>} Generar DCL</>}
+                                        </button>
+                                    </div>
+
+                                    {imgUrl && (
+                                        <div className="mb-4 bg-slate-900 p-2 rounded-xl border border-slate-700 text-center">
+                                            <img src={imgUrl} alt="Diagrama de Cuerpo Libre" className="mx-auto max-h-40 rounded-lg" />
+                                        </div>
+                                    )}
+
+                                    <div className="text-[11px] text-slate-300 space-y-3 leading-relaxed">
+                                        <p><strong>1. Calcular la Fuerza Normal (N):</strong><br/>
+                                        La fuerza de rozamiento depende del aplastamiento (Normal). En un plano inclinado, la Normal disminuye porque es la componente Y del Peso.</p>
+                                        <div className="bg-slate-900/80 p-2 rounded-lg border-l-4 border-blue-500 font-mono text-blue-200">
+                                            N = P_y = m · g · cos(α)<br/>
+                                            N = {masa} · 9.8 · cos({angulo}º)<br/>
+                                            <strong>N = {normal.toFixed(1)} N</strong>
+                                        </div>
+
+                                        <p className="mt-2"><strong>2. Fuerza de Rozamiento (F_r):</strong></p>
+                                        <div className="bg-slate-900/80 p-2 rounded-lg border-l-4 border-red-500 font-mono text-red-200">
+                                            F_r = μ · N = {mu} · {normal.toFixed(1)} = <strong>{fr.toFixed(1)} N</strong>
+                                        </div>
+
+                                        <p className="mt-2"><strong>3. Trabajo y Calor Desprendido:</strong><br/>
+                                        El trabajo de la fuerza de rozamiento es el producto de la fuerza por el desplazamiento. Como la fricción se opone al movimiento, el ángulo entre Fuerza y Desplazamiento es de 180º.</p>
+                                        <div className="bg-slate-900/80 p-3 rounded-lg border-l-4 border-orange-500 font-mono text-orange-200 shadow-inner">
+                                            W_fr = F_r · d · cos(180º)<br/>
+                                            W_fr = {fr.toFixed(1)} · {distanciaTotal} · (-1)<br/>
+                                            <strong>W_fr = {trabajoTotal.toFixed(1)} J</strong>
+                                        </div>
+                                        <p className="text-[10px] text-slate-400 italic text-center mt-2">
+                                            El signo negativo indica que el bloque pierde energía. Esta energía "perdida" es exactamente el <strong>calor disipado ({calorTotal.toFixed(1)} J)</strong> que calienta el suelo y la caja.
+                                        </p>
+                                    </div>
+                                </div>
+                            </div>
+                        </main>
+
+                        <footer className="max-w-5xl mx-auto mt-12 pt-6 border-t border-slate-800 text-center text-slate-500 text-[10px] font-bold uppercase tracking-widest">
+                            Profe Física | Trabajo, Energía y Fuerzas no Conservativas
+                        </footer>
+                    </div>
+                );
+            };
+
+            const container = document.getElementById('root');
+            const root = ReactDOM.createRoot(container);
+            root.render(<App />);
+        })();
+    </script>
+</body>
+</html>

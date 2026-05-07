@@ -1,0 +1,408 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Laboratorio: Trabajo, Potencia y Rendimiento</title>
+    <!-- Bibliotecas externas -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <script src="https://unpkg.com/lucide-react@latest"></script>
+
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&family=Fira+Code&display=swap');
+        body { font-family: 'Inter', sans-serif; background-color: #0f172a; }
+        .font-mono { font-family: 'Fira Code', monospace; }
+        input[type=range]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            height: 24px;
+            width: 24px;
+            border-radius: 50%;
+            background: #10b981; /* Emerald 500 */
+            cursor: pointer;
+            border: 3px solid #ffffff;
+            box-shadow: 0 0 10px rgba(16, 185, 129, 0.5);
+        }
+        .cable-texture {
+            background-image: repeating-linear-gradient(45deg, #64748b 0, #64748b 2px, #94a3b8 2px, #94a3b8 4px);
+        }
+        .wall-texture {
+            background-color: #1e293b;
+            background-image: linear-gradient(90deg, transparent 50%, rgba(255,255,255,.05) 50%);
+            background-size: 20px 20px;
+        }
+        /* Rotación del motor */
+        @keyframes spin-motor {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+        .motor-spin {
+            animation: spin-motor 1s linear infinite;
+        }
+    </style>
+</head>
+<body>
+    <div id="root"></div>
+
+    <script type="text/babel">
+        (() => {
+            var { useState, useEffect } = React;
+            var icons = window.LucideReact || {};
+            
+            // Asignación segura de iconos
+            var getIcon = (name) => icons[name] || (({className}) => <span className={className || ''}></span>);
+            var PlayIcon = getIcon('Play');
+            var RotateCcwIcon = getIcon('RotateCcw');
+            var CalculatorIcon = getIcon('Calculator');
+            var SettingsIcon = getIcon('Settings');
+            var InfoIcon = getIcon('Info');
+            var ZapIcon = getIcon('Zap');
+            var ArrowUpIcon = getIcon('ArrowUp');
+            var ArrowDownIcon = getIcon('ArrowDown');
+            var BatteryChargingIcon = getIcon('BatteryCharging');
+            var ImagePlusIcon = getIcon('ImagePlus');
+            var FlameIcon = getIcon('Flame');
+            var PowerIcon = getIcon('Power');
+
+            var App = () => {
+                const g = 9.8; // m/s^2
+                const w_per_cv = 735.5; // Watts por cada Caballo de Vapor
+
+                // Estados interactivos (Inicializados con el enunciado)
+                const [potenciaCV, setPotenciaCV] = useState(18); // CV
+                const [masa, setMasa] = useState(500); // kg
+                const [altura, setAltura] = useState(50); // m
+                const [tiempo, setTiempo] = useState(25); // s
+
+                // Animación
+                const [currentTime, setCurrentTime] = useState(0); 
+                const [isMoving, setIsMoving] = useState(false);
+
+                // --- CÁLCULOS FÍSICOS ---
+                
+                // 1. Trabajo Realizado (Energía necesaria para subir la carga)
+                // W = F * d = Peso * altura = m * g * h
+                const peso = masa * g; // N
+                const trabajo = peso * altura; // Julios (J)
+                
+                // 2. Potencia Útil (La que realmente se invirtió en levantar la carga)
+                // Pu = W / t
+                const potenciaUtil = trabajo / tiempo; // Vatios (W)
+
+                // 3. Potencia Consumida Teórica (La que gasta el motor de la red eléctrica o combustible)
+                const potenciaConsumida = potenciaCV * w_per_cv; // Vatios (W)
+
+                // 4. Rendimiento (n)
+                const rendimiento = (potenciaUtil / potenciaConsumida) * 100; // Porcentaje %
+
+                // Energía perdida en calor/fricción
+                const potenciaPerdida = potenciaConsumida - potenciaUtil;
+
+                // Restricciones físicas: El rendimiento no puede ser > 100%
+                const isValid = rendimiento <= 100 && rendimiento >= 0;
+
+                useEffect(() => {
+                    let interval;
+                    if (isMoving && currentTime < tiempo) {
+                        interval = setInterval(() => {
+                            setCurrentTime(prev => {
+                                // Aceleramos el tiempo visual (x5) para no aburrirnos 25s
+                                const timeScale = 5; 
+                                const nextTime = prev + (0.05 * timeScale);
+                                if (nextTime >= tiempo) {
+                                    setIsMoving(false);
+                                    return tiempo;
+                                }
+                                return nextTime;
+                            });
+                        }, 50); // 20 FPS
+                    }
+                    return () => clearInterval(interval);
+                }, [isMoving, currentTime, tiempo]);
+
+                const handlePlay = () => {
+                    if (currentTime < tiempo && isValid) setIsMoving(true);
+                };
+
+                const reset = () => {
+                    setCurrentTime(0);
+                    setIsMoving(false);
+                };
+
+                // Forzar reset si se cambian los parámetros
+                useEffect(() => {
+                    reset();
+                }, [potenciaCV, masa, altura, tiempo]);
+
+                // Cinemática instantánea
+                const progress = tiempo > 0 ? Math.min(1, currentTime / tiempo) : 0;
+                const currentHeight = progress * altura;
+                const visualPos = progress * 250; // px (Altura visual max)
+
+                // Generador de Diagrama DCL con IA
+                const [imgUrl, setImgUrl] = useState(null);
+                const [imgLoading, setImgLoading] = useState(false);
+
+                const generarDiagrama = async () => {
+                    setImgLoading(true);
+                    const apiKey = "AIzaSyDMyUo-WgmdNkCRW6-YK7h-bnRF_FLAjf0"; // API Key insertada por entorno; 
+                    try {
+                        const response = await fetch(
+                            `https://generativelanguage.googleapis.com/v1beta/models/imagen-4.0-generate-001:predict?key=${apiKey}`,
+                            {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({
+                                    instances: [{ prompt: "Diagrama técnico de física y termodinámica. Un esquema de bloque (diagrama de Sankey). Una flecha gorda de energía entra en una máquina, se divide en dos: una flecha útil sale hacia adelante (Trabajo W) y una flecha roja sale hacia arriba disipándose (Calor Q por fricción). Rendimiento indicado. Estilo educativo minimalista, fondo blanco" }],
+                                    parameters: { sampleCount: 1 }
+                                })
+                            }
+                        );
+                        if (!response.ok) throw new Error("Error en red");
+                        const data = await response.json();
+                        setImgUrl(`data:image/png;base64,${data.predictions[0].bytesBase64Encoded}`);
+                    } catch (error) {
+                        console.error(error);
+                    } finally {
+                        setImgLoading(false);
+                    }
+                };
+
+                return (
+                    <div className="min-h-screen bg-slate-900 text-slate-100 p-4 md:p-8">
+                        <header className="max-w-5xl mx-auto mb-8 border-b border-slate-700 pb-6">
+                            <div className="flex items-center gap-3 mb-2">
+                                <span className="bg-emerald-600 text-white px-3 py-1 rounded-full text-xs font-black uppercase tracking-widest">Energía y Máquinas</span>
+                                <h1 className="text-3xl font-black text-emerald-400 uppercase tracking-tight tracking-widest">Rendimiento Mecánico</h1>
+                            </div>
+                            <div className="bg-slate-800/50 p-4 rounded-xl border border-slate-700 mt-4">
+                                <p className="text-slate-300 text-sm leading-relaxed">
+                                    <strong>Enunciado:</strong> Un motor de 18 CV eleva un montacargas de 500 kg a 50 m de altura en 25 s. Calcula el trabajo realizado, la potencia útil y el rendimiento.
+                                </p>
+                            </div>
+                        </header>
+
+                        <main className="max-w-5xl mx-auto grid md:grid-cols-2 gap-8">
+                            {/* Panel Visual */}
+                            <div className="bg-slate-800 rounded-3xl border border-slate-700 h-[550px] relative overflow-hidden shadow-2xl flex flex-col items-center">
+                                
+                                {/* Marcadores Flotantes (HUD) */}
+                                <div className="absolute top-4 w-full px-6 flex justify-between z-30 pointer-events-none">
+                                    <div className="bg-slate-900/90 p-3 rounded-lg border border-slate-700 backdrop-blur-md">
+                                        <p className="text-[10px] text-slate-500 uppercase font-black mb-1">Trabajo Efectuado (W)</p>
+                                        <p className="text-xl font-mono font-black text-emerald-400">
+                                            {(trabajo / 1000).toFixed(1)} kJ
+                                        </p>
+                                    </div>
+                                    <div className={`bg-slate-900/90 p-3 rounded-lg border backdrop-blur-md text-right border-b-4 ${!isValid ? 'border-b-red-500' : rendimiento > 80 ? 'border-b-green-500' : 'border-b-yellow-500'}`}>
+                                        <p className="text-[10px] text-slate-500 uppercase font-black">Rendimiento (η)</p>
+                                        <p className={`text-2xl font-mono font-black ${!isValid ? 'text-red-400' : rendimiento > 80 ? 'text-green-400' : 'text-yellow-400'}`}>
+                                            {isValid ? `${rendimiento.toFixed(1)} %` : 'IMPOSIBLE (>100%)'}
+                                        </p>
+                                    </div>
+                                </div>
+
+                                {/* Escena del Montacargas */}
+                                <div className="relative w-full h-[450px] mt-20 flex justify-center">
+                                    
+                                    {/* Muro lateral y regla */}
+                                    <div className="absolute left-10 bottom-0 h-full border-r-2 border-dashed border-slate-600 flex flex-col justify-between items-end pr-2 pb-6">
+                                        <span className="text-[10px] text-slate-400 font-bold font-mono">{altura} m</span>
+                                        {/* Marca móvil de la altura */}
+                                        <div className="absolute w-4 border-b-2 border-emerald-500 transition-all" style={{ bottom: `${visualPos + 24}px`, right: '-1px' }}></div>
+                                        <span className="text-[10px] text-slate-400 font-bold font-mono">0 m</span>
+                                    </div>
+
+                                    {/* Hueco del ascensor */}
+                                    <div className="w-48 h-full wall-texture border-x-4 border-slate-600 relative flex flex-col items-center">
+                                        
+                                        {/* Motor (Arriba) */}
+                                        <div className="absolute top-0 w-full h-16 bg-slate-900 border-b-4 border-slate-700 flex justify-center items-center z-30 shadow-lg">
+                                            
+                                            {/* Rueda del motor girando */}
+                                            <div className="relative w-10 h-10 bg-slate-700 rounded-full border-4 border-slate-500 flex items-center justify-center overflow-hidden">
+                                                <div className={`w-full h-1 bg-slate-400 ${isMoving ? 'motor-spin' : ''}`}></div>
+                                                <div className={`w-1 h-full bg-slate-400 absolute ${isMoving ? 'motor-spin' : ''}`}></div>
+                                            </div>
+                                            
+                                            {/* Etiqueta motor */}
+                                            <div className="absolute -left-20 bg-slate-800 p-2 rounded border border-slate-600 shadow-md">
+                                                <p className="text-[8px] text-slate-400 font-black uppercase">Consumo (P_c)</p>
+                                                <p className="text-xs font-mono font-bold text-orange-400 flex items-center gap-1"><ZapIcon size={12}/> {(potenciaConsumida/1000).toFixed(1)} kW</p>
+                                            </div>
+
+                                            {/* Animación de calor disipado */}
+                                            {isMoving && (
+                                                <div className="absolute -right-8 -top-4 text-red-500 animate-pulse flex flex-col items-center">
+                                                    <FlameIcon size={20} />
+                                                    <span className="text-[8px] font-black">Pérdida</span>
+                                                </div>
+                                            )}
+                                        </div>
+
+                                        {/* Cable */}
+                                        <div 
+                                            className="absolute top-16 w-1.5 cable-texture z-10 transition-all"
+                                            style={{ bottom: `${visualPos + 20}px` }}
+                                        ></div>
+
+                                        {/* Cabina del Montacargas */}
+                                        <div 
+                                            className="absolute w-24 h-20 bg-emerald-700 border-4 border-emerald-500 rounded-b-xl shadow-xl flex items-center justify-center z-20 transition-transform"
+                                            style={{ bottom: `${20 + visualPos}px` }}
+                                        >
+                                            <div className="absolute -top-4 w-4 h-4 bg-slate-500 rounded-t-sm"></div>
+                                            <span className="font-black text-emerald-100 text-sm">{masa} kg</span>
+                                        </div>
+
+                                        {/* Base */}
+                                        <div className="absolute bottom-0 w-full h-5 bg-slate-800 border-t-2 border-slate-600 z-10"></div>
+                                    </div>
+                                </div>
+                                
+                                {/* HUD Inferior (Cronómetro) */}
+                                <div className="absolute bottom-6 w-full flex justify-center z-30">
+                                    <div className="bg-slate-900/90 px-6 py-2 rounded-full border border-slate-700 shadow-lg flex items-center gap-4">
+                                        <span className="text-[10px] text-slate-500 uppercase font-black">Tiempo Actual</span>
+                                        <span className="font-mono font-black text-white text-lg">{currentTime.toFixed(1)} s</span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* Controles y Resolución */}
+                            <div className="space-y-6">
+                                <div className="bg-slate-800 p-6 rounded-3xl border border-slate-700 shadow-xl">
+                                    <h3 className="text-xl font-bold mb-4 flex items-center gap-2 text-emerald-400">
+                                        {SettingsIcon && <SettingsIcon size={20} />} Datos de la Máquina
+                                    </h3>
+                                    
+                                    <div className="space-y-5 mb-6">
+                                        <div className="grid grid-cols-2 gap-4">
+                                            {/* Potencia CV */}
+                                            <div className="bg-orange-900/20 p-3 rounded-xl border border-orange-500/20">
+                                                <div className="flex justify-between text-[10px] mb-1">
+                                                    <span className="text-orange-400 font-bold uppercase">Motor (P_c)</span>
+                                                    <span className="font-mono text-white">{potenciaCV} CV</span>
+                                                </div>
+                                                <input type="range" min="1" max="50" step="1" value={potenciaCV} onChange={e => setPotenciaCV(Number(e.target.value))} className="w-full h-1.5 bg-slate-700 rounded-lg appearance-none cursor-pointer accent-orange-500" />
+                                            </div>
+                                            
+                                            {/* Masa */}
+                                            <div className="bg-emerald-900/20 p-3 rounded-xl border border-emerald-500/20">
+                                                <div className="flex justify-between text-[10px] mb-1">
+                                                    <span className="text-emerald-400 font-bold uppercase">Carga (m)</span>
+                                                    <span className="font-mono text-white">{masa} kg</span>
+                                                </div>
+                                                <input type="range" min="100" max="2000" step="50" value={masa} onChange={e => setMasa(Number(e.target.value))} className="w-full h-1.5 bg-slate-700 rounded-lg appearance-none cursor-pointer accent-emerald-500" />
+                                            </div>
+                                        </div>
+
+                                        <div className="grid grid-cols-2 gap-4">
+                                            {/* Altura */}
+                                            <div>
+                                                <div className="flex justify-between text-[10px] mb-1">
+                                                    <span className="text-blue-400 font-bold uppercase">Altura (h)</span>
+                                                    <span className="font-mono text-white">{altura} m</span>
+                                                </div>
+                                                <input type="range" min="5" max="100" step="5" value={altura} onChange={e => setAltura(Number(e.target.value))} className="w-full h-1.5 bg-slate-700 rounded-lg appearance-none cursor-pointer accent-blue-500" />
+                                            </div>
+                                            
+                                            {/* Tiempo */}
+                                            <div>
+                                                <div className="flex justify-between text-[10px] mb-1">
+                                                    <span className="text-purple-400 font-bold uppercase">Tiempo (t)</span>
+                                                    <span className="font-mono text-white">{tiempo} s</span>
+                                                </div>
+                                                <input type="range" min="5" max="120" step="5" value={tiempo} onChange={e => setTiempo(Number(e.target.value))} className="w-full h-1.5 bg-slate-700 rounded-lg appearance-none cursor-pointer accent-purple-500" />
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    {!isValid && (
+                                        <div className="mb-4 bg-red-900/50 p-3 rounded-lg border border-red-500/50 flex items-start gap-3">
+                                            <AlertTriangleIcon className="text-red-400 shrink-0" size={20} />
+                                            <p className="text-xs text-red-200"><strong>¡Imposible físicamente!</strong> Con estos datos, la máquina tendría un rendimiento superior al 100%. Un motor de {potenciaCV} CV no puede hacer ese trabajo en tan poco tiempo.</p>
+                                        </div>
+                                    )}
+
+                                    <div className="flex gap-2">
+                                        <button 
+                                            onClick={handlePlay} 
+                                            disabled={isMoving || currentTime >= tiempo || !isValid}
+                                            className={`flex-1 font-black py-3 rounded-xl shadow-lg flex justify-center items-center gap-2 disabled:opacity-50 transition-all active:scale-95 ${!isValid ? 'bg-slate-600 text-slate-400' : 'bg-emerald-600 hover:bg-emerald-500 text-white'}`}
+                                        >
+                                            {PlayIcon && <PlayIcon size={18} />} {!isValid ? 'FALTA POTENCIA' : currentTime >= tiempo ? 'CARGA ELEVADA' : 'INICIAR MOTOR'}
+                                        </button>
+                                        <button onClick={reset} className="bg-slate-700 hover:bg-slate-600 text-white font-bold px-4 rounded-xl transition-all shadow-md">
+                                            {RotateCcwIcon && <RotateCcwIcon size={18} />}
+                                        </button>
+                                    </div>
+                                </div>
+
+                                <div className="bg-emerald-950/20 p-6 rounded-3xl border border-emerald-500/20">
+                                    <div className="flex justify-between items-center mb-4 border-b border-emerald-500/30 pb-2">
+                                        <h4 className="font-bold text-emerald-300 flex items-center gap-2">
+                                            {CalculatorIcon && <CalculatorIcon size={18} />} Resolución Paso a Paso
+                                        </h4>
+                                        <button onClick={generarDiagrama} className="text-[10px] uppercase font-bold bg-slate-800 hover:bg-slate-700 text-slate-300 px-3 py-1.5 rounded flex items-center gap-1 border border-slate-600">
+                                            {imgLoading ? <span className="animate-pulse">Cargando...</span> : <>{ImagePlusIcon && <ImagePlusIcon size={14}/>} Ver Diagrama</>}
+                                        </button>
+                                    </div>
+
+                                    {imgUrl && (
+                                        <div className="mb-4 bg-slate-900 p-2 rounded-xl border border-slate-700 text-center">
+                                            <img src={imgUrl} alt="Diagrama de Energía" className="mx-auto max-h-40 rounded-lg" />
+                                        </div>
+                                    )}
+
+                                    <div className="text-xs text-slate-300 space-y-3 leading-relaxed">
+                                        <p><strong>1. Potencia Consumida (P_c):</strong><br/>
+                                        Convertimos los Caballos de Vapor (CV) a Vatios (W). Sabemos que 1 CV = 735,5 W.</p>
+                                        <div className="bg-slate-900/80 p-2 rounded-lg border-l-4 border-orange-500 font-mono text-orange-200">
+                                            P_c = {potenciaCV} · 735.5 = <strong>{potenciaConsumida.toFixed(1)} W</strong>
+                                        </div>
+                                        
+                                        <p className="mt-2"><strong>2. Trabajo Realizado (W):</strong><br/>
+                                        El trabajo para subir un objeto es vencer su Peso a lo largo de una altura (ΔE_p = m·g·h).</p>
+                                        <div className="bg-slate-900/80 p-2 rounded-lg border-l-4 border-blue-500 font-mono text-blue-200">
+                                            W = m · g · h = {masa} · 9.8 · {altura}<br/>
+                                            W = <strong>{trabajo.toLocaleString()} Julios (J)</strong>
+                                        </div>
+
+                                        <p className="mt-2"><strong>3. Potencia Útil (P_u):</strong><br/>
+                                        La potencia que de verdad ha servido para mover la carga (P = W / t).</p>
+                                        <div className="bg-slate-900/80 p-2 rounded-lg border-l-4 border-sky-500 font-mono text-sky-200">
+                                            P_u = {trabajo.toLocaleString()} / {tiempo}<br/>
+                                            P_u = <strong>{potenciaUtil.toFixed(1)} W</strong>
+                                        </div>
+
+                                        <p className="mt-2"><strong>4. Rendimiento (η):</strong><br/>
+                                        El porcentaje de energía aprovechada respecto a la gastada total.</p>
+                                        <div className="bg-slate-900/80 p-3 rounded-lg border-l-4 border-emerald-500 font-mono text-emerald-300 shadow-inner">
+                                            η (%) = (P_u / P_c) · 100<br/>
+                                            η = ({potenciaUtil.toFixed(1)} / {potenciaConsumida.toFixed(1)}) · 100<br/>
+                                            <strong>η = {rendimiento.toFixed(2)} %</strong>
+                                        </div>
+                                        <p className="text-[10px] text-slate-400 italic text-center mt-1">El resto ({100 - rendimiento.toFixed(2)}%) se pierde calentando el motor o por fricciones mecánicas.</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </main>
+
+                        <footer className="max-w-5xl mx-auto mt-12 pt-6 border-t border-slate-800 text-center text-slate-500 text-[10px] font-bold uppercase tracking-widest">
+                            Profe Física | Trabajo, Energía y Termodinámica de Máquinas
+                        </footer>
+                    </div>
+                );
+            };
+
+            const container = document.getElementById('root');
+            const root = ReactDOM.createRoot(container);
+            root.render(<App />);
+        })();
+    </script>
+</body>
+</html>

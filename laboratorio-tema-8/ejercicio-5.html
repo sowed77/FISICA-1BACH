@@ -1,0 +1,379 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Laboratorio: Trabajo de Elevación</title>
+    <!-- Bibliotecas externas -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <script src="https://unpkg.com/lucide-react@latest"></script>
+
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&family=Fira+Code&display=swap');
+        body { font-family: 'Inter', sans-serif; background-color: #0f172a; }
+        .font-mono { font-family: 'Fira Code', monospace; }
+        input[type=range]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            height: 20px;
+            width: 20px;
+            border-radius: 50%;
+            background: #10b981; /* Emerald 500 */
+            cursor: pointer;
+            border: 2px solid #ffffff;
+            box-shadow: 0 0 10px rgba(16, 185, 129, 0.5);
+        }
+        .sky-bg {
+            background-color: #0ea5e9;
+            background-image: linear-gradient(to bottom, #0284c7, #7dd3fc);
+        }
+        .building-pattern {
+            background-color: #334155;
+            background-image: 
+                repeating-linear-gradient(0deg, transparent, transparent 18px, #1e293b 18px, #1e293b 20px),
+                repeating-linear-gradient(90deg, transparent, transparent 18px, #1e293b 18px, #1e293b 20px);
+        }
+    </style>
+</head>
+<body>
+    <div id="root"></div>
+
+    <script type="text/babel">
+        (() => {
+            var { useState, useEffect } = React;
+            var icons = window.LucideReact || {};
+            
+            var getIcon = (name) => icons[name] || (({className}) => <span className={className || ''}></span>);
+            var PlayIcon = getIcon('Play');
+            var RotateCcwIcon = getIcon('RotateCcw');
+            var CalculatorIcon = getIcon('Calculator');
+            var SettingsIcon = getIcon('Settings');
+            var InfoIcon = getIcon('Info');
+            var ArrowUpIcon = getIcon('ArrowUp');
+            var ArrowDownIcon = getIcon('ArrowDown');
+            var BatteryChargingIcon = getIcon('BatteryCharging');
+            var BoxIcon = getIcon('Box');
+            var ImagePlusIcon = getIcon('ImagePlus');
+
+            var App = () => {
+                const g = 9.8; // m/s^2
+
+                // Estados interactivos
+                const [masa, setMasa] = useState(20.0); // kg
+                const [h0, setH0] = useState(10.0); // m
+                const [hf, setHf] = useState(25.0); // m
+
+                // Asegurar que hf siempre sea >= h0 al mover los sliders
+                useEffect(() => {
+                    if (hf < h0) setHf(h0);
+                }, [h0]);
+                useEffect(() => {
+                    if (h0 > hf) setH0(hf);
+                }, [hf]);
+
+                // Animación
+                const [currentH, setCurrentH] = useState(h0); // Altura actual en metros
+                const [isLifting, setIsLifting] = useState(false);
+
+                // Cálculos Físicos
+                const desplazamiento = hf - h0; // m
+                const peso = masa * g; // N
+                const fuerza = peso; // N (Fuerza necesaria para subir a vel. constante)
+                
+                // Trabajo Total a realizar
+                const trabajoTotal = fuerza * desplazamiento; // J
+                
+                // Trabajo realizado en tiempo real
+                const trabajoActual = fuerza * (currentH - h0); // J
+
+                useEffect(() => {
+                    let interval;
+                    if (isLifting && currentH < hf) {
+                        interval = setInterval(() => {
+                            setCurrentH(prev => {
+                                const nextH = prev + 0.15; // Velocidad de subida
+                                if (nextH >= hf) {
+                                    setIsLifting(false);
+                                    return hf;
+                                }
+                                return nextH;
+                            });
+                        }, 20); // 50 fps
+                    }
+                    return () => clearInterval(interval);
+                }, [isLifting, currentH, hf]);
+
+                const handlePlay = () => {
+                    if (currentH < hf) setIsLifting(true);
+                };
+
+                const reset = () => {
+                    setCurrentH(h0);
+                    setIsLifting(false);
+                };
+
+                // Si cambiamos parámetros base, reiniciamos el experimento
+                useEffect(() => {
+                    reset();
+                }, [masa, h0, hf]);
+
+                // Escala visual: Mapeamos de 0 a 40 metros en un alto de 320 píxeles
+                const maxVisualH = 40; 
+                const pxPerMeter = 320 / maxVisualH; // 8 px por metro
+                const bottomVisual = currentH * pxPerMeter;
+
+                // Generador de Diagrama de Cuerpo Libre
+                const [imgUrl, setImgUrl] = useState(null);
+                const [imgLoading, setImgLoading] = useState(false);
+
+                const generarDiagrama = async () => {
+                    setImgLoading(true);
+                    const apiKey = "AIzaSyDMyUo-WgmdNkCRW6-YK7h-bnRF_FLAjf0"; // API Key insertada por entorno; 
+                    try {
+                        const response = await fetch(
+                            `https://generativelanguage.googleapis.com/v1beta/models/imagen-4.0-generate-001:predict?key=${apiKey}`,
+                            {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({
+                                    instances: [{ prompt: "Diagrama técnico de física de cuerpo libre. Un bloque elevándose. Vector Fuerza F apuntando verticalmente hacia arriba. Vector Peso P apuntando verticalmente hacia abajo. Ambos vectores son de igual tamaño. Cota lateral indicando desplazamiento delta h hacia arriba. Fondo blanco, estilo educativo minimalista" }],
+                                    parameters: { sampleCount: 1 }
+                                })
+                            }
+                        );
+                        if (!response.ok) throw new Error("Error en red");
+                        const data = await response.json();
+                        setImgUrl(`data:image/png;base64,${data.predictions[0].bytesBase64Encoded}`);
+                    } catch (error) {
+                        console.error(error);
+                    } finally {
+                        setImgLoading(false);
+                    }
+                };
+
+                return (
+                    <div className="min-h-screen bg-slate-900 text-slate-100 p-4 md:p-8">
+                        <header className="max-w-5xl mx-auto mb-8 border-b border-slate-700 pb-6">
+                            <div className="flex items-center gap-3 mb-2">
+                                <span className="bg-emerald-600 text-white px-3 py-1 rounded-full text-xs font-black uppercase tracking-widest">Trabajo y Energía</span>
+                                <h1 className="text-3xl font-black text-emerald-400 uppercase tracking-tight tracking-widest">Elevación Vertical</h1>
+                            </div>
+                            <div className="bg-slate-800/50 p-4 rounded-xl border border-slate-700 mt-4">
+                                <p className="text-slate-300 text-sm leading-relaxed">
+                                    <strong>Enunciado:</strong> ¿Qué trabajo hay que hacer para elevar un cuerpo de 20,0 kg desde una altura de 10,0 m sobre el suelo hasta una altura de 25,0 m? ¿Qué fuerza hay que ejercer?
+                                </p>
+                            </div>
+                        </header>
+
+                        <main className="max-w-5xl mx-auto grid md:grid-cols-2 gap-8">
+                            {/* Panel Visual */}
+                            <div className="bg-slate-800 rounded-3xl border border-slate-700 h-[500px] relative overflow-hidden shadow-2xl flex flex-col justify-end">
+                                
+                                {/* HUD de Datos en Vivo */}
+                                <div className="absolute top-4 w-full px-6 flex justify-between z-30 pointer-events-none">
+                                    <div className="bg-slate-900/90 p-3 rounded-lg border border-slate-700 backdrop-blur-md">
+                                        <p className="text-[10px] text-slate-500 uppercase font-black">Fuerza Ejercida (F)</p>
+                                        <p className="text-xl font-mono font-black text-emerald-400">{fuerza.toFixed(1)} N</p>
+                                    </div>
+                                    <div className="bg-slate-900/90 p-3 rounded-lg border border-slate-700 backdrop-blur-md text-right border-b-4 border-b-emerald-500 shadow-[0_0_15px_rgba(16,185,129,0.2)]">
+                                        <p className="text-[10px] text-slate-500 uppercase font-black flex items-center justify-end gap-1">
+                                            {BatteryChargingIcon && <BatteryChargingIcon size={12} className={trabajoActual > 0 ? "text-emerald-400" : "text-slate-500"} />} Trabajo Mecánico (W)
+                                        </p>
+                                        <p className={`text-2xl font-mono font-black ${trabajoActual > 0 ? 'text-emerald-400' : 'text-slate-400'}`}>
+                                            {trabajoActual.toFixed(0)} <span className="text-sm">J</span>
+                                        </p>
+                                    </div>
+                                </div>
+
+                                {/* Escenario */}
+                                <div className="relative w-full h-[400px] sky-bg border-b-8 border-slate-600 flex justify-center items-end">
+                                    
+                                    {/* Grúa / Edificio de fondo */}
+                                    <div className="absolute left-10 bottom-0 w-32 h-full building-pattern border-x-4 border-slate-500 opacity-80 z-0"></div>
+
+                                    {/* Regla de alturas */}
+                                    <div className="absolute left-44 bottom-0 h-full border-l-2 border-slate-700/50 flex flex-col items-start pt-2">
+                                        <div className="w-4 border-b-2 border-slate-700/50 mb-auto relative"><span className="absolute left-6 -top-2 text-[10px] font-mono font-bold text-slate-600">40m</span></div>
+                                        <div className="w-4 border-b-2 border-slate-700/50 mb-auto relative"><span className="absolute left-6 -top-2 text-[10px] font-mono font-bold text-slate-600">30m</span></div>
+                                        <div className="w-4 border-b-2 border-slate-700/50 mb-auto relative"><span className="absolute left-6 -top-2 text-[10px] font-mono font-bold text-slate-600">20m</span></div>
+                                        <div className="w-4 border-b-2 border-slate-700/50 mb-auto relative"><span className="absolute left-6 -top-2 text-[10px] font-mono font-bold text-slate-600">10m</span></div>
+                                    </div>
+
+                                    {/* Cable de la grúa */}
+                                    <div 
+                                        className="absolute bg-slate-400 w-1 z-10 transition-all"
+                                        style={{ top: 0, bottom: `${bottomVisual + 40}px`, left: '60%' }} 
+                                    ></div>
+
+                                    {/* Zonas de Inicio y Fin marcadas */}
+                                    <div className="absolute w-full border-t border-dashed border-red-400/50 z-10" style={{ bottom: `${h0 * pxPerMeter}px` }}>
+                                        <span className="text-[10px] font-bold text-red-300 bg-slate-900/80 px-1 ml-4 rounded">Inicio (h₀)</span>
+                                    </div>
+                                    {desplazamiento > 0 && (
+                                        <div className="absolute w-full border-t border-dashed border-green-400/50 z-10" style={{ bottom: `${hf * pxPerMeter}px` }}>
+                                            <span className="text-[10px] font-bold text-green-300 bg-slate-900/80 px-1 ml-4 rounded">Fin (h_f)</span>
+                                        </div>
+                                    )}
+
+                                    {/* El Bloque (Cuerpo) */}
+                                    <div 
+                                        className="absolute w-16 h-16 bg-orange-500 border-4 border-orange-300 rounded-lg flex items-center justify-center shadow-xl z-20 transition-all"
+                                        style={{ left: 'calc(60% - 32px)', bottom: `${bottomVisual}px` }}
+                                    >
+                                        <span className="font-black text-orange-950 text-xs">{masa.toFixed(1)}kg</span>
+
+                                        {/* Vector Fuerza (Arriba) */}
+                                        <div className="absolute bottom-full left-1/2 -translate-x-1/2 flex flex-col items-center pb-1 pointer-events-none" style={{ height: 60 }}>
+                                            <span className="mb-1 text-[10px] font-black text-emerald-200 bg-slate-900/80 px-1 rounded whitespace-nowrap shadow">F = {fuerza.toFixed(0)} N</span>
+                                            <div className="w-1.5 bg-emerald-400 h-full relative shadow-[0_0_8px_rgba(52,211,153,0.8)]">
+                                                <div className="absolute top-0 -translate-x-[6px]">{ArrowUpIcon && <ArrowUpIcon size={18} className="text-emerald-400" />}</div>
+                                            </div>
+                                        </div>
+
+                                        {/* Vector Peso (Abajo) */}
+                                        <div className="absolute top-full left-1/2 -translate-x-1/2 flex flex-col items-center pt-1 pointer-events-none" style={{ height: 60 }}>
+                                            <div className="w-1.5 bg-red-400 h-full relative shadow-[0_0_8px_rgba(248,113,113,0.8)]">
+                                                <div className="absolute bottom-0 -translate-x-[6px]">{ArrowDownIcon && <ArrowDownIcon size={18} className="text-red-400" />}</div>
+                                            </div>
+                                            <span className="mt-1 text-[10px] font-black text-red-200 bg-slate-900/80 px-1 rounded whitespace-nowrap shadow">P = {peso.toFixed(0)} N</span>
+                                        </div>
+                                    </div>
+                                    
+                                    {/* Cota lateral de Desplazamiento */}
+                                    {isLifting && (
+                                        <div className="absolute left-[75%] border-l-2 border-y-2 border-emerald-400/50 w-4 z-10" style={{ bottom: `${h0 * pxPerMeter}px`, height: `${(currentH - h0) * pxPerMeter}px` }}>
+                                            <span className="absolute left-6 top-1/2 -translate-y-1/2 text-[10px] font-black text-emerald-300 bg-slate-900/80 px-1 rounded shadow">Δh</span>
+                                        </div>
+                                    )}
+
+                                </div>
+                            </div>
+
+                            {/* Controles y Resolución */}
+                            <div className="space-y-6">
+                                <div className="bg-slate-800 p-6 rounded-3xl border border-slate-700 shadow-xl">
+                                    <h3 className="text-xl font-bold mb-4 flex items-center gap-2 text-emerald-400">
+                                        {SettingsIcon && <SettingsIcon size={20} />} Configurar Elevación
+                                    </h3>
+                                    
+                                    <div className="space-y-5 mb-6">
+                                        <div>
+                                            <div className="flex justify-between text-xs mb-1">
+                                                <span className="text-orange-400 font-bold uppercase">Masa del Cuerpo (m)</span>
+                                                <span className="font-mono bg-slate-900 px-2 py-0.5 rounded text-white">{masa.toFixed(1)} kg</span>
+                                            </div>
+                                            <input 
+                                                type="range" min="1" max="100" step="1" value={masa} 
+                                                onChange={e => setMasa(Number(e.target.value))} 
+                                                className="w-full h-2 bg-slate-700 rounded-lg appearance-none cursor-pointer accent-orange-500" 
+                                            />
+                                        </div>
+
+                                        <div className="grid grid-cols-2 gap-4 pt-3 border-t border-slate-700">
+                                            <div>
+                                                <div className="flex justify-between text-[10px] mb-1">
+                                                    <span className="text-slate-300 font-bold uppercase">Altura Inicial (h₀)</span>
+                                                    <span className="font-mono text-white">{h0.toFixed(1)} m</span>
+                                                </div>
+                                                <input 
+                                                    type="range" min="0" max="35" step="1" value={h0} 
+                                                    onChange={e => setH0(Number(e.target.value))} 
+                                                    className="w-full h-1.5 bg-slate-700 rounded-lg appearance-none cursor-pointer accent-slate-400" 
+                                                />
+                                            </div>
+                                            <div>
+                                                <div className="flex justify-between text-[10px] mb-1">
+                                                    <span className="text-emerald-400 font-bold uppercase">Altura Final (h_f)</span>
+                                                    <span className="font-mono text-white">{hf.toFixed(1)} m</span>
+                                                </div>
+                                                <input 
+                                                    type="range" min="5" max="40" step="1" value={hf} 
+                                                    onChange={e => setHf(Number(e.target.value))} 
+                                                    className="w-full h-1.5 bg-slate-700 rounded-lg appearance-none cursor-pointer accent-emerald-500" 
+                                                />
+                                            </div>
+                                        </div>
+                                        
+                                        <div className="bg-slate-900/50 p-2 rounded text-center text-xs font-mono text-emerald-300 border border-slate-700">
+                                            Desplazamiento neto (Δh) = {desplazamiento.toFixed(1)} m
+                                        </div>
+                                    </div>
+
+                                    <div className="flex gap-2">
+                                        <button 
+                                            onClick={handlePlay} 
+                                            disabled={isLifting || currentH >= hf || desplazamiento === 0}
+                                            className={`flex-1 font-black py-3 rounded-xl shadow-lg flex justify-center items-center gap-2 disabled:opacity-50 transition-all active:scale-95 ${desplazamiento === 0 ? 'bg-slate-600 text-slate-400' : 'bg-emerald-600 hover:bg-emerald-500 text-white'}`}
+                                        >
+                                            {PlayIcon && <PlayIcon size={18} />} {desplazamiento === 0 ? 'NO HAY DESPLAZAMIENTO' : currentH >= hf ? 'ALTURA ALCANZADA' : 'INICIAR ELEVACIÓN'}
+                                        </button>
+                                        <button onClick={reset} className="bg-slate-700 hover:bg-slate-600 text-white font-bold px-4 rounded-xl transition-all shadow-md">
+                                            {RotateCcwIcon && <RotateCcwIcon size={18} />}
+                                        </button>
+                                    </div>
+                                </div>
+
+                                <div className="bg-emerald-950/20 p-6 rounded-3xl border border-emerald-500/20">
+                                    <div className="flex justify-between items-center mb-4 border-b border-emerald-500/30 pb-2">
+                                        <h4 className="font-bold text-emerald-300 flex items-center gap-2">
+                                            {CalculatorIcon && <CalculatorIcon size={18} />} Resolución Paso a Paso
+                                        </h4>
+                                        <button onClick={generarDiagrama} className="text-[10px] uppercase font-bold bg-slate-800 hover:bg-slate-700 text-slate-300 px-3 py-1.5 rounded flex items-center gap-1 border border-slate-600">
+                                            {imgLoading ? <span className="animate-pulse">Cargando...</span> : <>{ImagePlusIcon && <ImagePlusIcon size={14}/>} Generar DCL</>}
+                                        </button>
+                                    </div>
+
+                                    {imgUrl && (
+                                        <div className="mb-4 bg-slate-900 p-2 rounded-xl border border-slate-700 text-center">
+                                            <img src={imgUrl} alt="Diagrama de Cuerpo Libre" className="mx-auto max-h-40 rounded-lg" />
+                                        </div>
+                                    )}
+
+                                    <div className="text-xs text-slate-300 space-y-4 leading-relaxed">
+                                        <p><strong>1. ¿Qué fuerza hay que ejercer?</strong><br/>
+                                        Para que el cuerpo suba (asumiendo que lo hace a velocidad constante, sin ganar aceleración extra), la fuerza que ejerce la grúa debe igualar al peso del cuerpo.</p>
+                                        
+                                        <div className="bg-slate-900/80 p-2 rounded-lg border-l-4 border-red-500 font-mono text-red-200">
+                                            F = P = m · g<br/>
+                                            F = {masa.toFixed(1)} · 9.8 = <strong>{fuerza.toFixed(1)} N</strong>
+                                        </div>
+
+                                        <p className="mt-3"><strong>2. Desplazamiento Vertical (Δh):</strong><br/>
+                                        El trabajo depende solo de la distancia recorrida en la misma dirección que la fuerza.</p>
+                                        <div className="bg-slate-900/80 p-2 rounded-lg border-l-4 border-slate-500 font-mono text-slate-200">
+                                            Δh = h_f - h₀<br/>
+                                            Δh = {hf.toFixed(1)} - {h0.toFixed(1)} = <strong>{desplazamiento.toFixed(1)} m</strong>
+                                        </div>
+
+                                        <p className="mt-3"><strong>3. Trabajo Mecánico (W):</strong><br/>
+                                        El trabajo es el producto de la Fuerza por el Desplazamiento. Como ambas apuntan hacia arriba, el ángulo es 0º (cos(0º) = 1).</p>
+                                        <div className="bg-slate-900/80 p-3 rounded-lg border-l-4 border-emerald-500 font-mono text-emerald-200 shadow-inner">
+                                            W = F · Δh · cos(0º)<br/>
+                                            W = {fuerza.toFixed(1)} · {desplazamiento.toFixed(1)} · 1<br/>
+                                            <strong>W = {trabajoTotal.toFixed(0)} J</strong>
+                                        </div>
+                                        <p className="text-[10px] text-slate-400 italic text-center mt-2">
+                                            Fíjate que este cálculo es exactamente igual a la Variación de la Energía Potencial Gravitatoria (ΔEp = m·g·h_f - m·g·h_0).
+                                        </p>
+                                    </div>
+                                </div>
+                            </div>
+                        </main>
+
+                        <footer className="max-w-5xl mx-auto mt-12 pt-6 border-t border-slate-800 text-center text-slate-500 text-[10px] font-bold uppercase tracking-widest">
+                            Profe Física | Trabajo, Fuerza y Energía Potencial
+                        </footer>
+                    </div>
+                );
+            };
+
+            const container = document.getElementById('root');
+            const root = ReactDOM.createRoot(container);
+            root.render(<App />);
+        })();
+    </script>
+</body>
+</html>

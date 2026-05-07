@@ -1,0 +1,282 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Laboratorio: Trabajo y Potencia de Bombeo</title>
+    <!-- Bibliotecas externas -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <script src="https://unpkg.com/lucide-react@latest"></script>
+
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&family=Fira+Code&display=swap');
+        body { font-family: 'Inter', sans-serif; background-color: #0f172a; }
+        .font-mono { font-family: 'Fira Code', monospace; }
+        input[type=range]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            height: 24px;
+            width: 24px;
+            border-radius: 50%;
+            background: #06b6d4; /* Cyan 500 */
+            cursor: pointer;
+            border: 3px solid #ffffff;
+            box-shadow: 0 0 10px rgba(6, 182, 212, 0.5);
+        }
+        .water-pattern {
+            background-color: #0284c7;
+            background-image: 
+                radial-gradient(circle at 100% 150%, #0369a1 24%, transparent 25%, transparent 28%, #0369a1 29%, transparent 30%),
+                radial-gradient(circle at 0% 150%, #0369a1 24%, transparent 25%, transparent 28%, #0369a1 29%, transparent 30%);
+            background-size: 40px 20px;
+        }
+        
+        @keyframes flow-up {
+            0% { background-position: 0 0; }
+            100% { background-position: 0 -40px; }
+        }
+        .pipe-flow {
+            background-image: repeating-linear-gradient(0deg, #0ea5e9 0px, #0ea5e9 10px, transparent 10px, transparent 20px);
+            background-size: 100% 40px;
+            animation: flow-up 1s linear infinite;
+        }
+    </style>
+</head>
+<body>
+    <div id="root"></div>
+
+    <script type="text/babel">
+        (() => {
+            const { useState, useEffect } = React;
+            const icons = window.LucideReact || {};
+            
+            const getIcon = (name) => icons[name] || (({className}) => <span className={className || ''}></span>);
+            
+            const PlayIcon = getIcon('Play');
+            const SquareIcon = getIcon('Square');
+            const CalculatorIcon = getIcon('Calculator');
+            const SettingsIcon = getIcon('Settings');
+            const DropletIcon = getIcon('Droplet') || getIcon('Droplets');
+            const ZapIcon = getIcon('Zap');
+            const BatteryChargingIcon = getIcon('BatteryCharging');
+            const ClockIcon = getIcon('Clock');
+            const ArrowUpIcon = getIcon('ArrowUp');
+            const ImagePlusIcon = getIcon('ImagePlus');
+
+            const App = () => {
+                const g = 9.8; 
+                const densidadAgua = 1000; 
+                const segundosDia = 24 * 3600; 
+
+                const [volumenM3, setVolumenM3] = useState(4200);
+                const [altura, setAltura] = useState(85);
+
+                const masaKg = volumenM3 * densidadAgua;
+                const trabajoJ = masaKg * g * altura;
+                const trabajoGJ = trabajoJ / 1e9;
+                const potenciaW = trabajoJ / segundosDia;
+                const potenciaKW = potenciaW / 1000;
+
+                const [isPumping, setIsPumping] = useState(false);
+                const [tankLevel, setTankLevel] = useState(0);
+
+                useEffect(() => {
+                    let interval;
+                    if (isPumping && tankLevel < 100) {
+                        interval = setInterval(() => {
+                            setTankLevel(prev => {
+                                const nextLvl = prev + 0.5;
+                                if (nextLvl >= 100) {
+                                    setIsPumping(false);
+                                    return 100;
+                                }
+                                return nextLvl;
+                            });
+                        }, 50);
+                    }
+                    return () => clearInterval(interval);
+                }, [isPumping, tankLevel]);
+
+                const togglePump = () => {
+                    if (tankLevel >= 100) setTankLevel(0);
+                    setIsPumping(!isPumping);
+                };
+
+                const [imgUrl, setImgUrl] = useState(null);
+                const [imgLoading, setImgLoading] = useState(false);
+
+                const generarDiagrama = async () => {
+                    setImgLoading(true);
+                    const apiKey = "AIzaSyDMyUo-WgmdNkCRW6-YK7h-bnRF_FLAjf0"; // API Key insertada por entorno; 
+                    try {
+                        const response = await fetch(
+                            `https://generativelanguage.googleapis.com/v1beta/models/imagen-4.0-generate-001:predict?key=${apiKey}`,
+                            {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({
+                                    instances: [{ prompt: "Diagrama técnico de ingeniería. Un río abajo y un depósito elevado arriba. Una tubería vertical los conecta. Vector Fuerza F_bomba apuntando hacia arriba en la tubería. Cota marcando la altura h. Estilo minimalista, educativo, fondo blanco" }],
+                                    parameters: { sampleCount: 1 }
+                                })
+                            }
+                        );
+                        if (!response.ok) throw new Error("Error en red");
+                        const data = await response.json();
+                        setImgUrl(`data:image/png;base64,${data.predictions[0].bytesBase64Encoded}`);
+                    } catch (error) {
+                        console.error(error);
+                    } finally {
+                        setImgLoading(false);
+                    }
+                };
+
+                const vExp = Math.floor(Math.log10(volumenM3 || 1));
+                const vBase = (volumenM3 / Math.pow(10, vExp)).toFixed(1);
+
+                return (
+                    <div className="min-h-screen bg-slate-900 text-slate-100 p-4 md:p-8">
+                        <header className="max-w-5xl mx-auto mb-8 border-b border-slate-700 pb-6">
+                            <div className="flex items-center gap-3 mb-2">
+                                <span className="bg-cyan-600 text-white px-3 py-1 rounded-full text-xs font-black uppercase tracking-widest">Trabajo y Potencia</span>
+                                <h1 className="text-3xl font-black text-cyan-400 uppercase tracking-tight tracking-widest">Bombas de Agua</h1>
+                            </div>
+                            <div className="bg-slate-800/50 p-4 rounded-xl border border-slate-700 mt-4">
+                                <p className="text-slate-300 text-sm leading-relaxed">
+                                    <strong>Enunciado:</strong> El consumo de agua de una ciudad es de 4,2 × 10³ m³ diarios, y hay que elevarla a unos depósitos situados a 85 m por encima del río en que se capta. Calcula el trabajo diario y la potencia total de las bombas.
+                                </p>
+                            </div>
+                        </header>
+
+                        <main className="max-w-5xl mx-auto grid md:grid-cols-2 gap-8">
+                            <div className="bg-slate-800 rounded-3xl border border-slate-700 h-[500px] relative overflow-hidden shadow-2xl flex flex-col justify-end">
+                                <div className="absolute top-4 w-full px-6 flex justify-between z-30 pointer-events-none">
+                                    <div className="bg-slate-900/90 p-3 rounded-lg border border-slate-700 backdrop-blur-md">
+                                        <p className="text-[10px] text-slate-500 uppercase font-black flex items-center gap-1"><BatteryChargingIcon size={12}/> Trabajo Diario (W)</p>
+                                        <p className="text-xl font-mono font-black text-emerald-400">{trabajoGJ.toFixed(2)} GJ</p>
+                                    </div>
+                                    <div className={`bg-slate-900/90 p-3 rounded-lg border backdrop-blur-md text-right border-b-4 ${isPumping ? 'border-b-yellow-500 shadow-[0_0_15px_rgba(234,179,8,0.2)]' : 'border-b-slate-700'}`}>
+                                        <p className="text-[10px] text-slate-500 uppercase font-black flex items-center justify-end gap-1"><ZapIcon size={12} className={isPumping ? "text-yellow-400" : ""}/> Potencia (P)</p>
+                                        <p className={`text-2xl font-mono font-black ${isPumping ? 'text-yellow-400' : 'text-slate-400'}`}>
+                                            {potenciaKW.toFixed(1)} <span className="text-sm">kW</span>
+                                        </p>
+                                    </div>
+                                </div>
+
+                                <div className="relative w-full h-[400px] flex flex-col items-center justify-between pb-8">
+                                    <div className="w-48 h-24 bg-slate-700/50 border-4 border-slate-500 rounded-lg relative overflow-hidden z-20">
+                                        <div className="absolute bottom-0 w-full bg-cyan-600/80 transition-all duration-300" style={{ height: `${tankLevel}%` }}></div>
+                                        <div className="absolute inset-0 flex items-center justify-center">
+                                            <span className="font-black text-white/50 text-xl">{Math.floor(tankLevel)}%</span>
+                                        </div>
+                                    </div>
+
+                                    <div className="flex-1 w-12 border-x-4 border-slate-600 bg-slate-800 relative z-10 overflow-hidden">
+                                        {isPumping && <div className="absolute inset-0 w-full h-full pipe-flow"></div>}
+                                        <div className="absolute left-16 top-0 bottom-0 border-l-2 border-dashed border-slate-500 flex flex-col justify-between items-start py-4">
+                                            <span className="text-[10px] font-mono font-bold text-slate-400 -ml-1">h={altura}m</span>
+                                            <span className="text-[10px] font-mono font-bold text-slate-400 -ml-1">0m</span>
+                                        </div>
+                                    </div>
+
+                                    <div className="w-full relative flex flex-col items-center">
+                                        <div className={`w-20 h-12 rounded-lg border-4 flex items-center justify-center z-30 transition-all ${isPumping ? 'bg-yellow-600 border-yellow-400 shadow-[0_0_15px_rgba(234,179,8,0.5)]' : 'bg-slate-700 border-slate-500'}`}>
+                                            <ZapIcon size={24} className={isPumping ? 'text-white animate-pulse' : 'text-slate-400'} />
+                                        </div>
+                                        <div className="w-full h-16 water-pattern border-t-4 border-cyan-800 absolute top-6 z-20"></div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div className="space-y-6">
+                                <div className="bg-slate-800 p-6 rounded-3xl border border-slate-700 shadow-xl">
+                                    <h3 className="text-xl font-bold mb-4 flex items-center gap-2 text-cyan-400">
+                                        {SettingsIcon && <SettingsIcon size={20} />} Parámetros de la Estación
+                                    </h3>
+                                    <div className="space-y-6 mb-6">
+                                        <div>
+                                            <div className="flex justify-between text-xs mb-2">
+                                                <span className="text-cyan-400 font-bold uppercase flex items-center gap-1"><DropletIcon size={14}/> Volumen Diario (V)</span>
+                                                <span className="font-mono bg-slate-900 px-2 py-0.5 rounded text-white">{vBase} × 10<sup>{vExp}</sup> m³</span>
+                                            </div>
+                                            <input 
+                                                type="range" min="1000" max="10000" step="100" value={volumenM3} 
+                                                onChange={e => setVolumenM3(Number(e.target.value))} 
+                                                className="w-full h-2 bg-slate-700 rounded-lg appearance-none cursor-pointer accent-cyan-500" 
+                                            />
+                                        </div>
+                                        <div className="pt-2 border-t border-slate-700">
+                                            <div className="flex justify-between text-xs mb-2">
+                                                <span className="text-emerald-400 font-bold uppercase flex items-center gap-1"><ArrowUpIcon size={14}/> Altura del Depósito (h)</span>
+                                                <span className="font-mono bg-slate-900 px-2 py-0.5 rounded text-emerald-300">{altura} m</span>
+                                            </div>
+                                            <input 
+                                                type="range" min="10" max="200" step="5" value={altura} 
+                                                onChange={e => setAltura(Number(e.target.value))} 
+                                                className="w-full h-2 bg-slate-700 rounded-lg appearance-none cursor-pointer accent-emerald-500" 
+                                            />
+                                        </div>
+                                    </div>
+                                    <div className="flex gap-2">
+                                        <button 
+                                            onClick={togglePump} 
+                                            className={`flex-1 font-black py-4 rounded-xl shadow-lg flex justify-center items-center gap-2 transition-all active:scale-95 ${isPumping ? 'bg-slate-700 hover:bg-slate-600 text-slate-300' : 'bg-cyan-600 hover:bg-cyan-500 text-white'}`}
+                                        >
+                                            {isPumping ? <><SquareIcon size={18} /> APAGAR BOMBAS</> : <><PlayIcon size={18} /> ENCENDER BOMBAS</>}
+                                        </button>
+                                    </div>
+                                </div>
+
+                                <div className="bg-cyan-950/20 p-6 rounded-3xl border border-cyan-500/20">
+                                    <div className="flex justify-between items-center mb-4 border-b border-cyan-500/30 pb-2">
+                                        <h4 className="font-bold text-cyan-300 flex items-center gap-2">
+                                            {CalculatorIcon && <CalculatorIcon size={18} />} Resolución Paso a Paso
+                                        </h4>
+                                        <button onClick={generarDiagrama} className="text-[10px] uppercase font-bold bg-slate-800 hover:bg-slate-700 text-slate-300 px-3 py-1.5 rounded flex items-center gap-1 border border-slate-600">
+                                            {imgLoading ? <span className="animate-pulse">Cargando...</span> : <>{ImagePlusIcon && <ImagePlusIcon size={14}/>} Generar DCL</>}
+                                        </button>
+                                    </div>
+
+                                    {imgUrl && (
+                                        <div className="mb-4 bg-slate-900 p-2 rounded-xl border border-slate-700 text-center">
+                                            <img src={imgUrl} alt="Diagrama" className="mx-auto max-h-40 rounded-lg" />
+                                        </div>
+                                    )}
+
+                                    <div className="text-xs text-slate-300 space-y-4 leading-relaxed">
+                                        <p><strong>1. Calcular la Masa del Agua:</strong><br/>
+                                        Densidad del agua: 1000 kg/m³.</p>
+                                        <div className="bg-slate-900/80 p-2 rounded-lg border-l-4 border-blue-500 font-mono text-blue-200">
+                                            m = Volumen · Densidad<br/>
+                                            m = ({vBase} × 10<sup>{vExp}</sup>) · 1000 = <strong>{masaKg.toExponential(2)} kg</strong>
+                                        </div>
+
+                                        <p><strong>a) Trabajo Diario (W):</strong></p>
+                                        <div className="bg-slate-900/80 p-3 rounded-lg border-l-4 border-emerald-500 font-mono text-emerald-200 shadow-inner overflow-x-auto">
+                                            W = m · g · h = {masaKg.toExponential(2)} · 9.8 · {altura}<br/>
+                                            W = <strong>{trabajoJ.toExponential(3)} J</strong> ({trabajoGJ.toFixed(2)} GJ)
+                                        </div>
+
+                                        <p className="border-t border-slate-700 pt-3"><strong>b) Potencia (P):</strong><br/>
+                                        t = 24h · 3600s = 86400s.</p>
+                                        <div className="bg-slate-900/80 p-3 rounded-lg border-l-4 border-yellow-500 font-mono text-yellow-200 shadow-inner">
+                                            P = W / t = {trabajoJ.toExponential(2)} / 86400<br/>
+                                            <strong>P = {potenciaKW.toFixed(1)} kW</strong>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </main>
+                    </div>
+                );
+            };
+
+            const container = document.getElementById('root');
+            const root = ReactDOM.createRoot(container);
+            root.render(<App />);
+        })();
+    </script>
+</body>
+</html>

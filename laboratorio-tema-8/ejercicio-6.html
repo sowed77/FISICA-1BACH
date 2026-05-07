@@ -1,0 +1,393 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Laboratorio: Cálculo Gráfico del Trabajo</title>
+    <!-- Bibliotecas externas -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <script src="https://unpkg.com/lucide-react@latest"></script>
+
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&family=Fira+Code&display=swap');
+        body { font-family: 'Inter', sans-serif; background-color: #0f172a; }
+        .font-mono { font-family: 'Fira Code', monospace; }
+        input[type=range]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            height: 20px;
+            width: 20px;
+            border-radius: 50%;
+            background: #14b8a6; /* Teal 500 */
+            cursor: pointer;
+            border: 2px solid #ffffff;
+            box-shadow: 0 0 10px rgba(20, 184, 166, 0.5);
+        }
+        .graph-grid {
+            background-image: 
+                linear-gradient(rgba(255,255,255,0.05) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(255,255,255,0.05) 1px, transparent 1px);
+            background-size: 25px 25px; /* Representará 1 unidad en la cuadrícula */
+        }
+        .road-pattern {
+            background-image: repeating-linear-gradient(90deg, #334155 0, #334155 20px, transparent 20px, transparent 40px);
+            background-size: 40px 4px;
+            background-position: bottom;
+            background-repeat: repeat-x;
+        }
+    </style>
+</head>
+<body>
+    <div id="root"></div>
+
+    <script type="text/babel">
+        (() => {
+            var { useState, useEffect } = React;
+            var icons = window.LucideReact || {};
+            
+            var getIcon = (name) => icons[name] || (({className}) => <span className={className || ''}></span>);
+            var PlayIcon = getIcon('Play');
+            var RotateCcwIcon = getIcon('RotateCcw');
+            var CalculatorIcon = getIcon('Calculator');
+            var SettingsIcon = getIcon('Settings');
+            var InfoIcon = getIcon('Info');
+            var AreaChartIcon = getIcon('AreaChart');
+            var BatteryChargingIcon = getIcon('BatteryCharging');
+            var ArrowRightIcon = getIcon('ArrowRight');
+
+            var App = () => {
+                // Estados interactivos para moldear la gráfica
+                // La gráfica consta de dos tramos:
+                // 1. De x=0 a x=d1: Fuerza constante = fMax
+                // 2. De x=d1 a x=d2: Fuerza desciende de fMax a 0
+                const [fMax, setFMax] = useState(10); // N
+                const [d1, setD1] = useState(2.0); // m
+                const [d2, setD2] = useState(4.0); // m
+
+                // Estados de animación
+                const [pos, setPos] = useState(0); // Posición actual (m)
+                const [isMoving, setIsMoving] = useState(false);
+
+                // Forzar coherencia en los deslizadores
+                useEffect(() => {
+                    if (d1 > d2) setD2(d1);
+                }, [d1]);
+                useEffect(() => {
+                    if (d2 < d1) setD1(d2);
+                }, [d2]);
+
+                // Función de Fuerza F(x)
+                const getForceAt = (x) => {
+                    if (x <= d1) return fMax;
+                    if (x > d1 && x <= d2) {
+                        return fMax * (1 - (x - d1) / (d2 - d1));
+                    }
+                    return 0;
+                };
+
+                // Cálculo del Trabajo (Área acumulada hasta 'pos')
+                const getWorkAt = (x) => {
+                    if (x <= d1) {
+                        // Área de un rectángulo
+                        return fMax * x;
+                    } else if (x <= d2) {
+                        // Área rectángulo (hasta d1) + Área trapecio (de d1 a x)
+                        const rectArea = fMax * d1;
+                        const currentF = getForceAt(x);
+                        const trapArea = ((fMax + currentF) / 2) * (x - d1);
+                        return rectArea + trapArea;
+                    } else {
+                        // Trabajo total si x > d2
+                        return (fMax * d1) + ((fMax * (d2 - d1)) / 2);
+                    }
+                };
+
+                const currentF = getForceAt(pos);
+                const currentW = getWorkAt(pos);
+
+                // Áreas Totales (Para la explicación)
+                const areaRectangulo = fMax * d1;
+                const areaTriangulo = (fMax * (d2 - d1)) / 2;
+                const trabajoTotal = areaRectangulo + areaTriangulo;
+
+                // Animación (Cinemática ignorada, solo avanzamos en X para ver el área llenarse)
+                useEffect(() => {
+                    let interval;
+                    if (isMoving && pos < d2) {
+                        interval = setInterval(() => {
+                            setPos(p => {
+                                const newP = p + 0.05; // Velocidad de animación constante
+                                if (newP >= d2) {
+                                    setIsMoving(false);
+                                    return d2;
+                                }
+                                return newP;
+                            });
+                        }, 20); // 50 fps
+                    }
+                    return () => clearInterval(interval);
+                }, [isMoving, pos, d2]);
+
+                const handlePlay = () => {
+                    if (pos < d2) setIsMoving(true);
+                };
+
+                const reset = () => {
+                    setPos(0);
+                    setIsMoving(false);
+                };
+
+                // Si cambiamos la gráfica, reseteamos la animación
+                useEffect(() => {
+                    reset();
+                }, [fMax, d1, d2]);
+
+                // PARÁMETROS DEL SVG (Gráfica)
+                const svgWidth = 400;
+                const svgHeight = 200;
+                const maxX = 6; // Mostrar hasta 6 metros en X
+                const maxY = 20; // Mostrar hasta 20 N en Y
+
+                // Funciones de mapeo a SVG
+                const mapX = (x) => (x / maxX) * svgWidth;
+                const mapY = (y) => svgHeight - ((y / maxY) * svgHeight);
+
+                // Path de la línea de la gráfica completa
+                const graphPath = `M ${mapX(0)} ${mapY(fMax)} L ${mapX(d1)} ${mapY(fMax)} L ${mapX(d2)} ${mapY(0)}`;
+                
+                // Generar el polígono de área rellenada según la posición actual
+                const getAreaPolygon = () => {
+                    if (pos === 0) return "";
+                    let points = `0,${svgHeight} 0,${mapY(fMax)} `;
+                    
+                    if (pos <= d1) {
+                        points += `${mapX(pos)},${mapY(fMax)} ${mapX(pos)},${svgHeight}`;
+                    } else {
+                        points += `${mapX(d1)},${mapY(fMax)} `;
+                        points += `${mapX(pos)},${mapY(currentF)} ${mapX(pos)},${svgHeight}`;
+                    }
+                    return points;
+                };
+
+                return (
+                    <div className="min-h-screen bg-slate-900 text-slate-100 p-4 md:p-8">
+                        <header className="max-w-5xl mx-auto mb-8 border-b border-slate-700 pb-6">
+                            <div className="flex items-center gap-3 mb-2">
+                                <span className="bg-teal-600 text-white px-3 py-1 rounded-full text-xs font-black uppercase tracking-widest">Energía y Trabajo</span>
+                                <h1 className="text-3xl font-black text-teal-400 uppercase tracking-tight tracking-widest">Fuerza Variable</h1>
+                            </div>
+                            <div className="bg-slate-800/50 p-4 rounded-xl border border-slate-700 mt-4">
+                                <p className="text-slate-300 text-sm leading-relaxed">
+                                    <strong>Enunciado:</strong> Calcula gráficamente el trabajo realizado por una fuerza que varía según la figura, al desplazar un móvil a lo largo de los 4,0 m iniciales.
+                                    <br/><span className="text-[10px] text-teal-400 italic">Puedes moldear la gráfica arrastrando los controles para que sea idéntica a tu figura.</span>
+                                </p>
+                            </div>
+                        </header>
+
+                        <main className="max-w-5xl mx-auto grid md:grid-cols-2 gap-8">
+                            {/* Panel Visual (Gráfica y Animación) */}
+                            <div className="bg-slate-800 rounded-3xl border border-slate-700 h-[500px] relative overflow-hidden shadow-2xl flex flex-col justify-between pt-4">
+                                
+                                {/* HUD Superior */}
+                                <div className="px-6 flex justify-between z-30 pointer-events-none mb-2">
+                                    <div className="bg-slate-900/90 p-3 rounded-lg border border-slate-700 backdrop-blur-md">
+                                        <p className="text-[10px] text-slate-500 uppercase font-black">Fuerza Aplicada F(x)</p>
+                                        <p className="text-xl font-mono font-black text-indigo-400">{currentF.toFixed(1)} N</p>
+                                    </div>
+                                    <div className="bg-slate-900/90 p-3 rounded-lg border border-slate-700 backdrop-blur-md text-right border-b-4 border-b-teal-500 shadow-[0_0_15px_rgba(20,184,166,0.2)]">
+                                        <p className="text-[10px] text-slate-500 uppercase font-black flex items-center justify-end gap-1">
+                                            {BatteryChargingIcon && <BatteryChargingIcon size={12} className={currentW > 0 ? "text-teal-400" : "text-slate-500"} />} Trabajo (Área Acumulada)
+                                        </p>
+                                        <p className={`text-2xl font-mono font-black ${currentW > 0 ? 'text-teal-400' : 'text-slate-400'}`}>
+                                            {currentW.toFixed(1)} <span className="text-sm">J</span>
+                                        </p>
+                                    </div>
+                                </div>
+
+                                {/* Gráfica de Trabajo (F vs x) */}
+                                <div className="relative w-full flex justify-center mt-2 px-8">
+                                    <div className="relative" style={{ width: svgWidth, height: svgHeight }}>
+                                        {/* Cuadrícula de fondo */}
+                                        <div className="absolute inset-0 graph-grid opacity-30 border-l-2 border-b-2 border-slate-400"></div>
+                                        
+                                        {/* Ejes Etiquetas */}
+                                        <span className="absolute -left-6 top-0 text-[10px] text-slate-400 font-bold">{maxY}</span>
+                                        <span className="absolute -left-4 bottom-0 text-[10px] text-slate-400 font-bold">0</span>
+                                        <span className="absolute -bottom-5 left-[33%] text-[10px] text-slate-400 font-bold">2</span>
+                                        <span className="absolute -bottom-5 left-[66%] text-[10px] text-slate-400 font-bold">4</span>
+                                        <span className="absolute -bottom-5 right-0 text-[10px] text-slate-400 font-bold">{maxX}</span>
+                                        
+                                        <span className="absolute -left-8 top-1/2 -rotate-90 text-[10px] text-indigo-400 font-bold tracking-widest">Fuerza (N)</span>
+                                        <span className="absolute -bottom-8 left-1/2 -translate-x-1/2 text-[10px] text-emerald-400 font-bold tracking-widest">Distancia (m)</span>
+
+                                        <svg width="100%" height="100%" className="absolute inset-0">
+                                            {/* Área bajo la curva completa (Translúcida) */}
+                                            <polygon 
+                                                points={`0,${svgHeight} 0,${mapY(fMax)} ${mapX(d1)},${mapY(fMax)} ${mapX(d2)},${mapY(0)}`}
+                                                fill="rgba(45, 212, 191, 0.1)" // Teal 400
+                                                stroke="none"
+                                            />
+                                            
+                                            {/* Línea divisoria entre áreas para la explicación */}
+                                            {d1 < d2 && (
+                                                <line x1={mapX(d1)} y1={mapY(fMax)} x2={mapX(d1)} y2={svgHeight} stroke="#475569" strokeWidth="2" strokeDasharray="4 4" />
+                                            )}
+
+                                            {/* Área sombreada animada (Trabajo realizado hasta 'pos') */}
+                                            {pos > 0 && (
+                                                <polygon 
+                                                    points={getAreaPolygon()}
+                                                    fill="rgba(20, 184, 166, 0.5)" // Teal 500
+                                                    stroke="none"
+                                                />
+                                            )}
+
+                                            {/* Línea de la función de Fuerza */}
+                                            <path 
+                                                d={graphPath} 
+                                                fill="none" 
+                                                stroke="#818cf8" // Indigo 400
+                                                strokeWidth="4" 
+                                            />
+
+                                            {/* Indicador de posición actual en la gráfica */}
+                                            <circle cx={mapX(pos)} cy={mapY(currentF)} r="5" fill="#facc15" stroke="#ca8a04" strokeWidth="2" />
+                                            <line x1={mapX(pos)} y1={mapY(currentF)} x2={mapX(pos)} y2={svgHeight} stroke="#facc15" strokeWidth="2" strokeDasharray="2 2" />
+                                        </svg>
+                                    </div>
+                                </div>
+
+                                {/* Escena del bloque móvil (debajo de la gráfica) */}
+                                <div className="relative w-full h-32 flex flex-col justify-end pb-8 px-8 mt-4">
+                                    {/* Marcador de distancia debajo */}
+                                    <div className="absolute w-[400px] left-1/2 -translate-x-1/2 border-b-2 border-slate-600 road-pattern h-2 z-0"></div>
+                                    
+                                    <div className="relative w-[400px] left-1/2 -translate-x-1/2">
+                                        <div 
+                                            className="absolute bottom-1 w-12 h-10 bg-slate-400 border-2 border-slate-300 rounded shadow-lg flex items-center justify-center z-10 transition-transform"
+                                            style={{ left: `${mapX(pos)}px`, transform: 'translateX(-50%)' }}
+                                        >
+                                            {/* Vector Fuerza que cambia de tamaño */}
+                                            {currentF > 0 && (
+                                                <div className="absolute left-full top-1/2 -translate-y-1/2 flex items-center pl-1 pointer-events-none" style={{ width: (currentF / maxY) * 150 }}>
+                                                    <div className="h-1.5 bg-indigo-400 w-full relative shadow-[0_0_5px_rgba(129,140,248,0.8)]">
+                                                        <div className="absolute right-0 -top-1.5">{ArrowRightIcon && <ArrowRightIcon size={16} className="text-indigo-400" />}</div>
+                                                    </div>
+                                                </div>
+                                            )}
+                                        </div>
+                                    </div>
+                                </div>
+
+                            </div>
+
+                            {/* Controles y Resolución */}
+                            <div className="space-y-6">
+                                <div className="bg-slate-800 p-6 rounded-3xl border border-slate-700 shadow-xl">
+                                    <h3 className="text-xl font-bold mb-4 flex items-center gap-2 text-teal-400">
+                                        {AreaChartIcon && <AreaChartIcon size={20} />} Diseña tu Gráfica
+                                    </h3>
+                                    
+                                    <div className="space-y-5 mb-6">
+                                        <div className="bg-indigo-900/20 p-3 rounded-xl border border-indigo-500/20">
+                                            <div className="flex justify-between text-xs mb-1">
+                                                <span className="text-indigo-400 font-bold uppercase">Fuerza Máxima (Eje Y)</span>
+                                                <span className="font-mono bg-slate-900 px-2 py-0.5 rounded text-white">{fMax.toFixed(1)} N</span>
+                                            </div>
+                                            <input 
+                                                type="range" min="2" max="20" step="1" value={fMax} 
+                                                onChange={e => setFMax(Number(e.target.value))} 
+                                                className="w-full h-2 bg-slate-700 rounded-lg appearance-none cursor-pointer accent-indigo-500" 
+                                            />
+                                        </div>
+
+                                        <div className="grid grid-cols-2 gap-4">
+                                            <div className="bg-emerald-900/20 p-3 rounded-xl border border-emerald-500/20">
+                                                <div className="flex justify-between text-[10px] mb-1"><span className="text-emerald-400 font-bold uppercase">Fin tramo cte.</span></div>
+                                                <input type="range" min="0" max="6" step="0.5" value={d1} onChange={e => setD1(Number(e.target.value))} className="w-full h-1.5 bg-slate-700 rounded-lg appearance-none cursor-pointer accent-emerald-500 mb-1" />
+                                                <span className="font-mono text-white text-xs">{d1.toFixed(1)} m</span>
+                                            </div>
+                                            
+                                            <div className="bg-teal-900/20 p-3 rounded-xl border border-teal-500/20">
+                                                <div className="flex justify-between text-[10px] mb-1"><span className="text-teal-400 font-bold uppercase">Distancia Total</span></div>
+                                                <input type="range" min="1" max="6" step="0.5" value={d2} onChange={e => setD2(Number(e.target.value))} className="w-full h-1.5 bg-slate-700 rounded-lg appearance-none cursor-pointer accent-teal-500 mb-1" />
+                                                <span className="font-mono text-white text-xs">{d2.toFixed(1)} m</span>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div className="flex gap-2">
+                                        <button 
+                                            onClick={handlePlay} 
+                                            disabled={isMoving || pos >= d2}
+                                            className={`flex-1 font-black py-3 rounded-xl shadow-lg flex justify-center items-center gap-2 disabled:opacity-50 transition-all active:scale-95 ${pos >= d2 ? 'bg-slate-600 text-slate-400' : 'bg-teal-600 hover:bg-teal-500 text-white'}`}
+                                        >
+                                            {PlayIcon && <PlayIcon size={18} />} CÁLCULO VISUAL
+                                        </button>
+                                        <button onClick={reset} className="bg-slate-700 hover:bg-slate-600 text-white font-bold px-4 rounded-xl transition-all shadow-md">
+                                            {RotateCcwIcon && <RotateCcwIcon size={18} />}
+                                        </button>
+                                    </div>
+                                </div>
+
+                                <div className="bg-teal-950/20 p-6 rounded-3xl border border-teal-500/20">
+                                    <div className="flex justify-between items-center mb-4 border-b border-teal-500/30 pb-2">
+                                        <h4 className="font-bold text-teal-300 flex items-center gap-2">
+                                            {CalculatorIcon && <CalculatorIcon size={18} />} Resolución Matemática
+                                        </h4>
+                                    </div>
+
+                                    <div className="text-[11px] text-slate-300 space-y-3 leading-relaxed">
+                                        <div className="bg-slate-900/80 p-3 rounded-lg border border-slate-700 text-center font-bold text-white mb-2">
+                                            Trabajo = Área bajo la curva Fuerza-Desplazamiento
+                                        </div>
+
+                                        <p><strong>Área 1 (Rectángulo):</strong><br/>
+                                        Corresponde al tramo donde la fuerza es constante ({fMax} N) durante {d1} m.</p>
+                                        
+                                        <div className="bg-slate-900/80 p-2 rounded-lg border-l-4 border-emerald-500 font-mono text-emerald-200">
+                                            Área₁ = base · altura<br/>
+                                            W₁ = {d1.toFixed(1)} m · {fMax.toFixed(1)} N = <strong>{areaRectangulo.toFixed(1)} J</strong>
+                                        </div>
+
+                                        {d1 < d2 && (
+                                            <>
+                                                <p className="mt-3"><strong>Área 2 (Triángulo):</strong><br/>
+                                                Corresponde al tramo donde la fuerza cae hasta 0 N. La base de este triángulo es de {d1} a {d2} m (es decir, {d2 - d1} m).</p>
+                                                
+                                                <div className="bg-slate-900/80 p-2 rounded-lg border-l-4 border-indigo-500 font-mono text-indigo-200">
+                                                    Área₂ = (base · altura) / 2<br/>
+                                                    W₂ = ({(d2 - d1).toFixed(1)} m · {fMax.toFixed(1)} N) / 2 = <strong>{areaTriangulo.toFixed(1)} J</strong>
+                                                </div>
+                                            </>
+                                        )}
+
+                                        <p className="mt-3"><strong>Trabajo Total (W_total):</strong><br/>
+                                        Es la suma de las áreas calculadas hasta los {d2} metros que hemos analizado.</p>
+                                        
+                                        <div className="bg-slate-900/80 p-3 rounded-lg border-l-4 border-teal-500 font-mono text-teal-200 shadow-inner">
+                                            W_total = W₁ {d1 < d2 ? '+ W₂' : ''}<br/>
+                                            W_total = {areaRectangulo.toFixed(1)} J {d1 < d2 ? `+ ${areaTriangulo.toFixed(1)} J` : ''} = <strong>{trabajoTotal.toFixed(1)} J</strong>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </main>
+
+                        <footer className="max-w-5xl mx-auto mt-12 pt-6 border-t border-slate-800 text-center text-slate-500 text-[10px] font-bold uppercase tracking-widest">
+                            Profe Física | Trabajo de Fuerzas Variables e Integración Gráfica
+                        </footer>
+                    </div>
+                );
+            };
+
+            const container = document.getElementById('root');
+            const root = ReactDOM.createRoot(container);
+            root.render(<App />);
+        })();
+    </script>
+</body>
+</html>

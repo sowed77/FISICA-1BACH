@@ -1,0 +1,387 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Laboratorio: Péndulo Interrumpido</title>
+    <!-- Bibliotecas externas -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <script src="https://unpkg.com/lucide-react@latest"></script>
+
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&family=Fira+Code&display=swap');
+        body { font-family: 'Inter', sans-serif; background-color: #0f172a; }
+        .font-mono { font-family: 'Fira Code', monospace; }
+        input[type=range]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            height: 20px;
+            width: 20px;
+            border-radius: 50%;
+            background: #14b8a6; /* Teal 500 */
+            cursor: pointer;
+            border: 2px solid #ffffff;
+            box-shadow: 0 0 10px rgba(20, 184, 166, 0.5);
+        }
+        .grid-bg {
+            background-image: 
+                linear-gradient(rgba(255,255,255,0.05) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(255,255,255,0.05) 1px, transparent 1px);
+            background-size: 20px 20px;
+        }
+    </style>
+</head>
+<body>
+    <div id="root"></div>
+
+    <script type="text/babel">
+        (() => {
+            var { useState, useEffect, useRef } = React;
+            var icons = window.LucideReact || {};
+            
+            var getIcon = (name) => icons[name] || (({className}) => <span className={className || ''}></span>);
+            var PlayIcon = getIcon('Play');
+            var RotateCcwIcon = getIcon('RotateCcw');
+            var InfoIcon = getIcon('Info');
+            var CalculatorIcon = getIcon('Calculator');
+            var TargetIcon = getIcon('Target');
+            var ZapIcon = getIcon('Zap');
+            var SettingsIcon = getIcon('Settings');
+            var ImagePlusIcon = getIcon('ImagePlus');
+            var BatteryChargingIcon = getIcon('BatteryCharging');
+
+            var App = () => {
+                // Parámetros Físicos Constantes
+                const g = 9.8; // m/s²
+                const L = 1.0; // m (Longitud total del hilo)
+                const d = 0.5; // m (Distancia del techo al obstáculo)
+                const L_peg = L - d; // m (Longitud del hilo después de chocar, 0.5m)
+                const m = 1.0; // kg (Masa genérica, no afecta a la altura)
+
+                // Estados Interactivos
+                const [h0, setH0] = useState(0.3); // Altura inicial en metros (max 0.5 para que no pase del clavo)
+
+                // Estados de Simulación
+                const [isSwinging, setIsSwinging] = useState(false);
+                const [simState, setSimState] = useState({ theta: 0, omega: 0 }); // Ángulo y velocidad angular
+
+                // Calcular ángulo inicial a partir de h0
+                // h0 = L - L * cos(theta0) => cos(theta0) = 1 - h0/L
+                const theta0 = -Math.acos(1 - h0 / L);
+
+                // Resetear el estado si cambia h0
+                useEffect(() => {
+                    if (!isSwinging) {
+                        setSimState({ theta: theta0, omega: 0 });
+                    }
+                }, [h0, theta0, isSwinging]);
+
+                // Motor Físico (Integración Semi-implícita de Euler para conservación de energía estable)
+                const requestRef = useRef();
+                const lastTimeRef = useRef();
+
+                const updatePhysics = (time) => {
+                    if (lastTimeRef.current != undefined) {
+                        const deltaTime = Math.min((time - lastTimeRef.current) / 1000, 0.05); // dt en segundos (capado a 50ms)
+                        
+                        setSimState(prev => {
+                            // Si theta < 0, el péndulo está a la izquierda (longitud L)
+                            // Si theta > 0, el péndulo chocó con el clavo y está a la derecha (longitud L_peg)
+                            const Leff = prev.theta <= 0 ? L : L_peg;
+                            
+                            // Aceleración angular: alpha = - (g / L_eff) * sin(theta)
+                            const alpha = -(g / Leff) * Math.sin(prev.theta);
+                            
+                            // Actualizamos velocidad angular y luego posición
+                            const newOmega = prev.omega + alpha * deltaTime;
+                            const newTheta = prev.theta + newOmega * deltaTime;
+                            
+                            return { theta: newTheta, omega: newOmega };
+                        });
+                    }
+                    lastTimeRef.current = time;
+                    requestRef.current = requestAnimationFrame(updatePhysics);
+                };
+
+                useEffect(() => {
+                    if (isSwinging) {
+                        requestRef.current = requestAnimationFrame(updatePhysics);
+                    } else {
+                        cancelAnimationFrame(requestRef.current);
+                        lastTimeRef.current = undefined;
+                    }
+                    return () => cancelAnimationFrame(requestRef.current);
+                }, [isSwinging]);
+
+                const handlePlay = () => setIsSwinging(true);
+                const handleReset = () => {
+                    setIsSwinging(false);
+                    setSimState({ theta: theta0, omega: 0 });
+                };
+
+                // --- CÁLCULOS PARA RENDERIZADO Y UI ---
+                const { theta, omega } = simState;
+                const Leff = theta <= 0 ? L : L_peg;
+                
+                // Altura actual (h)
+                let currentH = 0;
+                if (theta <= 0) {
+                    currentH = L - L * Math.cos(theta);
+                } else {
+                    currentH = L - (d + L_peg * Math.cos(theta));
+                }
+
+                // Velocidad lineal (v = omega * r)
+                const currentV = Math.abs(omega * Leff);
+
+                // Energías
+                const ePotencial = m * g * currentH;
+                const eCinetica = 0.5 * m * Math.pow(currentV, 2);
+                const eMecanicaInicial = m * g * h0;
+
+                // --- COORDENADAS SVG ---
+                const svgW = 400;
+                const svgH = 350;
+                const cx = 200; // Punto de suspensión X
+                const cy = 20;  // Punto de suspensión Y
+                const scale = 250; // píxeles por metro
+
+                // Posición del clavo (obstáculo)
+                const pegX = cx;
+                const pegY = cy + d * scale;
+
+                // Posición de la masa
+                let massX, massY;
+                if (theta <= 0) {
+                    massX = cx + L * scale * Math.sin(theta);
+                    massY = cy + L * scale * Math.cos(theta);
+                } else {
+                    massX = pegX + L_peg * scale * Math.sin(theta);
+                    massY = pegY + L_peg * scale * Math.cos(theta);
+                }
+
+                // Generador de DCL IA
+                const [imgUrl, setImgUrl] = useState(null);
+                const [imgLoading, setImgLoading] = useState(false);
+
+                const generarDiagrama = async () => {
+                    setImgLoading(true);
+                    const apiKey = "AIzaSyDMyUo-WgmdNkCRW6-YK7h-bnRF_FLAjf0"; // API Key insertada por entorno; 
+                    try {
+                        const response = await fetch(
+                            `https://generativelanguage.googleapis.com/v1beta/models/imagen-4.0-generate-001:predict?key=${apiKey}`,
+                            {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({
+                                    instances: [{ prompt: "Diagrama técnico de física de un péndulo de Galileo. Una masa oscilando de izquierda a derecha. Un obstáculo a mitad de camino que dobla el hilo. Líneas horizontales punteadas que demuestran que la masa alcanza exactamente la misma altura h0 en ambos extremos, independiente de la curva del hilo. Estilo educativo minimalista, fondo blanco" }],
+                                    parameters: { sampleCount: 1 }
+                                })
+                            }
+                        );
+                        if (!response.ok) throw new Error("Error en la red");
+                        const data = await response.json();
+                        setImgUrl(`data:image/png;base64,${data.predictions[0].bytesBase64Encoded}`);
+                    } catch (error) {
+                        console.error(error);
+                    } finally {
+                        setImgLoading(false);
+                    }
+                };
+
+                return (
+                    <div className="min-h-screen bg-slate-900 text-slate-100 p-4 md:p-8">
+                        <header className="max-w-5xl mx-auto mb-8 border-b border-slate-700 pb-6">
+                            <div className="flex items-center gap-3 mb-2">
+                                <span className="bg-teal-600 text-white px-3 py-1 rounded-full text-xs font-black uppercase tracking-widest">Energía Mecánica</span>
+                                <h1 className="text-3xl font-black text-teal-400 uppercase tracking-tight tracking-widest">El Péndulo de Galileo</h1>
+                            </div>
+                            <div className="bg-slate-800/50 p-4 rounded-xl border border-slate-700 mt-4">
+                                <p className="text-slate-300 text-sm leading-relaxed">
+                                    <strong>El Enigma:</strong> Si soltamos un péndulo desde una altura $h_0$, pero su hilo choca con un obstáculo a mitad de camino obligándolo a acortar su radio de giro... ¿A qué altura subirá la esfera por el lado derecho?
+                                </p>
+                            </div>
+                        </header>
+
+                        <main className="max-w-5xl mx-auto grid md:grid-cols-2 gap-8">
+                            {/* Panel Visual */}
+                            <div className="bg-slate-800 rounded-3xl border border-slate-700 h-[500px] relative overflow-hidden shadow-2xl flex flex-col pt-4">
+                                
+                                {/* HUD Superior (Energías) */}
+                                <div className="absolute top-4 w-full px-6 flex justify-between z-30 pointer-events-none">
+                                    <div className="bg-slate-900/90 p-3 rounded-lg border border-slate-700 backdrop-blur-md flex flex-col gap-2 w-48">
+                                        <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest text-center border-b border-slate-700 pb-1 flex items-center justify-center gap-1">
+                                            {BatteryChargingIcon && <BatteryChargingIcon size={12}/>} Balance de Energía
+                                        </p>
+                                        
+                                        {/* Barra Ep */}
+                                        <div className="flex items-center gap-2 mt-1">
+                                            <span className="text-[9px] font-bold text-blue-400 w-4">Ep</span>
+                                            <div className="flex-1 h-2 bg-slate-800 rounded-full overflow-hidden border border-slate-700">
+                                                <div className="h-full bg-blue-500 transition-all duration-75" style={{ width: `${(ePotencial / eMecanicaInicial) * 100}%` }}></div>
+                                            </div>
+                                        </div>
+
+                                        {/* Barra Ec */}
+                                        <div className="flex items-center gap-2">
+                                            <span className="text-[9px] font-bold text-emerald-400 w-4">Ec</span>
+                                            <div className="flex-1 h-2 bg-slate-800 rounded-full overflow-hidden border border-slate-700">
+                                                <div className="h-full bg-emerald-500 transition-all duration-75" style={{ width: `${(eCinetica / eMecanicaInicial) * 100}%` }}></div>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div className="bg-slate-900/90 p-3 rounded-lg border border-slate-700 backdrop-blur-md text-right border-b-4 border-b-teal-500 h-16">
+                                        <p className="text-[10px] text-slate-500 uppercase font-black">Altura Actual (h)</p>
+                                        <p className="text-xl font-mono font-black text-teal-400">{currentH.toFixed(3)} m</p>
+                                    </div>
+                                </div>
+
+                                {/* Escena del Péndulo */}
+                                <div className="relative w-full flex-1 flex justify-center mt-2 grid-bg">
+                                    <svg width={svgW} height={svgH} className="absolute inset-0 overflow-visible mx-auto">
+                                        
+                                        {/* Línea de Altura Inicial (h0) - ¡La pista de la solución! */}
+                                        <line 
+                                            x1="0" y1={cy + L * scale - (h0 * scale)} 
+                                            x2={svgW} y2={cy + L * scale - (h0 * scale)} 
+                                            stroke="#14b8a6" strokeWidth="2" strokeDasharray="6 4" opacity="0.6"
+                                        />
+                                        <text x={svgW - 40} y={cy + L * scale - (h0 * scale) - 8} fill="#5eead4" fontSize="10" fontWeight="bold">Nivel h₀</text>
+
+                                        {/* Techo */}
+                                        <line x1={cx - 100} y1={cy} x2={cx + 100} y2={cy} stroke="#475569" strokeWidth="6" strokeLinecap="round" />
+                                        
+                                        {/* Pivote (Suspensión) */}
+                                        <circle cx={cx} cy={cy} r="6" fill="#94a3b8" />
+
+                                        {/* El Clavo (Obstáculo a 0.5m) */}
+                                        <circle cx={pegX} cy={pegY} r="4" fill="#f43f5e" className="shadow-lg" />
+                                        <text x={pegX + 10} y={pegY + 4} fill="#f43f5e" fontSize="10" fontWeight="bold">Obstáculo</text>
+
+                                        {/* El Hilo */}
+                                        {theta <= 0 ? (
+                                            /* Hilo recto si está a la izquierda */
+                                            <line x1={cx} y1={cy} x2={massX} y2={massY} stroke="#cbd5e1" strokeWidth="2" />
+                                        ) : (
+                                            /* Hilo doblado si está a la derecha */
+                                            <g>
+                                                <line x1={cx} y1={cy} x2={pegX} y2={pegY} stroke="#cbd5e1" strokeWidth="2" />
+                                                <line x1={pegX} y1={pegY} x2={massX} y2={massY} stroke="#cbd5e1" strokeWidth="2" />
+                                            </g>
+                                        )}
+
+                                        {/* La Esfera (Masa) */}
+                                        <circle cx={massX} cy={massY} r="14" fill="#3b82f6" stroke="#60a5fa" strokeWidth="3" />
+                                    </svg>
+                                </div>
+                                
+                                {/* Suelo (Referencia h=0) */}
+                                <div className="absolute bottom-0 w-full h-8 bg-slate-700 border-t-2 border-slate-500 flex items-center justify-center">
+                                    <span className="text-[10px] text-slate-400 font-mono font-bold tracking-widest">Suelo (h = 0)</span>
+                                </div>
+                            </div>
+
+                            {/* Controles y Resolución */}
+                            <div className="space-y-6">
+                                <div className="bg-slate-800 p-6 rounded-3xl border border-slate-700 shadow-xl">
+                                    <h3 className="text-xl font-bold mb-4 flex items-center gap-2 text-teal-400">
+                                        {SettingsIcon && <SettingsIcon size={20} />} Ajustes del Lanzamiento
+                                    </h3>
+                                    
+                                    <div className="space-y-6 mb-6">
+                                        <div>
+                                            <div className="flex justify-between text-xs mb-2">
+                                                <span className="text-teal-400 font-bold uppercase">Altura Inicial (h₀)</span>
+                                                <span className="font-mono bg-slate-900 px-2 py-0.5 rounded text-teal-200">{h0.toFixed(2)} m</span>
+                                            </div>
+                                            <input 
+                                                type="range" min="0.1" max="0.5" step="0.05" value={h0} 
+                                                onChange={e => {setH0(Number(e.target.value)); setIsSwinging(false);}} 
+                                                className="w-full h-2 bg-slate-700 rounded-lg appearance-none cursor-pointer accent-teal-500" 
+                                            />
+                                            <p className="text-[10px] text-slate-500 mt-2 italic text-center">
+                                                *Limitado a 0.5m para asegurar que la esfera no golpee el techo al dar la vuelta tras chocar con el clavo.
+                                            </p>
+                                        </div>
+                                    </div>
+
+                                    <div className="flex gap-2">
+                                        <button 
+                                            onClick={handlePlay} 
+                                            disabled={isSwinging}
+                                            className="flex-1 bg-teal-600 hover:bg-teal-500 text-slate-900 font-black py-4 rounded-xl shadow-[0_0_15px_rgba(20,184,166,0.4)] flex justify-center items-center gap-2 disabled:opacity-50 transition-all active:scale-95"
+                                        >
+                                            {PlayIcon && <PlayIcon size={18} />} SOLTAR PÉNDULO
+                                        </button>
+                                        <button onClick={handleReset} className="bg-slate-700 hover:bg-slate-600 text-white font-bold px-5 rounded-xl transition-all shadow-md">
+                                            {RotateCcwIcon && <RotateCcwIcon size={18} />}
+                                        </button>
+                                    </div>
+                                </div>
+
+                                <div className="bg-teal-950/20 p-6 rounded-3xl border border-teal-500/20">
+                                    <div className="flex justify-between items-center mb-4 border-b border-teal-500/30 pb-2">
+                                        <h4 className="font-bold text-teal-300 flex items-center gap-2">
+                                            {CalculatorIcon && <CalculatorIcon size={18} />} Explicación Teórica
+                                        </h4>
+                                        <button onClick={generarDiagrama} className="text-[10px] uppercase font-bold bg-slate-800 hover:bg-slate-700 text-slate-300 px-3 py-1.5 rounded flex items-center gap-1 border border-slate-600">
+                                            {imgLoading ? <span className="animate-pulse">Cargando...</span> : <>{ImagePlusIcon && <ImagePlusIcon size={14}/>} Generar DCL</>}
+                                        </button>
+                                    </div>
+
+                                    {imgUrl && (
+                                        <div className="mb-4 bg-slate-900 p-2 rounded-xl border border-slate-700 text-center">
+                                            <img src={imgUrl} alt="Diagrama de Energía" className="mx-auto max-h-40 rounded-lg" />
+                                        </div>
+                                    )}
+
+                                    <div className="text-xs text-slate-300 space-y-4 leading-relaxed">
+                                        <p><strong>1. El Principio de Conservación:</strong><br/>
+                                        Como no consideramos rozamiento con el aire ni fricción en el eje, la <strong>Energía Mecánica total se conserva</strong> a lo largo de todo el movimiento.</p>
+                                        
+                                        <div className="bg-slate-900/80 p-2 rounded-lg border-l-4 border-blue-500 font-mono text-blue-200">
+                                            E_inicial = E_final<br/>
+                                            Ep₀ + Ec₀ = Ep_f + Ec_f
+                                        </div>
+
+                                        <p><strong>2. Puntos Extremos:</strong><br/>
+                                        En el punto en el que soltamos la esfera, su velocidad es cero (Ec₀ = 0). En el punto de máxima altura al otro lado, la esfera se detiene un instante antes de volver a caer (Ec_f = 0).</p>
+                                        
+                                        <div className="bg-slate-900/80 p-3 rounded-lg border-l-4 border-teal-500 font-mono text-teal-200 shadow-inner overflow-x-auto">
+                                            Ep₀ + 0 = Ep_f + 0<br/>
+                                            m · g · h₀ = m · g · h_f
+                                        </div>
+
+                                        <p><strong>3. La Resolución (¡La masa se anula!):</strong><br/>
+                                        Dividiendo ambos lados de la ecuación entre la masa ($m$) y la gravedad ($g$), llegamos a la sorprendente conclusión:</p>
+                                        
+                                        <div className="bg-emerald-900/40 p-3 rounded-lg border border-emerald-500/50 font-mono font-black text-emerald-300 text-center text-lg">
+                                            h_f = h₀ = {h0.toFixed(2)} m
+                                        </div>
+                                        
+                                        <p className="text-[10px] text-slate-400 italic">
+                                            <strong>¿Por qué el obstáculo no quita energía?</strong> El clavo ejerce una fuerza de Tensión sobre el hilo, pero la Tensión siempre es perpendicular a la velocidad de la bola en cada instante. Por definición ($W = F \cdot d \cdot \cos(90º)$), una fuerza perpendicular <strong>no realiza trabajo</strong> y, por tanto, no puede restar ni sumar energía cinética.
+                                        </p>
+                                    </div>
+                                </div>
+                            </div>
+                        </main>
+
+                        <footer className="max-w-5xl mx-auto mt-12 pt-6 border-t border-slate-800 text-center text-slate-500 text-[10px] font-bold uppercase tracking-widest">
+                            Profe Física | Dinámica y Conservación de la Energía: El Péndulo de Galileo
+                        </footer>
+                    </div>
+                );
+            };
+
+            const container = document.getElementById('root');
+            const root = ReactDOM.createRoot(container);
+            root.render(<App />);
+        })();
+    </script>
+</body>
+</html>

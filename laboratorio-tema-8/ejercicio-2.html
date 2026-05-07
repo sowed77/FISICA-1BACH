@@ -1,0 +1,327 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Laboratorio: Inercia y Trabajo Nulo</title>
+    <!-- Bibliotecas externas -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <script src="https://unpkg.com/lucide-react@latest"></script>
+
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&family=Fira+Code&display=swap');
+        body { font-family: 'Inter', sans-serif; background-color: #0f172a; }
+        .font-mono { font-family: 'Fira Code', monospace; }
+        
+        .ice-pattern {
+            background-color: #e0f2fe; /* Sky 100 */
+            background-image: 
+                linear-gradient(90deg, rgba(255,255,255,0.8) 1px, transparent 1px),
+                linear-gradient(rgba(255,255,255,0.4) 1px, transparent 1px);
+            background-size: 60px 20px, 20px 20px;
+            box-shadow: inset 0 5px 15px rgba(255,255,255,0.8);
+        }
+
+        .asphalt-pattern {
+            background-color: #334155;
+            background-image: repeating-linear-gradient(45deg, #1e293b 0, #1e293b 2px, transparent 2px, transparent 8px);
+        }
+    </style>
+</head>
+<body>
+    <div id="root"></div>
+
+    <script type="text/babel">
+        (() => {
+            var { useState, useEffect, useRef } = React;
+            var icons = window.LucideReact || {};
+            
+            var getIcon = (name) => icons[name] || (({className}) => <span className={className || ''}></span>);
+            var PlayIcon = getIcon('Play');
+            var RotateCcwIcon = getIcon('RotateCcw');
+            var CalculatorIcon = getIcon('Calculator');
+            var InfoIcon = getIcon('Info');
+            var ArrowRightIcon = getIcon('ArrowRight');
+            var ArrowLeftIcon = getIcon('ArrowLeft');
+            var BatteryChargingIcon = getIcon('BatteryCharging');
+            var SnowflakeIcon = getIcon('Snowflake');
+            var WindIcon = getIcon('Wind');
+            var AlertTriangleIcon = getIcon('AlertTriangle');
+            var ImagePlusIcon = getIcon('ImagePlus');
+            var SettingsIcon = getIcon('Settings'); // <-- Añadido aquí
+
+            var App = () => {
+                // Parámetros fijos
+                const m = 10; // kg
+                const g = 9.8; // m/s^2
+                const vConstante = 5; // m/s (La velocidad ya se le dio antes de empezar a medir)
+                const distTotal = 20; // m
+
+                // Estados
+                const [mode, setMode] = useState('ideal'); // 'ideal' (hielo) o 'real' (asfalto)
+                const [pos, setPos] = useState(0);
+                const [isMoving, setIsMoving] = useState(false);
+
+                // Fricción según modo
+                const mu = mode === 'ideal' ? 0 : 0.4;
+                const fr = mu * m * g; // Fuerza de rozamiento
+                
+                // Fuerza aplicada necesaria para mantener V constante (F_neta = 0 -> F_apli = Fr)
+                const fApli = fr; 
+
+                // Trabajo instantáneo
+                const trabajo = fApli * pos; // W = F * d
+
+                // Animación (MRU: Posición = velocidad * tiempo)
+                useEffect(() => {
+                    let interval;
+                    if (isMoving && pos < distTotal) {
+                        interval = setInterval(() => {
+                            setPos(p => {
+                                const newP = p + (vConstante * 0.05); // dt = 0.05
+                                if (newP >= distTotal) {
+                                    setIsMoving(false);
+                                    return distTotal;
+                                }
+                                return newP;
+                            });
+                        }, 20); // 50 fps visuales
+                    }
+                    return () => clearInterval(interval);
+                }, [isMoving, pos]);
+
+                const handlePlay = () => {
+                    if (pos < distTotal) setIsMoving(true);
+                };
+
+                const reset = () => {
+                    setPos(0);
+                    setIsMoving(false);
+                };
+
+                useEffect(() => {
+                    reset();
+                }, [mode]);
+
+                // Escala visual
+                const pxPerMeter = 350 / distTotal; 
+                const posVisualX = pos * pxPerMeter;
+
+                // Generador DCL IA
+                const [imgUrl, setImgUrl] = useState(null);
+                const [imgLoading, setImgLoading] = useState(false);
+
+                const generarDiagrama = async () => {
+                    setImgLoading(true);
+                    const apiKey = "AIzaSyDMyUo-WgmdNkCRW6-YK7h-bnRF_FLAjf0"; // API Key insertada por entorno; 
+                    try {
+                        const response = await fetch(
+                            `https://generativelanguage.googleapis.com/v1beta/models/imagen-4.0-generate-001:predict?key=${apiKey}`,
+                            {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({
+                                    instances: [{ prompt: "Diagrama técnico de física de la ley de inercia. Un bloque moviéndose hacia la derecha a velocidad constante. En la opción sin fricción, solo hay vector Peso hacia abajo y Normal hacia arriba, sin fuerzas horizontales. En la opción con fricción, hay una fuerza de empuje igual a la de fricción. Fondo blanco, minimalista, educativo" }],
+                                    parameters: { sampleCount: 1 }
+                                })
+                            }
+                        );
+                        if (!response.ok) throw new Error("Error en red");
+                        const data = await response.json();
+                        setImgUrl(`data:image/png;base64,${data.predictions[0].bytesBase64Encoded}`);
+                    } catch (error) {
+                        console.error(error);
+                    } finally {
+                        setImgLoading(false);
+                    }
+                };
+
+                return (
+                    <div className="min-h-screen bg-slate-900 text-slate-100 p-4 md:p-8">
+                        <header className="max-w-5xl mx-auto mb-8 border-b border-slate-700 pb-6">
+                            <div className="flex items-center gap-3 mb-2">
+                                <span className="bg-sky-600 text-white px-3 py-1 rounded-full text-xs font-black uppercase tracking-widest">Inercia y Energía</span>
+                                <h1 className="text-3xl font-black text-sky-400 uppercase tracking-tight tracking-widest">El Trabajo Invisible</h1>
+                            </div>
+                            <div className="bg-slate-800/50 p-4 rounded-xl border border-slate-700 mt-4">
+                                <p className="text-slate-300 text-sm leading-relaxed">
+                                    <strong>Enunciado Visual:</strong> Desplazamos un bloque de 10 kg a una velocidad constante de 5 m/s. Observa la diferencia de Trabajo Mecánico (Julios) cuando lo hacemos en un suelo ideal sin fricción (hielo) frente a un suelo con fricción (asfalto).
+                                </p>
+                            </div>
+                        </header>
+
+                        <main className="max-w-5xl mx-auto grid md:grid-cols-2 gap-8">
+                            {/* Panel Visual */}
+                            <div className="bg-slate-800 rounded-3xl border border-slate-700 h-[450px] relative overflow-hidden shadow-2xl flex flex-col justify-end pb-12">
+                                
+                                {/* Marcadores Flotantes */}
+                                <div className="absolute top-4 w-full px-6 flex justify-between z-30 pointer-events-none">
+                                    <div className="bg-slate-900/90 p-3 rounded-lg border border-slate-700 backdrop-blur-md">
+                                        <p className="text-[10px] text-slate-500 uppercase font-black">Distancia (d)</p>
+                                        <p className="text-xl font-mono font-black text-emerald-400">{pos.toFixed(1)} m</p>
+                                    </div>
+                                    <div className={`bg-slate-900/90 p-3 rounded-lg border backdrop-blur-md text-right border-b-4 ${trabajo === 0 ? 'border-b-sky-500 shadow-[0_0_15px_rgba(14,165,233,0.3)]' : 'border-b-orange-500 shadow-[0_0_15px_rgba(249,115,22,0.3)]'}`}>
+                                        <p className="text-[10px] text-slate-500 uppercase font-black flex items-center justify-end gap-1">
+                                            {BatteryChargingIcon && <BatteryChargingIcon size={12} className={trabajo > 0 ? "text-orange-400" : "text-sky-400"} />} Trabajo Mecánico (W)
+                                        </p>
+                                        <p className={`text-3xl font-mono font-black ${trabajo === 0 ? 'text-sky-400' : 'text-orange-400'}`}>
+                                            {trabajo.toFixed(0)} <span className="text-sm">J</span>
+                                        </p>
+                                    </div>
+                                </div>
+
+                                {mode === 'ideal' && isMoving && (
+                                    <div className="absolute top-24 left-1/2 -translate-x-1/2 z-40 bg-sky-900/80 text-sky-200 px-6 py-2 rounded-full border border-sky-500 text-xs font-bold uppercase tracking-widest shadow-lg animate-pulse whitespace-nowrap">
+                                        Se mueve solo por Inercia (F = 0)
+                                    </div>
+                                )}
+
+                                {/* Escena del bloque */}
+                                <div className="relative w-full h-48 flex justify-center items-end">
+                                    {/* Pista Dinámica */}
+                                    <div className={`absolute bottom-0 w-full h-8 border-t-2 transition-colors duration-500 ${mode === 'ideal' ? 'ice-pattern border-sky-300' : 'asphalt-pattern border-slate-500'}`}></div>
+
+                                    {/* Bloque */}
+                                    <div 
+                                        className="absolute bottom-8 w-20 h-20 bg-blue-600 border-4 border-blue-400 rounded-lg flex items-center justify-center shadow-lg transition-transform z-20"
+                                        style={{ transform: `translateX(${posVisualX}px)`, left: '40px' }}
+                                    >
+                                        <span className="font-black text-blue-200 text-xs">10 kg</span>
+
+                                        {/* Vector Velocidad (Siempre presente) */}
+                                        <div className="absolute bottom-full left-1/2 flex items-center mb-2 pointer-events-none" style={{ width: 80, transform: 'translateX(-50%)' }}>
+                                            <div className="h-0.5 bg-emerald-400 w-full relative">
+                                                <div className="absolute right-0 -top-1.5">{ArrowRightIcon && <ArrowRightIcon size={14} className="text-emerald-400" />}</div>
+                                            </div>
+                                            <span className="ml-1 text-[10px] font-black text-emerald-300">v = {vConstante} m/s</span>
+                                        </div>
+
+                                        {/* Vectores de Fuerza (Solo en modo real) */}
+                                        {mode === 'real' && (
+                                            <>
+                                                {/* Fuerza de Empuje */}
+                                                <div className="absolute left-full top-1/2 -translate-y-1/2 flex items-center pl-1 pointer-events-none" style={{ width: 60 }}>
+                                                    <div className="h-1.5 bg-orange-400 w-full relative shadow-[0_0_8px_rgba(251,146,60,0.8)]">
+                                                        <div className="absolute right-0 -top-2">{ArrowRightIcon && <ArrowRightIcon size={20} className="text-orange-400" />}</div>
+                                                    </div>
+                                                    <span className="ml-1 text-[10px] font-black text-orange-300 bg-slate-900/80 px-1 rounded">F={fApli.toFixed(0)}N</span>
+                                                </div>
+
+                                                {/* Fuerza de Fricción */}
+                                                <div className="absolute right-full top-1/2 -translate-y-1/2 flex items-center pr-1 pointer-events-none" style={{ width: 60 }}>
+                                                    <span className="mr-1 text-[10px] font-black text-red-400 bg-slate-900/80 px-1 rounded">Fr={fr.toFixed(0)}N</span>
+                                                    <div className="h-1.5 bg-red-500 w-full relative shadow-[0_0_8px_rgba(239,68,68,0.8)]">
+                                                        <div className="absolute left-0 -top-2">{ArrowLeftIcon && <ArrowLeftIcon size={20} className="text-red-500" />}</div>
+                                                    </div>
+                                                </div>
+                                            </>
+                                        )}
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* Controles y Explicación */}
+                            <div className="space-y-6">
+                                <div className="bg-slate-800 p-6 rounded-3xl border border-slate-700 shadow-xl">
+                                    <h3 className="text-xl font-bold mb-4 flex items-center gap-2 text-sky-400">
+                                        {SettingsIcon && <SettingsIcon size={20} />} Seleccionar Entorno
+                                    </h3>
+                                    
+                                    <div className="grid grid-cols-2 gap-4 mb-6">
+                                        <button 
+                                            onClick={() => setMode('ideal')}
+                                            className={`p-4 rounded-xl border-2 flex flex-col items-center gap-2 transition-all ${mode === 'ideal' ? 'bg-sky-900/50 border-sky-400 text-sky-200 shadow-[0_0_15px_rgba(56,189,248,0.3)]' : 'bg-slate-900/50 border-slate-700 text-slate-500 hover:border-slate-500'}`}
+                                        >
+                                            {SnowflakeIcon && <SnowflakeIcon size={32} className={mode === 'ideal' ? 'text-sky-400' : ''} />}
+                                            <span className="font-bold text-xs uppercase text-center">Hielo Ideal<br/>(Sin Fricción)</span>
+                                        </button>
+
+                                        <button 
+                                            onClick={() => setMode('real')}
+                                            className={`p-4 rounded-xl border-2 flex flex-col items-center gap-2 transition-all ${mode === 'real' ? 'bg-orange-900/50 border-orange-400 text-orange-200 shadow-[0_0_15px_rgba(251,146,60,0.3)]' : 'bg-slate-900/50 border-slate-700 text-slate-500 hover:border-slate-500'}`}
+                                        >
+                                            {WindIcon && <WindIcon size={32} className={mode === 'real' ? 'text-orange-400' : ''} />}
+                                            <span className="font-bold text-xs uppercase text-center">Asfalto Real<br/>(Con Fricción)</span>
+                                        </button>
+                                    </div>
+
+                                    <div className="flex gap-2">
+                                        <button 
+                                            onClick={handlePlay} 
+                                            disabled={isMoving || pos >= distTotal}
+                                            className="flex-1 bg-sky-600 hover:bg-sky-500 text-white font-black py-4 rounded-xl shadow-lg flex justify-center items-center gap-2 disabled:opacity-50 transition-all active:scale-95"
+                                        >
+                                            {PlayIcon && <PlayIcon size={18} />} OBSERVAR DESPLAZAMIENTO
+                                        </button>
+                                        <button onClick={reset} className="bg-slate-700 hover:bg-slate-600 text-white font-bold px-5 rounded-xl transition-all shadow-md">
+                                            {RotateCcwIcon && <RotateCcwIcon size={18} />}
+                                        </button>
+                                    </div>
+                                </div>
+
+                                <div className="bg-sky-950/20 p-6 rounded-3xl border border-sky-500/20">
+                                    <div className="flex justify-between items-center mb-4 border-b border-sky-500/30 pb-2">
+                                        <h4 className="font-bold text-sky-300 flex items-center gap-2">
+                                            {CalculatorIcon && <CalculatorIcon size={18} />} Análisis Físico
+                                        </h4>
+                                        <button onClick={generarDiagrama} className="text-[10px] uppercase font-bold bg-slate-800 hover:bg-slate-700 text-slate-300 px-3 py-1.5 rounded flex items-center gap-1 border border-slate-600">
+                                            {imgLoading ? <span className="animate-pulse">Cargando...</span> : <>{ImagePlusIcon && <ImagePlusIcon size={14}/>} Generar DCL</>}
+                                        </button>
+                                    </div>
+
+                                    {imgUrl && (
+                                        <div className="mb-4 bg-slate-900 p-2 rounded-xl border border-slate-700 text-center">
+                                            <img src={imgUrl} alt="Diagrama de Inercia" className="mx-auto max-h-40 rounded-lg" />
+                                        </div>
+                                    )}
+
+                                    <div className="text-xs text-slate-300 space-y-4 leading-relaxed">
+                                        <div className="bg-slate-900/80 p-3 rounded-lg border-l-4 border-sky-500 font-mono text-center text-sky-300 shadow-inner text-sm font-bold">
+                                            W = F_aplicada · d
+                                        </div>
+
+                                        {mode === 'ideal' ? (
+                                            <div className="p-4 bg-sky-900/20 border border-sky-500/30 rounded-lg">
+                                                <p className="font-bold text-sky-400 mb-2 uppercase text-[10px] tracking-widest">Caso Ideal (Sin Fricción):</p>
+                                                <p className="mb-2">Por la Primera Ley de Newton (Inercia), un cuerpo en movimiento mantiene su velocidad constante si no actúan fuerzas sobre él.</p>
+                                                <p className="mb-2">Como no hay rozamiento que lo frene, <strong>no necesitamos empujarlo</strong> (F_aplicada = 0 N) para que siga a {vConstante} m/s.</p>
+                                                <p className="font-mono text-white bg-slate-900 p-2 rounded mt-2 text-center border border-slate-700">W = 0 N · 20 m = <span className="text-sky-400 font-bold">0 J</span></p>
+                                            </div>
+                                        ) : (
+                                            <div className="p-4 bg-orange-900/20 border border-orange-500/30 rounded-lg">
+                                                <p className="font-bold text-orange-400 mb-2 uppercase text-[10px] tracking-widest">Caso Real (Con Fricción):</p>
+                                                <p className="mb-2">El asfalto produce un rozamiento F_r = μ·N = 0.4 · (10·9.8) = {fr.toFixed(1)} N.</p>
+                                                <p className="mb-2">Para mantener la velocidad constante (a=0), debemos empujar con una fuerza exactamente igual para cancelar el rozamiento.</p>
+                                                <p className="font-mono text-white bg-slate-900 p-2 rounded mt-2 text-center border border-slate-700">W = {fr.toFixed(1)} N · 20 m = <span className="text-orange-400 font-bold">{(fr * distTotal).toFixed(0)} J</span></p>
+                                            </div>
+                                        )}
+                                        
+                                        <div className="flex items-start gap-2 bg-slate-800 p-3 rounded-lg border border-slate-700 mt-2">
+                                            <AlertTriangleIcon className="text-yellow-500 shrink-0" size={16} />
+                                            <p className="text-[10px] text-slate-400">
+                                                <strong>Ojo con el concepto:</strong> Sí que hubo que hacer trabajo al principio para acelerarlo de 0 a 5 m/s, pero la pregunta es sobre el trabajo durante el desplazamiento a velocidad constante.
+                                            </p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </main>
+
+                        <footer className="max-w-5xl mx-auto mt-12 pt-6 border-t border-slate-800 text-center text-slate-500 text-[10px] font-bold uppercase tracking-widest">
+                            Profe Física | Trabajo Mecánico y Primera Ley de Newton
+                        </footer>
+                    </div>
+                );
+            };
+
+            const container = document.getElementById('root');
+            const root = ReactDOM.createRoot(container);
+            root.render(<App />);
+        })();
+    </script>
+</body>
+</html>

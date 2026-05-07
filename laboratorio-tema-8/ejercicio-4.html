@@ -1,0 +1,339 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Laboratorio: El Trabajo Nulo de la Grúa</title>
+    <!-- Bibliotecas externas -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <script src="https://unpkg.com/lucide-react@latest"></script>
+
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&family=Fira+Code&display=swap');
+        body { font-family: 'Inter', sans-serif; background-color: #0f172a; }
+        .font-mono { font-family: 'Fira Code', monospace; }
+        input[type=range]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            height: 24px;
+            width: 24px;
+            border-radius: 50%;
+            background: #0ea5e9; /* Sky 500 */
+            cursor: pointer;
+            border: 3px solid #ffffff;
+            box-shadow: 0 0 10px rgba(14, 165, 233, 0.5);
+        }
+        .sky-pattern {
+            background-color: #e0f2fe; /* Sky 100 */
+            background-image: radial-gradient(#bae6fd 2px, transparent 2px);
+            background-size: 30px 30px;
+        }
+        .crane-rail {
+            background-image: repeating-linear-gradient(90deg, #475569 0, #475569 10px, transparent 10px, transparent 20px);
+            border-bottom: 4px solid #334155;
+        }
+    </style>
+</head>
+<body>
+    <div id="root"></div>
+
+    <script type="text/babel">
+        (() => {
+            var { useState, useEffect } = React;
+            var icons = window.LucideReact || {};
+            
+            var getIcon = (name) => icons[name] || (({className}) => <span className={className || ''}></span>);
+            var PlayIcon = getIcon('Play');
+            var RotateCcwIcon = getIcon('RotateCcw');
+            var CalculatorIcon = getIcon('Calculator');
+            var SettingsIcon = getIcon('Settings');
+            var InfoIcon = getIcon('Info');
+            var ArrowRightIcon = getIcon('ArrowRight');
+            var ArrowUpIcon = getIcon('ArrowUp');
+            var ArrowDownIcon = getIcon('ArrowDown');
+            var BoxIcon = getIcon('Box');
+            var BatteryChargingIcon = getIcon('BatteryCharging');
+            var ImagePlusIcon = getIcon('ImagePlus');
+
+            var App = () => {
+                const g = 9.8; // m/s^2
+
+                // Estados interactivos (Inicializados con el enunciado)
+                const [masa, setMasa] = useState(400); // kg
+                const [distanciaTotal, setDistanciaTotal] = useState(20); // m
+
+                // Cálculos Físicos
+                const peso = masa * g; // N
+                const fuerzaGrua = peso; // N (Para sostenerlo sin que caiga ni suba)
+                
+                // Trabajo: W = F * d * cos(90º)
+                const angulo = 90; // Grados entre la fuerza (arriba) y el desplazamiento (derecha)
+                const anguloRad = angulo * (Math.PI / 180);
+                const trabajo = fuerzaGrua * distanciaTotal * Math.cos(anguloRad); // ¡Cero!
+
+                // Estados de la animación
+                const [pos, setPos] = useState(0); // metros recorridos visualmente
+                const [isMoving, setIsMoving] = useState(false);
+
+                // Escala visual
+                const pxPerMeter = 10; // 20m = 200px
+                const visualX = pos * pxPerMeter;
+
+                useEffect(() => {
+                    let interval;
+                    if (isMoving && pos < distanciaTotal) {
+                        interval = setInterval(() => {
+                            setPos(p => {
+                                const newP = p + (distanciaTotal / 50); // Movimiento a velocidad constante visual
+                                if (newP >= distanciaTotal) {
+                                    setIsMoving(false);
+                                    return distanciaTotal;
+                                }
+                                return newP;
+                            });
+                        }, 30);
+                    }
+                    return () => clearInterval(interval);
+                }, [isMoving, pos, distanciaTotal]);
+
+                const handlePlay = () => {
+                    if (pos < distanciaTotal) setIsMoving(true);
+                };
+
+                const reset = () => {
+                    setPos(0);
+                    setIsMoving(false);
+                };
+
+                // Generador de Diagrama de Cuerpo Libre
+                const [imgUrl, setImgUrl] = useState(null);
+                const [imgLoading, setImgLoading] = useState(false);
+
+                const generarDiagrama = async () => {
+                    setImgLoading(true);
+                    const apiKey = "AIzaSyDMyUo-WgmdNkCRW6-YK7h-bnRF_FLAjf0"; // API Key insertada por entorno; 
+                    try {
+                        const response = await fetch(
+                            `https://generativelanguage.googleapis.com/v1beta/models/imagen-4.0-generate-001:predict?key=${apiKey}`,
+                            {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({
+                                    instances: [{ prompt: "Diagrama técnico de física del Trabajo Mecánico. Un bloque moviéndose hacia la derecha. Vector desplazamiento delta x horizontal hacia la derecha. Vector Fuerza de la grúa apuntando verticalmente hacia arriba. Un arco de 90 grados marcando el ángulo recto entre la fuerza y el desplazamiento. Estilo minimalista educativo, fondo blanco" }],
+                                    parameters: { sampleCount: 1 }
+                                })
+                            }
+                        );
+                        if (!response.ok) throw new Error("Error en red");
+                        const data = await response.json();
+                        setImgUrl(`data:image/png;base64,${data.predictions[0].bytesBase64Encoded}`);
+                    } catch (error) {
+                        console.error(error);
+                    } finally {
+                        setImgLoading(false);
+                    }
+                };
+
+                return (
+                    <div className="min-h-screen bg-slate-900 text-slate-100 p-4 md:p-8">
+                        <header className="max-w-5xl mx-auto mb-8 border-b border-slate-700 pb-6">
+                            <div className="flex items-center gap-3 mb-2">
+                                <span className="bg-sky-600 text-white px-3 py-1 rounded-full text-xs font-black uppercase tracking-widest">Energía y Trabajo</span>
+                                <h1 className="text-3xl font-black text-sky-400 uppercase tracking-tight tracking-widest">Fuerzas Perpendiculares</h1>
+                            </div>
+                            <div className="bg-slate-800/50 p-4 rounded-xl border border-slate-700 mt-4">
+                                <p className="text-slate-300 text-sm leading-relaxed">
+                                    <strong>Enunciado:</strong> Una grúa desplaza horizontalmente un contenedor de 400 kg de masa una distancia de 20 m sin que haya rozamientos. ¿Qué trabajo hace?
+                                </p>
+                            </div>
+                        </header>
+
+                        <main className="max-w-5xl mx-auto grid md:grid-cols-2 gap-8">
+                            {/* Panel Visual */}
+                            <div className="bg-slate-800 rounded-3xl border border-slate-700 h-[500px] relative overflow-hidden shadow-2xl flex flex-col justify-between">
+                                
+                                {/* HUD Superior */}
+                                <div className="absolute top-4 w-full px-6 flex justify-between z-30 pointer-events-none">
+                                    <div className="bg-slate-900/90 p-3 rounded-lg border border-slate-700 backdrop-blur-md">
+                                        <p className="text-[10px] text-slate-500 uppercase font-black">Distancia Recorrida (Δx)</p>
+                                        <p className="text-xl font-mono font-black text-emerald-400">{pos.toFixed(1)} m</p>
+                                    </div>
+                                    <div className="bg-slate-900/90 p-3 rounded-lg border border-sky-500/50 backdrop-blur-md text-right shadow-[0_0_15px_rgba(14,165,233,0.2)] border-b-4 border-b-sky-500">
+                                        <p className="text-[10px] text-sky-300 uppercase font-black flex items-center justify-end gap-1">
+                                            {BatteryChargingIcon && <BatteryChargingIcon size={12} className="text-sky-400" />} Trabajo Mecánico (W)
+                                        </p>
+                                        <p className="text-3xl font-mono font-black text-sky-400">{trabajo.toFixed(0)} <span className="text-sm">J</span></p>
+                                    </div>
+                                </div>
+
+                                {/* Animación de la Grúa */}
+                                <div className="relative w-full h-full flex flex-col pt-12 sky-pattern">
+                                    
+                                    {/* Riel de la grúa (Techo) */}
+                                    <div className="w-full h-6 crane-rail bg-slate-600 relative z-20 shadow-md"></div>
+
+                                    {/* Conjunto Móvil (Carro + Cable + Contenedor) */}
+                                    <div 
+                                        className="absolute top-12 bottom-12 flex flex-col items-center z-10 transition-transform"
+                                        style={{ left: `${40 + visualX}px` }}
+                                    >
+                                        {/* Carro de la Grúa */}
+                                        <div className="w-16 h-8 bg-yellow-500 rounded-b-lg border-2 border-yellow-600 shadow-md flex justify-center z-20">
+                                            <div className="w-4 h-4 bg-slate-800 rounded-full mt-2"></div>
+                                        </div>
+
+                                        {/* Cable */}
+                                        <div className="w-1 flex-1 bg-slate-400 border-l border-slate-300 z-10"></div>
+
+                                        {/* Contenedor */}
+                                        <div className="w-24 h-20 bg-orange-600 border-4 border-orange-700 rounded shadow-xl flex items-center justify-center relative z-20">
+                                            <span className="font-black text-orange-200 opacity-60 text-lg uppercase tracking-widest">{masa}kg</span>
+                                            
+                                            {/* Vectores (Mostrados en el centro del contenedor) */}
+                                            <div className="absolute top-1/2 left-1/2 w-0 h-0 pointer-events-none">
+                                                
+                                                {/* Vector Fuerza de la Grúa (Arriba) */}
+                                                <div className="absolute bottom-0 flex flex-col items-center pb-1" style={{ height: 100, transform: 'translateX(-50%)' }}>
+                                                    <span className="mb-1 text-[10px] font-black text-indigo-500 bg-white/80 px-1 rounded shadow whitespace-nowrap">F_grúa = {fuerzaGrua.toLocaleString()} N</span>
+                                                    <div className="w-2 bg-indigo-500 h-full relative">
+                                                        <div className="absolute top-0 -translate-x-[6px]">{ArrowUpIcon && <ArrowUpIcon size={20} className="text-indigo-600" />}</div>
+                                                    </div>
+                                                </div>
+
+                                                {/* Vector Desplazamiento (Derecha) */}
+                                                {isMoving && (
+                                                    <div className="absolute left-0 top-0 flex items-center pl-1" style={{ width: 120, transform: 'translateY(-50%)' }}>
+                                                        <div className="h-2 bg-emerald-500 w-full relative border-t-2 border-dashed border-emerald-600">
+                                                            <div className="absolute right-0 -top-[7px]">{ArrowRightIcon && <ArrowRightIcon size={20} className="text-emerald-600" />}</div>
+                                                        </div>
+                                                        <span className="ml-2 text-[12px] font-black text-emerald-600 bg-white/80 px-1 rounded shadow whitespace-nowrap">Δx</span>
+                                                    </div>
+                                                )}
+
+                                                {/* Marcador del Ángulo de 90º */}
+                                                {isMoving && (
+                                                    <div className="absolute bottom-0 left-0 w-8 h-8 border-t-2 border-r-2 border-red-500/80 bg-red-500/20">
+                                                        <span className="absolute -top-4 -right-8 text-[10px] font-bold text-red-600 bg-white/80 px-1 rounded shadow">90º</span>
+                                                    </div>
+                                                )}
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                {/* Suelo base */}
+                                <div className="absolute bottom-0 w-full h-12 bg-slate-700 border-t-4 border-slate-600"></div>
+                            </div>
+
+                            {/* Controles y Resolución */}
+                            <div className="space-y-6">
+                                <div className="bg-slate-800 p-6 rounded-3xl border border-slate-700 shadow-xl">
+                                    <h3 className="text-xl font-bold mb-4 flex items-center gap-2 text-sky-400">
+                                        {SettingsIcon && <SettingsIcon size={20} />} Parámetros de Carga
+                                    </h3>
+                                    
+                                    <div className="space-y-6 mb-6">
+                                        <div>
+                                            <div className="flex justify-between text-xs mb-2">
+                                                <span className="text-orange-400 font-bold uppercase">Masa del Contenedor (m)</span>
+                                                <span className="font-mono bg-slate-900 px-2 py-0.5 rounded text-white">{masa} kg</span>
+                                            </div>
+                                            <input 
+                                                type="range" min="100" max="2000" step="100" value={masa} 
+                                                onChange={e => {setMasa(Number(e.target.value)); reset();}} 
+                                                className="w-full h-3 bg-slate-700 rounded-lg appearance-none cursor-pointer accent-orange-500" 
+                                            />
+                                        </div>
+
+                                        <div className="pt-2 border-t border-slate-700">
+                                            <div className="flex justify-between text-xs mb-2">
+                                                <span className="text-emerald-400 font-bold uppercase">Distancia a Desplazar (Δx)</span>
+                                                <span className="font-mono bg-slate-900 px-2 py-0.5 rounded text-emerald-200">{distanciaTotal} m</span>
+                                            </div>
+                                            <input 
+                                                type="range" min="5" max="50" step="1" value={distanciaTotal} 
+                                                onChange={e => {setDistanciaTotal(Number(e.target.value)); reset();}} 
+                                                className="w-full h-3 bg-slate-700 rounded-lg appearance-none cursor-pointer accent-emerald-500" 
+                                            />
+                                        </div>
+                                    </div>
+
+                                    <div className="flex gap-2">
+                                        <button 
+                                            onClick={handlePlay} 
+                                            disabled={isMoving || pos >= distanciaTotal}
+                                            className="flex-1 bg-sky-600 hover:bg-sky-500 text-white font-black py-4 rounded-xl shadow-lg flex justify-center items-center gap-2 disabled:opacity-50 transition-all active:scale-95"
+                                        >
+                                            {PlayIcon && <PlayIcon size={18} />} DESPLAZAR GRÚA
+                                        </button>
+                                        <button onClick={reset} className="bg-slate-700 hover:bg-slate-600 text-white font-bold px-5 rounded-xl transition-all shadow-md">
+                                            {RotateCcwIcon && <RotateCcwIcon size={18} />}
+                                        </button>
+                                    </div>
+                                </div>
+
+                                <div className="bg-sky-950/20 p-6 rounded-3xl border border-sky-500/20">
+                                    <div className="flex justify-between items-center mb-4 border-b border-sky-500/30 pb-2">
+                                        <h4 className="font-bold text-sky-300 flex items-center gap-2">
+                                            {CalculatorIcon && <CalculatorIcon size={18} />} Resolución Matemática
+                                        </h4>
+                                        <button onClick={generarDiagrama} className="text-[10px] uppercase font-bold bg-slate-800 hover:bg-slate-700 text-slate-300 px-3 py-1.5 rounded flex items-center gap-1 border border-slate-600">
+                                            {imgLoading ? <span className="animate-pulse">Cargando...</span> : <>{ImagePlusIcon && <ImagePlusIcon size={14}/>} Generar DCL</>}
+                                        </button>
+                                    </div>
+
+                                    {imgUrl && (
+                                        <div className="mb-4 bg-slate-900 p-2 rounded-xl border border-slate-700 text-center">
+                                            <img src={imgUrl} alt="Diagrama de Trabajo" className="mx-auto max-h-40 rounded-lg" />
+                                        </div>
+                                    )}
+
+                                    <div className="text-xs text-slate-300 space-y-4 leading-relaxed">
+                                        <div className="bg-slate-900/80 p-3 rounded-lg border-l-4 border-sky-500 font-mono text-center text-sky-300 shadow-inner text-sm font-bold">
+                                            W = F · Δx · cos(α)
+                                        </div>
+
+                                        <p><strong>1. La Fuerza de la Grúa (F):</strong><br/>
+                                        La grúa aplica una fuerza vertical hacia arriba para sujetar el contenedor y evitar que caiga. Esta fuerza es igual a su peso.</p>
+                                        <div className="bg-slate-900/80 p-2 rounded-lg border-l-4 border-indigo-500 font-mono text-indigo-200">
+                                            F = P = m · g = {masa} · 9.8 = <strong>{fuerzaGrua.toLocaleString()} N</strong> (Hacia arriba)
+                                        </div>
+
+                                        <p className="mt-3"><strong>2. El Desplazamiento (Δx):</strong><br/>
+                                        El movimiento es puramente horizontal (hacia la derecha).</p>
+                                        <div className="bg-slate-900/80 p-2 rounded-lg border-l-4 border-emerald-500 font-mono text-emerald-200">
+                                            Δx = <strong>{distanciaTotal} m</strong> (Hacia la derecha)
+                                        </div>
+
+                                        <p className="mt-3"><strong>3. El Ángulo (α) y el Trabajo (W):</strong><br/>
+                                        El ángulo que forman una fuerza vertical (arriba) y un desplazamiento horizontal (derecha) es de <strong>90º</strong>.</p>
+                                        <div className="bg-slate-900/80 p-3 rounded-lg border-l-4 border-red-500 font-mono text-red-200 shadow-inner">
+                                            cos(90º) = 0<br/><br/>
+                                            W = {fuerzaGrua.toLocaleString()} · {distanciaTotal} · cos(90º)<br/>
+                                            W = {fuerzaGrua.toLocaleString()} · {distanciaTotal} · 0 = <strong>{trabajo} J</strong>
+                                        </div>
+                                        <p className="text-[10px] text-slate-400 italic text-center mt-2">
+                                            En física, sostener un peso mientras te mueves horizontalmente sin rozamiento <strong>no realiza trabajo mecánico</strong>.
+                                        </p>
+                                    </div>
+                                </div>
+                            </div>
+                        </main>
+
+                        <footer className="max-w-5xl mx-auto mt-12 pt-6 border-t border-slate-800 text-center text-slate-500 text-[10px] font-bold uppercase tracking-widest">
+                            Profe Física | Energía y Trabajo Mecánico
+                        </footer>
+                    </div>
+                );
+            };
+
+            const container = document.getElementById('root');
+            const root = ReactDOM.createRoot(container);
+            root.render(<App />);
+        })();
+    </script>
+</body>
+</html>

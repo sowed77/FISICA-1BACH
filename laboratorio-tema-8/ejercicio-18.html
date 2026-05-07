@@ -1,0 +1,308 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Laboratorio: Energía en Órbitas Elípticas</title>
+    <!-- Bibliotecas externas -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <script src="https://unpkg.com/lucide-react@latest"></script>
+
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&family=Fira+Code&display=swap');
+        body { font-family: 'Inter', sans-serif; background-color: #020617; }
+        .font-mono { font-family: 'Fira Code', monospace; }
+        
+        .space-bg {
+            background-image: 
+                radial-gradient(white, rgba(255,255,255,.2) 2px, transparent 4px),
+                radial-gradient(white, rgba(255,255,255,.15) 1px, transparent 3px);
+            background-size: 550px 550px, 350px 350px;
+            background-position: 0 0, 40px 60px;
+            opacity: 0.4;
+        }
+
+        .orbit-path {
+            stroke: rgba(148, 163, 184, 0.3);
+            stroke-width: 2;
+            fill: none;
+            stroke-dasharray: 4 4;
+        }
+
+        .sun-glow {
+            filter: blur(15px);
+            animation: pulse 2s infinite alternate;
+        }
+        @keyframes pulse {
+            from { opacity: 0.6; transform: scale(1); }
+            to { opacity: 1; transform: scale(1.2); }
+        }
+    </style>
+</head>
+<body>
+    <div id="root"></div>
+
+    <script type="text/babel">
+        (() => {
+            const { useState, useEffect, useMemo } = React;
+            
+            // FIX: En la versión CDN, los iconos están en window.lucide
+            const Lucide = window.lucide || {};
+            
+            // Función auxiliar para obtener iconos de forma segura
+            const getIcon = (name) => {
+                const Icon = Lucide[name];
+                return Icon ? Icon : (props) => <span {...props}></span>;
+            };
+
+            const CalculatorIcon = getIcon('Calculator');
+            const InfoIcon = getIcon('Info');
+            const SunIcon = getIcon('Sun');
+            const RotateCcwIcon = getIcon('RotateCcw');
+            const ImagePlusIcon = getIcon('ImagePlus');
+            const TimerIcon = getIcon('Timer');
+            const PauseIcon = getIcon('Pause');
+            const PlayIcon = getIcon('Play');
+            const Loader2Icon = getIcon('Loader2');
+
+            const App = () => {
+                // Datos del Cometa Halley (en km)
+                const perihelio_km = 8.75e7;
+                const afelio_km = 5.26e9;
+                const a_km = (perihelio_km + afelio_km) / 2;
+                const e = (afelio_km - perihelio_km) / (afelio_km + perihelio_km);
+
+                const [angle, setAngle] = useState(0); // Anomalía verdadera
+                const [isMoving, setIsMoving] = useState(true);
+
+                // Cálculo del radio vector (r) en función de la anomalía verdadera
+                const r_actual_km = useMemo(() => {
+                    return a_km * (1 - Math.pow(e, 2)) / (1 + e * Math.cos(angle));
+                }, [angle, a_km, e]);
+
+                // Energías relativas para las barras de progreso
+                const Ep_relativa = -1 / (r_actual_km / afelio_km);
+                const Ep_perihelio = -1 / (perihelio_km / afelio_km);
+                const Ep_afelio = -1; 
+                const Em_relativa = -1 / (2 * a_km / afelio_km);
+                const Ec_relativa = Em_relativa - Ep_relativa;
+
+                // Animación orbital respetando la 2ª Ley de Kepler
+                useEffect(() => {
+                    let interval;
+                    if (isMoving) {
+                        interval = setInterval(() => {
+                            setAngle(prev => {
+                                // Factor de velocidad: 1/r^2
+                                const speedFactor = 0.005 * Math.pow(a_km / r_actual_km, 2);
+                                // Limitamos el salto máximo para que no "parpadee" (gire loco) en el perihelio
+                                const cappedSpeed = Math.min(speedFactor, 0.15); 
+                                return (prev + cappedSpeed) % (2 * Math.PI);
+                            });
+                        }, 20); // 50 fps
+                    }
+                    return () => clearInterval(interval);
+                }, [isMoving, r_actual_km, a_km]);
+
+                // ---------------------------------------------------------
+                // AJUSTE GEOMÉTRICO PARA CENTRAR LA ÓRBITA EN EL SVG
+                // ---------------------------------------------------------
+                const svgWidth = 450;
+                const svgHeight = 300;
+                
+                const visual_a = 180; 
+                const visual_e = e;
+                const visual_b = visual_a * Math.sqrt(1 - visual_e * visual_e);
+                const focus_c = visual_a * visual_e; 
+
+                // Centramos la elipse exactamente en la mitad de la pantalla
+                const cx = svgWidth / 2;
+                const cy = svgHeight / 2;
+                
+                // Ubicamos el Sol en el foco de la derecha
+                const sunX = cx + focus_c;
+                const sunY = cy;
+
+                // Coordenadas del cometa basadas en el radio y ángulo desde el Sol
+                const r_visual = visual_a * (1 - Math.pow(visual_e, 2)) / (1 + visual_e * Math.cos(angle));
+                const cometX = sunX + r_visual * Math.cos(angle);
+                const cometY = sunY + r_visual * Math.sin(angle);
+
+                // HUD labels
+                const isNearPerihelio = Math.cos(angle) > 0.9;
+                const isNearAfelio = Math.cos(angle) < -0.9;
+
+                const [imgUrl, setImgUrl] = useState(null);
+                const [imgLoading, setImgLoading] = useState(false);
+
+                const generarDiagrama = async () => {
+                    setImgLoading(true);
+                    const apiKey = "AIzaSyDMyUo-WgmdNkCRW6-YK7h-bnRF_FLAjf0"; // API Key insertada por entorno; 
+                    try {
+                        const response = await fetch(
+                            `https://generativelanguage.googleapis.com/v1beta/models/imagen-4.0-generate-001:predict?key=${apiKey}`,
+                            {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({
+                                    instances: [{ prompt: "Diagrama técnico de física orbital. Una elipse muy alargada con el Sol en un foco. Un cometa en el punto más alejado (afelio). Vector de fuerza gravitatoria hacia el sol. Gráfico de energía potencial mostrando que es máxima (menos negativa) en el afelio. Estilo educativo, minimalista, fondo blanco." }],
+                                    parameters: { sampleCount: 1 }
+                                })
+                            }
+                        );
+                        if (!response.ok) throw new Error("Error");
+                        const data = await response.json();
+                        setImgUrl(`data:image/png;base64,${data.predictions[0].bytesBase64Encoded}`);
+                    } catch (error) {
+                        console.error(error);
+                    } finally {
+                        setImgLoading(false);
+                    }
+                };
+
+                return (
+                    <div className="min-h-screen bg-slate-950 text-slate-100 p-4 md:p-8">
+                        <header className="max-w-5xl mx-auto mb-8 border-b border-slate-800 pb-6">
+                            <div className="flex items-center gap-3 mb-2">
+                                <span className="bg-blue-600 text-white px-3 py-1 rounded-full text-xs font-black uppercase tracking-widest">Mecánica Celeste</span>
+                                <h1 className="text-3xl font-black text-blue-400 uppercase tracking-tight">Energía del Cometa Halley</h1>
+                            </div>
+                            <div className="bg-slate-900/80 p-4 rounded-xl border border-slate-800 mt-4">
+                                <p className="text-slate-300 text-sm leading-relaxed">
+                                    El cometa Halley tiene una órbita extremadamente elíptica ($e \approx 0.967$). Esto provoca cambios drásticos en su energía cinética y potencial mientras se desplaza.
+                                </p>
+                            </div>
+                        </header>
+
+                        <main className="max-w-5xl mx-auto grid md:grid-cols-2 gap-8">
+                            <div className="bg-slate-900 rounded-3xl border border-slate-800 h-[500px] relative overflow-hidden shadow-2xl flex flex-col items-center justify-center">
+                                <div className="absolute inset-0 space-bg pointer-events-none"></div>
+
+                                <div className="absolute top-4 w-full px-6 flex justify-between z-30 pointer-events-none">
+                                    <div className="bg-slate-950/90 p-4 rounded-xl border border-slate-800 backdrop-blur-md flex gap-6 items-end">
+                                        <div className="flex flex-col items-center">
+                                            <p className="text-[9px] text-emerald-400 uppercase font-black mb-1">Cinética (Ec)</p>
+                                            <div className="w-6 h-24 bg-slate-800 rounded-sm relative overflow-hidden border border-slate-700">
+                                                <div className="absolute bottom-0 w-full bg-emerald-500 transition-all duration-100" style={{ height: `${Math.max(2, (Ec_relativa / (Em_relativa - Ep_perihelio)) * 100)}%` }}></div>
+                                            </div>
+                                        </div>
+                                        <div className="flex flex-col items-center">
+                                            <p className="text-[9px] text-blue-400 uppercase font-black mb-1">Potencial (Ep)</p>
+                                            <div className="w-6 h-24 bg-slate-800 rounded-sm relative overflow-hidden border border-slate-700">
+                                                <div className="absolute bottom-0 w-full bg-blue-500 transition-all duration-100" style={{ height: `${((Ep_relativa - Ep_perihelio) / (Ep_afelio - Ep_perihelio)) * 100}%` }}></div>
+                                            </div>
+                                        </div>
+                                        <div className="text-left ml-2 mb-2">
+                                            <p className="text-[10px] text-slate-500 uppercase font-black">Distancia al Sol</p>
+                                            <p className="text-lg font-mono font-black text-white">{(r_actual_km / 1e6).toFixed(1)} <span className="text-xs">M km</span></p>
+                                        </div>
+                                    </div>
+                                    
+                                    <div className="flex flex-col gap-2">
+                                        <div className={`px-4 py-2 rounded-lg border-2 font-black text-[10px] uppercase tracking-widest transition-all ${isNearPerihelio ? 'bg-orange-500/20 border-orange-500 text-orange-400' : isNearAfelio ? 'bg-blue-500/20 border-blue-500 text-blue-400' : 'bg-slate-800 border-slate-700 text-slate-500'}`}>
+                                            {isNearPerihelio ? 'Perihelio (Mín Ep)' : isNearAfelio ? 'Afelio (Máx Ep)' : 'En tránsito'}
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <svg viewBox={`0 0 ${svgWidth} ${svgHeight}`} className="w-full h-full relative z-10 overflow-visible mt-20">
+                                    {/* Órbita elíptica completa */}
+                                    <ellipse cx={cx} cy={cy} rx={visual_a} ry={visual_b} className="orbit-path" />
+                                    
+                                    {/* El Sol (en el foco derecho) */}
+                                    <g transform={`translate(${sunX}, ${sunY})`}>
+                                        <circle r="15" fill="#f59e0b" className="sun-glow" />
+                                        <circle r="8" fill="#fbbf24" />
+                                        <SunIcon size={14} className="text-orange-900 absolute -top-1.5 -left-1.5" style={{ transform: 'translate(-50%, -50%)' }} />
+                                    </g>
+
+                                    {/* El Cometa */}
+                                    <circle cx={cometX} cy={cometY} r="5" fill="white" className="shadow-[0_0_10px_white]" />
+                                    {/* Cola del cometa (dirección opuesta al sol) */}
+                                    <line 
+                                        x1={cometX} y1={cometY} 
+                                        x2={cometX + (cometX - sunX) * 0.15} y2={cometY + (cometY - sunY) * 0.15} 
+                                        stroke="rgba(255,255,255,0.6)" strokeWidth="3" strokeLinecap="round" 
+                                    />
+                                </svg>
+                                
+                                <div className="absolute bottom-6 flex gap-4 w-full justify-center px-12 z-30">
+                                    <button onClick={() => setIsMoving(!isMoving)} className="flex-1 bg-slate-800 hover:bg-slate-700 py-3 px-4 rounded-xl border border-slate-600 flex items-center justify-center gap-2 transition-all text-xs font-bold uppercase tracking-wider text-slate-300">
+                                        {isMoving ? <PauseIcon size={18}/> : <PlayIcon size={18}/>}
+                                        {isMoving ? 'Pausar Animación' : 'Reanudar Órbita'}
+                                    </button>
+                                    <button onClick={() => setAngle(0)} className="bg-slate-800 hover:bg-slate-700 py-3 px-6 rounded-xl border border-slate-600 flex items-center justify-center gap-2 transition-all text-xs font-bold uppercase tracking-wider text-slate-300">
+                                        <RotateCcwIcon size={18}/> Reiniciar
+                                    </button>
+                                </div>
+                            </div>
+
+                            <div className="space-y-6">
+                                <div className="bg-slate-800 p-6 rounded-3xl border border-slate-700 shadow-xl">
+                                    <h3 className="text-xl font-bold mb-4 flex items-center gap-2 text-blue-400">
+                                        <CalculatorIcon size={20} /> Resolución Teórica
+                                    </h3>
+                                    
+                                    <div className="text-xs text-slate-300 space-y-4 leading-relaxed">
+                                        <div className="bg-slate-950 p-4 rounded-xl border-l-4 border-blue-500">
+                                            <p className="font-bold text-blue-300 mb-2 uppercase tracking-widest text-[10px]">La Función de Energía Potencial:</p>
+                                            <p className="font-mono text-blue-200 mb-2">Ep(r) = -G · (M · m) / r</p>
+                                            <p>Debido al signo negativo, la función es <strong>creciente</strong> con la distancia. Cuanto mayor es $r$, mayor (más cercana a cero) es la energía potencial.</p>
+                                        </div>
+
+                                        <div className="grid grid-cols-2 gap-4">
+                                            <div className="p-3 bg-slate-900 rounded-lg border border-slate-700">
+                                                <p className="font-black text-orange-400 uppercase text-[9px] mb-1">En el Perihelio</p>
+                                                <p className="font-mono text-white">$r$ es mínimo</p>
+                                                <p className="text-[10px] mt-1 text-slate-500">La $E_p$ es el valor más negativo posible (mínima).</p>
+                                            </div>
+                                            <div className="p-3 bg-slate-900 rounded-lg border border-blue-500/30">
+                                                <p className="font-black text-blue-400 uppercase text-[9px] mb-1">En el Afelio</p>
+                                                <p className="font-mono text-white">$r$ es máximo</p>
+                                                <p className="text-[10px] mt-1 text-slate-500">La $E_p$ es el valor menos negativo (máxima).</p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div className="bg-slate-800 p-6 rounded-3xl border border-slate-700 shadow-xl">
+                                    <div className="flex justify-between items-center mb-4 border-b border-slate-700 pb-2">
+                                        <h4 className="font-bold text-slate-300 flex items-center gap-2">
+                                            <InfoIcon size={18} /> Diagrama Técnico
+                                        </h4>
+                                        <button onClick={generarDiagrama} className="text-[10px] uppercase font-bold bg-slate-900 hover:bg-slate-700 text-slate-400 px-3 py-1.5 rounded flex items-center gap-1 border border-slate-700">
+                                            {imgLoading ? <Loader2Icon className="animate-spin" size={14}/> : <><ImagePlusIcon size={14}/> Generar DCL</>}
+                                        </button>
+                                    </div>
+
+                                    {imgUrl && (
+                                        <div className="mb-4 bg-white p-2 rounded-xl text-center">
+                                            <img src={imgUrl} alt="DCL Órbita" className="mx-auto max-h-40 rounded-lg" />
+                                        </div>
+                                    )}
+
+                                    <div className="flex items-start gap-3 text-[11px] text-slate-400 italic">
+                                        <TimerIcon size={16} className="shrink-0 text-blue-500" />
+                                        <p>Fíjate en la animación: el cometa pasa "volando" por el perihelio (mucha $E_c$) y parece detenerse casi por completo en el afelio (toda la energía se ha convertido en $E_p$).</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </main>
+
+                        <footer className="max-w-5xl mx-auto mt-12 pt-6 border-t border-slate-800 text-center text-slate-600 text-[10px] font-bold uppercase tracking-widest">
+                            Profe Física | Gravitación: Conservación de la Energía Mecánica
+                        </footer>
+                    </div>
+                );
+            };
+
+            const container = document.getElementById('root');
+            const root = ReactDOM.createRoot(container);
+            root.render(<App />);
+        })();
+    </script>
+</body>
+</html>

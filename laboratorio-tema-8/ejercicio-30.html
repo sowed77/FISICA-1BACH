@@ -1,0 +1,408 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Laboratorio: Pérdidas de Energía en Rampa</title>
+    <!-- Bibliotecas externas -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <script src="https://unpkg.com/lucide-react@latest"></script>
+
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&family=Fira+Code&display=swap');
+        body { font-family: 'Inter', sans-serif; background-color: #0f172a; }
+        .font-mono { font-family: 'Fira Code', monospace; }
+        input[type=range]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            height: 24px;
+            width: 24px;
+            border-radius: 50%;
+            background: #10b981; /* Emerald 500 */
+            cursor: pointer;
+            border: 3px solid #ffffff;
+            box-shadow: 0 0 10px rgba(16, 185, 129, 0.5);
+        }
+        .ramp-pattern {
+            background-color: #334155;
+            background-image: repeating-linear-gradient(45deg, #1e293b 0, #1e293b 4px, transparent 4px, transparent 12px);
+        }
+        /* Rastro de calor */
+        .heat-trail {
+            background: linear-gradient(90deg, transparent, #ef4444, #f97316, #facc15);
+            opacity: 0.6;
+            filter: blur(4px);
+            border-radius: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div id="root"></div>
+
+    <script type="text/babel">
+        (() => {
+            const { useState, useEffect } = React;
+            const icons = window.LucideReact || {};
+            
+            // Asignación segura de iconos
+            const getIcon = (name) => icons[name] || (({className}) => <span className={className || ''}></span>);
+            const PlayIcon = getIcon('Play');
+            const RotateCcwIcon = getIcon('RotateCcw');
+            const CalculatorIcon = getIcon('Calculator');
+            const SettingsIcon = getIcon('Settings');
+            const InfoIcon = getIcon('Info');
+            const FlameIcon = getIcon('Flame');
+            const BatteryIcon = getIcon('BatteryCharging');
+            const ImagePlusIcon = getIcon('ImagePlus');
+            const ArrowRightIcon = getIcon('ArrowRight');
+
+            const App = () => {
+                const g = 9.8; // m/s²
+
+                // Estados interactivos (Inicializados con el enunciado)
+                const [masa, setMasa] = useState(10.0); // kg
+                const [altura, setAltura] = useState(3.0); // m
+                const [vReal, setVReal] = useState(4.8); // m/s
+
+                // --- CÁLCULOS FÍSICOS TEÓRICOS ---
+                
+                // Energía inicial (Todo Potencial)
+                const ep0 = masa * g * altura; // Julios
+                
+                // a) Velocidad Teórica (Si Ep0 = Ec_final)
+                const vTeorica = Math.sqrt((2 * ep0) / masa); // m/s
+                
+                // b) Energía Cinética Real y Trabajo de Rozamiento
+                // Evitar que la velocidad real introducida sea mayor que la teórica
+                const vRealSegura = Math.min(vReal, vTeorica);
+                
+                const ecReal = 0.5 * masa * Math.pow(vRealSegura, 2); // Julios
+                const trabajoRozamiento = ecReal - ep0; // Julios (Negativo)
+                const calorDisipado = Math.abs(trabajoRozamiento); // Julios (Positivo para visualización)
+
+                // --- ANIMACIÓN ---
+                const [time, setTime] = useState(0);
+                const [isMoving, setIsMoving] = useState(false);
+
+                // Fijamos un ángulo visual arbitrario para la rampa de 30º para que la animación se vea bien
+                // En la realidad no importa el ángulo para las energías.
+                const anguloVisualRad = 30 * (Math.PI / 180);
+                const distRampa = altura / Math.sin(anguloVisualRad); // m
+                
+                // Aceleración a lo largo del plano inclinado para lograr la velocidad final
+                const a_descenso = vRealSegura > 0 ? Math.pow(vRealSegura, 2) / (2 * distRampa) : 0;
+                const tStop = a_descenso > 0 ? vRealSegura / a_descenso : 0.1;
+
+                // Cinemática instantánea
+                const currentT = Math.min(time, tStop);
+                const currentD = 0.5 * a_descenso * Math.pow(currentT, 2); // m a lo largo de la rampa
+                const currentV = a_descenso * currentT; // m/s
+                
+                const currentH = Math.max(0, altura - (currentD * Math.sin(anguloVisualRad))); // m de altura
+                const currentEp = masa * g * currentH;
+                const currentEc = 0.5 * masa * Math.pow(currentV, 2);
+                const currentCalor = Math.max(0, ep0 - currentEp - currentEc); // Energía perdida hasta este momento
+
+                // Escala visual
+                const pxPerMeter = 200 / altura; // Hacemos que la altura encaje en unos 200px
+                const visualPos = currentD * pxPerMeter;
+
+                useEffect(() => {
+                    let interval;
+                    if (isMoving && time < tStop) {
+                        interval = setInterval(() => {
+                            setTime(prev => {
+                                // Aceleramos/ralentizamos el tiempo visual para que siempre tarde ~2 segundos
+                                const timeScale = tStop / 2;
+                                const nextTime = prev + (0.05 * timeScale);
+                                if (nextTime >= tStop) {
+                                    setIsMoving(false);
+                                    return tStop;
+                                }
+                                return nextTime;
+                            });
+                        }, 50);
+                    }
+                    return () => clearInterval(interval);
+                }, [isMoving, time, tStop]);
+
+                const handlePlay = () => {
+                    if (time < tStop) setIsMoving(true);
+                };
+
+                const reset = () => {
+                    setTime(0);
+                    setIsMoving(false);
+                };
+
+                // Forzar reset al cambiar variables
+                useEffect(() => {
+                    reset();
+                }, [masa, altura, vReal]);
+
+                // Generador DCL
+                const [imgUrl, setImgUrl] = useState(null);
+                const [imgLoading, setImgLoading] = useState(false);
+
+                const generarDiagrama = async () => {
+                    setImgLoading(true);
+                    const apiKey = "AIzaSyDMyUo-WgmdNkCRW6-YK7h-bnRF_FLAjf0"; // API Key insertada por entorno; 
+                    try {
+                        const response = await fetch(
+                            `https://generativelanguage.googleapis.com/v1beta/models/imagen-4.0-generate-001:predict?key=${apiKey}`,
+                            {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({
+                                    instances: [{ prompt: "Diagrama técnico de física de conservación de energía. Un bloque en un plano inclinado. Barras de energía comparando el estado inicial (Solo Energía Potencial) con el estado final (Energía Cinética más pequeña y Calor disipado por el Trabajo de fricción). Estilo educativo minimalista, fondo blanco" }],
+                                    parameters: { sampleCount: 1 }
+                                })
+                            }
+                        );
+                        if (!response.ok) throw new Error("Error en red");
+                        const data = await response.json();
+                        setImgUrl(`data:image/png;base64,${data.predictions[0].bytesBase64Encoded}`);
+                    } catch (error) {
+                        console.error(error);
+                    } finally {
+                        setImgLoading(false);
+                    }
+                };
+
+                return (
+                    <div className="min-h-screen bg-slate-900 text-slate-100 p-4 md:p-8">
+                        <header className="max-w-5xl mx-auto mb-8 border-b border-slate-700 pb-6">
+                            <div className="flex items-center gap-3 mb-2">
+                                <span className="bg-emerald-600 text-white px-3 py-1 rounded-full text-xs font-black uppercase tracking-widest">Trabajo y Energía</span>
+                                <h1 className="text-3xl font-black text-emerald-400 uppercase tracking-tight tracking-widest">Pérdidas de Energía</h1>
+                            </div>
+                            <div className="bg-slate-800/50 p-4 rounded-xl border border-slate-700 mt-4">
+                                <p className="text-slate-300 text-sm leading-relaxed">
+                                    <strong>Enunciado:</strong> En el punto más elevado de un plano inclinado de 3,0 m de altura se sitúa un cuerpo de 10 kg que desliza a lo largo del plano. Calcula: a) La velocidad del cuerpo al pie del plano si no hubiera rozamiento. b) Si se mide la velocidad y es de 4,8 m/s, ¿cuánto vale el trabajo de rozamiento?
+                                </p>
+                            </div>
+                        </header>
+
+                        <main className="max-w-5xl mx-auto grid md:grid-cols-2 gap-8">
+                            {/* Panel Visual */}
+                            <div className="bg-slate-800 rounded-3xl border border-slate-700 h-[500px] relative overflow-hidden shadow-2xl flex flex-col justify-end pb-8">
+                                
+                                {/* HUD de Energías (Barras) */}
+                                <div className="absolute top-4 w-full px-6 flex justify-between z-30 pointer-events-none">
+                                    <div className="bg-slate-900/90 p-4 rounded-xl border border-slate-700 backdrop-blur-md flex flex-col gap-2 w-64 shadow-lg">
+                                        <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest text-center border-b border-slate-700 pb-1 flex items-center justify-center gap-1">
+                                            {BatteryIcon && <BatteryIcon size={12}/>} Balance Energético
+                                        </p>
+                                        
+                                        {/* Barra Ep */}
+                                        <div className="flex items-center gap-2 mt-1">
+                                            <span className="text-[9px] font-bold text-blue-400 w-4">Ep</span>
+                                            <div className="flex-1 h-2 bg-slate-800 rounded-full overflow-hidden border border-slate-700">
+                                                <div className="h-full bg-blue-500 transition-all duration-75" style={{ width: `${(currentEp / ep0) * 100}%` }}></div>
+                                            </div>
+                                            <span className="text-[9px] font-mono text-blue-300 w-10 text-right">{currentEp.toFixed(0)} J</span>
+                                        </div>
+
+                                        {/* Barra Ec */}
+                                        <div className="flex items-center gap-2">
+                                            <span className="text-[9px] font-bold text-emerald-400 w-4">Ec</span>
+                                            <div className="flex-1 h-2 bg-slate-800 rounded-full overflow-hidden border border-slate-700">
+                                                <div className="h-full bg-emerald-500 transition-all duration-75" style={{ width: `${(currentEc / ep0) * 100}%` }}></div>
+                                            </div>
+                                            <span className="text-[9px] font-mono text-emerald-300 w-10 text-right">{currentEc.toFixed(0)} J</span>
+                                        </div>
+
+                                        {/* Barra Calor (Rozamiento) */}
+                                        <div className="flex items-center gap-2">
+                                            <span className="text-[9px] font-bold text-red-400 w-4">Calor</span>
+                                            <div className="flex-1 h-2 bg-slate-800 rounded-full overflow-hidden border border-slate-700">
+                                                <div className="h-full bg-red-500 transition-all duration-75" style={{ width: `${(currentCalor / ep0) * 100}%` }}></div>
+                                            </div>
+                                            <span className="text-[9px] font-mono text-red-300 w-10 text-right">{currentCalor.toFixed(0)} J</span>
+                                        </div>
+                                    </div>
+                                    
+                                    <div className={`bg-slate-900/90 p-3 rounded-lg border backdrop-blur-md text-right border-b-4 ${time === tStop ? 'border-b-emerald-500 shadow-[0_0_15px_rgba(16,185,129,0.3)]' : 'border-b-slate-700'} h-16`}>
+                                        <p className="text-[10px] text-slate-500 uppercase font-black">Velocidad Actual (v)</p>
+                                        <p className={`text-xl font-mono font-black ${time === tStop ? 'text-emerald-400' : 'text-slate-300'}`}>{currentV.toFixed(2)} m/s</p>
+                                    </div>
+                                </div>
+
+                                {/* Escena de la Rampa */}
+                                <div className="relative w-full h-80 flex justify-center">
+                                    <div className="absolute bottom-6 left-1/2 -translate-x-1/2 w-[350px] h-full pointer-events-none">
+                                        
+                                        {/* Cota de altura */}
+                                        <div className="absolute left-[-40px] border-r-2 border-dashed border-blue-500/50 w-4 z-10 flex flex-col justify-center items-start pl-1" style={{ bottom: '0', height: `${altura * pxPerMeter}px` }}>
+                                            <span className="text-[10px] font-black text-blue-300 bg-slate-900/80 px-1 rounded shadow whitespace-nowrap">h = {altura.toFixed(1)}m</span>
+                                        </div>
+
+                                        {/* Rampa Rotada. Origen bottom-right para que baje hacia la derecha */}
+                                        <div 
+                                            className="absolute bottom-0 left-0 w-full h-full origin-bottom-right transition-transform duration-300 z-20"
+                                            style={{ transform: `rotate(30deg)` }}
+                                        >
+                                            {/* La Rampa */}
+                                            <div className="absolute bottom-0 left-0 w-full h-6 ramp-pattern shadow-xl rounded-l-full border-t-2 border-slate-500"></div>
+
+                                            {/* Rastro de Calor (Se dibuja detrás del bloque) */}
+                                            {currentCalor > 0 && (
+                                                <div 
+                                                    className="absolute bottom-6 h-4 heat-trail"
+                                                    style={{ left: '30px', width: `${visualPos}px` }}
+                                                ></div>
+                                            )}
+
+                                            {/* El Bloque */}
+                                            <div 
+                                                className="absolute bottom-6 w-14 h-14 bg-indigo-600 border-4 border-indigo-400 rounded-lg flex items-center justify-center shadow-lg z-30 transition-transform"
+                                                style={{ transform: `translateX(${30 + visualPos}px)` }}
+                                            >
+                                                <span className="font-black text-indigo-100 text-xs">{masa.toFixed(1)}kg</span>
+
+                                                {/* Efecto Calor por Fricción (Solo si pierde energía y se mueve) */}
+                                                {currentV > 0 && calorDisipado > 0 && (
+                                                    <div className="absolute -bottom-2 left-1/2 -translate-x-1/2 text-orange-500 animate-pulse">
+                                                        {FlameIcon && <FlameIcon size={16} />}
+                                                    </div>
+                                                )}
+
+                                                {/* Vector Velocidad */}
+                                                {currentV > 0 && (
+                                                    <div className="absolute bottom-full left-1/2 mb-1 flex items-center pointer-events-none" style={{ width: Math.max(20, currentV * 10) }}>
+                                                        <div className="h-0.5 bg-emerald-400 w-full relative">
+                                                            <div className="absolute right-0 -top-1.5">{ArrowRightIcon && <ArrowRightIcon className="text-emerald-400" size={16} />}</div>
+                                                        </div>
+                                                        <span className="ml-1 text-[10px] font-black text-emerald-300 bg-slate-900/80 px-1 rounded shadow">v</span>
+                                                    </div>
+                                                )}
+                                            </div>
+                                        </div>
+
+                                        {/* Suelo Base */}
+                                        <div className="absolute bottom-0 left-[-50px] w-[450px] border-b-2 border-slate-600 border-dashed"></div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* Controles y Resolución */}
+                            <div className="space-y-6">
+                                <div className="bg-slate-800 p-6 rounded-3xl border border-slate-700 shadow-xl">
+                                    <h3 className="text-xl font-bold mb-4 flex items-center gap-2 text-emerald-400">
+                                        {SettingsIcon && <SettingsIcon size={20} />} Parámetros Experimentales
+                                    </h3>
+                                    
+                                    <div className="space-y-6 mb-6">
+                                        <div className="grid grid-cols-2 gap-4">
+                                            <div>
+                                                <div className="flex justify-between text-xs mb-1">
+                                                    <span className="text-slate-300 font-bold uppercase">Masa (m)</span>
+                                                </div>
+                                                <input type="range" min="1" max="50" step="1" value={masa} onChange={e => {setMasa(Number(e.target.value)); reset();}} className="w-full h-1.5 bg-slate-700 rounded-lg appearance-none cursor-pointer accent-slate-400 mb-1" />
+                                                <span className="font-mono text-white text-xs">{masa.toFixed(1)} kg</span>
+                                            </div>
+                                            <div>
+                                                <div className="flex justify-between text-xs mb-1">
+                                                    <span className="text-blue-400 font-bold uppercase">Altura (h)</span>
+                                                </div>
+                                                <input type="range" min="1" max="10" step="0.5" value={altura} onChange={e => {setAltura(Number(e.target.value)); reset();}} className="w-full h-1.5 bg-slate-700 rounded-lg appearance-none cursor-pointer accent-blue-500 mb-1" />
+                                                <span className="font-mono text-blue-200 text-xs">{altura.toFixed(1)} m</span>
+                                            </div>
+                                        </div>
+
+                                        <div className="pt-2 border-t border-slate-700">
+                                            <div className="flex justify-between text-[10px] mb-2 font-bold uppercase text-slate-400">
+                                                <span className="text-emerald-400">Velocidad Teórica MÁX: {vTeorica.toFixed(2)} m/s</span>
+                                            </div>
+                                            <div className="flex justify-between text-xs mb-1">
+                                                <span className="text-orange-400 font-bold uppercase">Velocidad Medida (Real)</span>
+                                                <span className="font-mono bg-slate-900 px-2 py-0.5 rounded text-orange-200">{vRealSegura.toFixed(2)} m/s</span>
+                                            </div>
+                                            <input 
+                                                type="range" min="0" max={vTeorica} step="0.1" value={vReal} 
+                                                onChange={e => {setVReal(Number(e.target.value)); reset();}} 
+                                                className="w-full h-2 bg-slate-700 rounded-lg appearance-none cursor-pointer accent-orange-500" 
+                                            />
+                                        </div>
+                                    </div>
+
+                                    <div className="flex gap-2">
+                                        <button 
+                                            onClick={handlePlay} 
+                                            disabled={isMoving || time >= tStop}
+                                            className="flex-1 bg-emerald-600 hover:bg-emerald-500 text-white font-black py-4 rounded-xl shadow-lg flex justify-center items-center gap-2 disabled:opacity-50 transition-all active:scale-95"
+                                        >
+                                            {PlayIcon && <PlayIcon size={18} />} DESLIZAR BLOQUE
+                                        </button>
+                                        <button onClick={reset} className="bg-slate-700 hover:bg-slate-600 text-white font-bold px-5 rounded-xl transition-all shadow-md">
+                                            {RotateCcwIcon && <RotateCcwIcon size={18} />}
+                                        </button>
+                                    </div>
+                                </div>
+
+                                <div className="bg-emerald-950/20 p-6 rounded-3xl border border-emerald-500/20">
+                                    <div className="flex justify-between items-center mb-4 border-b border-emerald-500/30 pb-2">
+                                        <h4 className="font-bold text-emerald-300 flex items-center gap-2">
+                                            {CalculatorIcon && <CalculatorIcon size={18} />} Resolución por Energías
+                                        </h4>
+                                        <button onClick={generarDiagrama} className="text-[10px] uppercase font-bold bg-slate-800 hover:bg-slate-700 text-slate-300 px-3 py-1.5 rounded flex items-center gap-1 border border-slate-600">
+                                            {imgLoading ? <span className="animate-pulse">Cargando...</span> : <>{ImagePlusIcon && <ImagePlusIcon size={14}/>} Ver Gráfico</>}
+                                        </button>
+                                    </div>
+
+                                    {imgUrl && (
+                                        <div className="mb-4 bg-slate-900 p-2 rounded-xl border border-slate-700 text-center">
+                                            <img src={imgUrl} alt="Diagrama de Energía" className="mx-auto max-h-40 rounded-lg" />
+                                        </div>
+                                    )}
+
+                                    <div className="text-xs text-slate-300 space-y-3 leading-relaxed">
+                                        <div className="bg-blue-900/40 p-2 rounded border border-blue-500/50 text-blue-200 font-bold mb-3 shadow-inner">
+                                            ¡MAGIA! No necesitamos saber ni el ángulo de la rampa ni su longitud para calcular el trabajo. Todo sale comparando las energías.
+                                        </div>
+
+                                        <p><strong>a) Velocidad Teórica (Sin Rozamiento):</strong><br/>
+                                        Toda la Energía Potencial inicial se transforma íntegramente en Energía Cinética al llegar abajo.</p>
+                                        
+                                        <div className="bg-slate-900/80 p-2 rounded-lg border-l-4 border-blue-500 font-mono text-blue-200 overflow-x-auto">
+                                            E_m_inicial = E_p0 = m · g · h = {masa} · 9.8 · {altura} = <strong>{ep0.toFixed(1)} J</strong><br/><br/>
+                                            E_p0 = E_cf_teórica<br/>
+                                            {ep0.toFixed(1)} = ½ · m · v²<br/>
+                                            v = √(2 · {ep0.toFixed(1)} / {masa}) = <strong>{vTeorica.toFixed(2)} m/s</strong>
+                                        </div>
+
+                                        <p className="mt-3"><strong>b) Trabajo de Rozamiento (W_r):</strong><br/>
+                                        La velocidad real fue de 4,8 m/s. Esto significa que la energía cinética real es menor que la inicial. El Teorema del Trabajo y la Energía nos dice que esa diferencia es el Trabajo de las Fuerzas No Conservativas (Rozamiento).</p>
+                                        
+                                        <div className="bg-slate-900/80 p-3 rounded-lg border-l-4 border-red-500 font-mono text-red-200 shadow-inner overflow-x-auto">
+                                            E_c_real = ½ · m · v_real²<br/>
+                                            E_c_real = 0.5 · {masa} · {vRealSegura.toFixed(1)}² = <strong>{ecReal.toFixed(1)} J</strong><br/><br/>
+                                            W_r = ΔE_m = E_c_real - E_m_inicial<br/>
+                                            W_r = {ecReal.toFixed(1)} - {ep0.toFixed(1)}<br/>
+                                            <strong>W_r = {trabajoRozamiento.toFixed(1)} Julios (J)</strong>
+                                        </div>
+                                        <p className="text-[10px] text-slate-400 mt-2 text-center italic">
+                                            (El signo negativo confirma que el rozamiento le robó energía al bloque).
+                                        </p>
+                                    </div>
+                                </div>
+                            </div>
+                        </main>
+
+                        <footer className="max-w-5xl mx-auto mt-12 pt-6 border-t border-slate-800 text-center text-slate-500 text-[10px] font-bold uppercase tracking-widest">
+                            Profe Física | Trabajo, Energía y Fuerzas No Conservativas
+                        </footer>
+                    </div>
+                );
+            };
+
+            const container = document.getElementById('root');
+            const root = ReactDOM.createRoot(container);
+            root.render(<App />);
+        })();
+    </script>
+</body>
+</html>

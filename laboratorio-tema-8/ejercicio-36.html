@@ -1,0 +1,365 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Laboratorio: Plano Inclinado y Energía</title>
+
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <script src="https://unpkg.com/lucide-react@latest"></script>
+
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&family=Fira+Code:wght@400;700&display=swap');
+
+        body { font-family: 'Inter', sans-serif; background-color: #0f172a; }
+        .font-mono { font-family: 'Fira Code', monospace; }
+
+        input[type=range]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            height: 20px;
+            width: 20px;
+            border-radius: 50%;
+            background: #f59e0b; /* Amber 500 */
+            cursor: pointer;
+            border: 2px solid #ffffff;
+            box-shadow: 0 0 10px rgba(245, 158, 11, 0.5);
+        }
+
+        .floor-pattern {
+            background-color: #1e293b;
+            background-image: repeating-linear-gradient(
+                90deg,
+                #334155 0,
+                #334155 20px,
+                transparent 20px,
+                transparent 40px
+            );
+            border-top: 3px solid #475569;
+        }
+
+        .ramp-texture {
+            fill: #334155;
+            stroke: #64748b;
+            stroke-width: 3;
+            stroke-linejoin: round;
+        }
+
+        .friction-dust {
+            animation: dust 0.8s linear infinite;
+            opacity: 0;
+        }
+
+        @keyframes dust {
+            0% { transform: translate(0, 0) scale(0.5); opacity: 0.6; }
+            100% { transform: translate(-20px, 10px) scale(2); opacity: 0; }
+        }
+    </style>
+</head>
+<body>
+    <div id="root"></div>
+
+    <script type="text/babel">
+        (() => {
+            const { useState, useEffect } = React;
+            const icons = window.LucideReact || {};
+
+            const getIcon = (name) => icons[name] || (({ className }) => <span className={className || ''}></span>);
+            const PlayIcon = getIcon('Play');
+            const RotateCcwIcon = getIcon('RotateCcw');
+            const CalculatorIcon = getIcon('Calculator');
+            const SettingsIcon = getIcon('Settings');
+            const MountainIcon = getIcon('Mountain');
+            const FlameIcon = getIcon('Flame');
+            const BoxIcon = getIcon('Package');
+            const ArrowRightIcon = getIcon('ArrowRight');
+            const ArrowUpIcon = getIcon('ArrowUp');
+            const BatteryIcon = getIcon('Battery');
+            const ImagePlusIcon = getIcon('ImagePlus');
+
+            const App = () => {
+                const cteGravedad = 9.8;
+
+                // Estados inicializados con los datos del problema
+                const [anguloDeg, setAnguloDeg] = useState(60);
+                const [distanciaM, setDistanciaM] = useState(10.0);
+                const [coefRozamiento, setCoefRozamiento] = useState(0.100);
+                const [masaCuerpo, setMasaCuerpo] = useState(2.0); // La masa no afecta v0, pero sirve para visualizar energías
+
+                // Cálculos Físicos
+                const anguloRad = anguloDeg * (Math.PI / 180);
+                const alturaMaxM = distanciaM * Math.sin(anguloRad);
+                
+                const energiaPotFinal = masaCuerpo * cteGravedad * alturaMaxM;
+                const trabajoRozamiento = coefRozamiento * masaCuerpo * cteGravedad * Math.cos(anguloRad) * distanciaM;
+                
+                // Conservación: Ec0 = Epf + Wroz
+                const energiaCinInicial = energiaPotFinal + trabajoRozamiento;
+                const velInicial = Math.sqrt((2 * energiaCinInicial) / masaCuerpo);
+                
+                // Aceleración (negativa porque frena)
+                const aceleracion = -cteGravedad * (Math.sin(anguloRad) + coefRozamiento * Math.cos(anguloRad));
+                const tiempoTotal = -velInicial / aceleracion;
+
+                // Estados de animación
+                const [fase, setFase] = useState('reposo'); // reposo, subiendo, cima
+                const [tiempo, setTiempo] = useState(0);
+                const [estaSimulando, setEstaSimulando] = useState(false);
+
+                // Valores instantáneos
+                let vActual = 0;
+                let dActual = 0;
+                let hActual = 0;
+                let ecActual = 0;
+                let epActual = 0;
+                let calorActual = 0;
+
+                if (fase === 'reposo') {
+                    vActual = 0;
+                    dActual = 0;
+                    hActual = 0;
+                    ecActual = energiaCinInicial;
+                    epActual = 0;
+                    calorActual = 0;
+                } else if (fase === 'cima') {
+                    vActual = 0;
+                    dActual = distanciaM;
+                    hActual = alturaMaxM;
+                    ecActual = 0;
+                    epActual = energiaPotFinal;
+                    calorActual = trabajoRozamiento;
+                } else {
+                    // fase === 'subiendo'
+                    vActual = velInicial + aceleracion * tiempo;
+                    if (vActual < 0) vActual = 0; // Por si acaso hay overflow
+
+                    dActual = velInicial * tiempo + 0.5 * aceleracion * tiempo * tiempo;
+                    hActual = dActual * Math.sin(anguloRad);
+
+                    ecActual = 0.5 * masaCuerpo * vActual * vActual;
+                    epActual = masaCuerpo * cteGravedad * hActual;
+                    calorActual = coefRozamiento * masaCuerpo * cteGravedad * Math.cos(anguloRad) * dActual;
+                }
+
+                // Bucle de animación
+                useEffect(() => {
+                    let interval;
+                    if (estaSimulando) {
+                        interval = setInterval(() => {
+                            setTiempo(prev => {
+                                const next = prev + 0.04; // paso de tiempo visual
+                                if (next >= tiempoTotal) {
+                                    setEstaSimulando(false);
+                                    setFase('cima');
+                                    return tiempoTotal;
+                                }
+                                return next;
+                            });
+                        }, 30);
+                    }
+                    return () => clearInterval(interval);
+                }, [estaSimulando, tiempoTotal]);
+
+                // Reset automático al cambiar variables
+                useEffect(() => {
+                    setFase('reposo');
+                    setTiempo(0);
+                    setEstaSimulando(false);
+                }, [anguloDeg, distanciaM, coefRozamiento, masaCuerpo]);
+
+                const iniciar = () => {
+                    setFase('subiendo');
+                    setTiempo(0);
+                    setEstaSimulando(true);
+                };
+
+                const reiniciar = () => {
+                    setFase('reposo');
+                    setTiempo(0);
+                    setEstaSimulando(false);
+                };
+
+                // Geometría Visual Fija (Escalado para que quepa en el cuadro)
+                const rampBaseX = 40;
+                const rampBaseY = 240; 
+                const rampHypotenusePx = 290; // Longitud visual fija para la rampa
+                
+                const rampWidthPx = rampHypotenusePx * Math.cos(anguloRad);
+                const rampHeightPx = rampHypotenusePx * Math.sin(anguloRad);
+
+                // Posición visual actual del bloque
+                const currentPx = (dActual / distanciaM) * rampHypotenusePx;
+                const blockX = rampBaseX + currentPx * Math.cos(anguloRad);
+                const blockY = rampBaseY - currentPx * Math.sin(anguloRad);
+
+                // DCL con IA
+                const [imgUrl, setImgUrl] = useState(null);
+                const [imgLoading, setImgLoading] = useState(false);
+
+                const generarDiagrama = async () => {
+                    setImgLoading(true);
+                    try {
+                        const apiKey = ""; 
+                        const response = await fetch(
+                            `https://generativelanguage.googleapis.com/v1beta/models/imagen-4.0-generate-001:predict?key=${apiKey}`,
+                            {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({
+                                    instances: [{
+                                        prompt: "Diagrama de cuerpo libre de un bloque subiendo por un plano inclinado. Vector velocidad hacia arriba del plano. Vector de fuerza de rozamiento hacia abajo del plano. Vector del peso hacia abajo. Estilo educativo física, fondo blanco limpio."
+                                    }],
+                                    parameters: { sampleCount: 1 }
+                                })
+                            }
+                        );
+                        if (!response.ok) throw new Error("API Error");
+                        const data = await response.json();
+                        setImgUrl(`data:image/png;base64,${data.predictions[0].bytesBase64Encoded}`);
+                    } catch (error) {
+                        console.error(error);
+                    } finally {
+                        setImgLoading(false);
+                    }
+                };
+
+                return (
+                    <div className="min-h-screen bg-slate-900 text-slate-100 p-4 md:p-8">
+                        <header className="max-w-6xl mx-auto mb-8 border-b border-slate-700 pb-6">
+                            <div className="flex items-center gap-3 mb-2">
+                                <span className="bg-amber-600 text-white px-3 py-1 rounded-full text-xs font-black uppercase tracking-widest">
+                                    Dinámica y Energía
+                                </span>
+                                <h1 className="text-3xl font-black text-amber-400 uppercase tracking-tight">
+                                    Ascenso en Plano Inclinado
+                                </h1>
+                            </div>
+
+                            <div className="bg-slate-800/50 p-4 rounded-xl border border-slate-700 mt-4">
+                                <p className="text-slate-300 text-sm leading-relaxed">
+                                    <strong>Enunciado:</strong> Se tiene un plano inclinado {anguloDeg}° respecto de la horizontal, cuya longitud es de {distanciaM.toFixed(1)} m.
+                                    ¿Qué velocidad paralela al plano debe comunicarse a un cuerpo para que este llegue a la parte superior del plano inclinado con velocidad nula?
+                                    Dato: el coeficiente de rozamiento vale {coefRozamiento.toFixed(3)}.
+                                </p>
+                            </div>
+                        </header>
+
+                        <main className="max-w-6xl mx-auto grid lg:grid-cols-2 gap-8">
+                            {/* PANEL VISUAL */}
+                            <div className="bg-slate-800 rounded-3xl border border-slate-700 h-[600px] relative overflow-hidden shadow-2xl flex flex-col justify-between pb-4">
+                                
+                                {/* HUD Superior y Tarjetas */}
+                                <div className="w-full px-6 pt-6 z-30 pointer-events-none flex flex-col gap-4">
+                                    <div className="flex justify-between">
+                                        <div className="bg-slate-900/90 p-3 rounded-lg border border-slate-700 backdrop-blur-md">
+                                            <p className="text-[10px] text-slate-500 uppercase font-black mb-1">Velocidad Requerida</p>
+                                            <p className="text-2xl font-mono font-black text-amber-400">
+                                                {velInicial.toFixed(2)} <span className="text-sm">m/s</span>
+                                            </p>
+                                            <p className="text-[10px] text-slate-400 mt-1">v actual: {vActual.toFixed(2)} m/s</p>
+                                        </div>
+
+                                        <div className="bg-slate-900/90 p-3 rounded-lg border border-slate-700 backdrop-blur-md text-right border-b-4 border-b-emerald-500 shadow-[0_0_15px_rgba(16,185,129,0.25)]">
+                                            <p className="text-[10px] text-slate-500 uppercase font-black flex items-center justify-end gap-1">
+                                                <MountainIcon size={12} className="text-emerald-400" />
+                                                Distancia Recorrida
+                                            </p>
+                                            <p className="text-2xl font-mono font-black text-emerald-400">
+                                                {dActual.toFixed(2)} <span className="text-sm">m</span>
+                                            </p>
+                                            <p className="text-[10px] text-slate-400 mt-1">
+                                                Altura (h): {hActual.toFixed(2)} m
+                                            </p>
+                                        </div>
+                                    </div>
+
+                                    {/* Mini tarjetas de energía */}
+                                    <div className="grid grid-cols-3 gap-3">
+                                        <div className="bg-slate-900/80 border border-slate-700 rounded-xl p-3">
+                                            <p className="text-[10px] uppercase font-black text-amber-400 mb-1">Ec Inicial</p>
+                                            <p className="font-mono text-white text-sm">{energiaCinInicial.toFixed(1)} J</p>
+                                        </div>
+                                        <div className="bg-slate-900/80 border border-slate-700 rounded-xl p-3">
+                                            <p className="text-[10px] uppercase font-black text-blue-400 mb-1">Ep Actual</p>
+                                            <p className="font-mono text-white text-sm">{epActual.toFixed(1)} J</p>
+                                        </div>
+                                        <div className="bg-slate-900/80 border border-slate-700 rounded-xl p-3">
+                                            <p className="text-[10px] uppercase font-black text-red-400 mb-1">Calor (Wroz)</p>
+                                            <p className="font-mono text-white text-sm">{calorActual.toFixed(1)} J</p>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                {/* Barras de Energía */}
+                                <div className="absolute right-6 top-[220px] z-20 w-48">
+                                    <div className="flex items-end gap-3 h-24">
+                                        <div className="flex-1 flex flex-col justify-end items-center">
+                                            <div className="w-10 bg-amber-400 rounded-t-md transition-all duration-100" style={{ height: `${(ecActual / energiaCinInicial) * 100}%` }}></div>
+                                            <p className="text-[9px] font-black uppercase text-amber-400 mt-2 text-center leading-tight">Ec</p>
+                                        </div>
+                                        <div className="flex-1 flex flex-col justify-end items-center">
+                                            <div className="w-10 bg-blue-500 rounded-t-md transition-all duration-100" style={{ height: `${(epActual / energiaCinInicial) * 100}%` }}></div>
+                                            <p className="text-[9px] font-black uppercase text-blue-400 mt-2 text-center leading-tight">Ep</p>
+                                        </div>
+                                        <div className="flex-1 flex flex-col justify-end items-center">
+                                            <div className="w-10 bg-red-500 rounded-t-md transition-all duration-100" style={{ height: `${(calorActual / energiaCinInicial) * 100}%` }}></div>
+                                            <p className="text-[9px] font-black uppercase text-red-400 mt-2 text-center leading-tight">Calor</p>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                {/* Etiquetas flotantes descriptivas */}
+                                <div className="absolute left-6 top-[220px] z-20 flex flex-col gap-3">
+                                    <div className="bg-slate-900/80 text-amber-400 px-3 py-1.5 rounded-full text-[10px] font-black uppercase border border-slate-700 w-max shadow-md">
+                                        Tiempo: {tiempo.toFixed(2)} s
+                                    </div>
+                                    <div className="bg-slate-900/80 text-slate-300 px-3 py-2.5 rounded-xl text-[11px] border border-slate-700 max-w-[220px] shadow-md leading-relaxed">
+                                        Toda la energía cinética inicial se gasta en subir la rampa (Ep) y vencer la fricción (Calor).
+                                    </div>
+                                </div>
+
+                                {/* Escena visual SVG y HTML */}
+                                <div className="relative w-full h-[300px]">
+                                    {/* Suelo */}
+                                    <div className="absolute bottom-0 w-full h-12 floor-pattern"></div>
+
+                                    {/* Triángulo de la Rampa dibujado con SVG */}
+                                    <svg className="absolute top-0 left-0 w-full h-full pointer-events-none">
+                                        <polygon 
+                                            points={`${rampBaseX},${rampBaseY} ${rampBaseX + rampWidthPx},${rampBaseY} ${rampBaseX + rampWidthPx},${rampBaseY - rampHeightPx}`}
+                                            className="ramp-texture"
+                                        />
+                                        {/* Línea de Cota de Altura */}
+                                        <line 
+                                            x1={rampBaseX + rampWidthPx + 15} y1={rampBaseY} 
+                                            x2={rampBaseX + rampWidthPx + 15} y2={rampBaseY - rampHeightPx} 
+                                            stroke="#94a3b8" strokeWidth="2" strokeDasharray="4 4"
+                                        />
+                                        <text x={rampBaseX + rampWidthPx + 25} y={rampBaseY - rampHeightPx/2} fill="#94a3b8" fontSize="12" fontWeight="bold" fontFamily="monospace">
+                                            h = {alturaMaxM.toFixed(1)}m
+                                        </text>
+                                        {/* Arco del ángulo */}
+                                        <path 
+                                            d={`M ${rampBaseX + 40} ${rampBaseY} A 40 40 0 0 0 ${rampBaseX + 40*Math.cos(anguloRad)} ${rampBaseY - 40*Math.sin(anguloRad)}`} 
+                                            fill="none" stroke="#f59e0b" strokeWidth="2"
+                                        />
+                                        <text x={rampBaseX + 45} y={rampBaseY - 15} fill="#fcd34d" fontSize="12" fontWeight="bold">
+                                            {anguloDeg}°
+                                        </text>
+                                    </svg>
+
+                                    {/* Bloque en Movimiento */}
+                                    <div 
+                                        className="absolute z-20 transition-transform duration-75"
+                                        style={{ 
+                                            left: `${blockX}px`, 
+                                            top: `${blockY}px`,
+                                            // Traslación adicional para centrar la base del bloque en la rampa
+                                            transform: `translate(-50%, -100%) rotate(${-anguloDeg}deg)`,
+                                            transformOrigin: 'bottom center'
+                                        }}
+                                    >
+                                        <div className="w-[60px] h-[50px] bg-sky-600 border-4 border-sky-400 rounded-lg flex flex-col items-center 

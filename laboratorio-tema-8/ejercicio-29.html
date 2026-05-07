@@ -1,0 +1,370 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Laboratorio: Pérdida de Potencia</title>
+    <!-- Bibliotecas externas -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <script src="https://unpkg.com/lucide-react@latest"></script>
+
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&family=Fira+Code&display=swap');
+        body { font-family: 'Inter', sans-serif; background-color: #0f172a; }
+        .font-mono { font-family: 'Fira Code', monospace; }
+        input[type=range]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            height: 24px;
+            width: 24px;
+            border-radius: 50%;
+            background: #8b5cf6; /* Violet 500 */
+            cursor: pointer;
+            border: 3px solid #ffffff;
+            box-shadow: 0 0 10px rgba(139, 92, 246, 0.5);
+        }
+        .road-pattern {
+            background-color: #1e293b;
+            background-image: repeating-linear-gradient(90deg, #334155 0px, #334155 40px, transparent 40px, transparent 80px);
+            background-size: 80px 4px;
+            background-position: bottom;
+            background-repeat: repeat-x;
+        }
+    </style>
+</head>
+<body>
+    <div id="root"></div>
+
+    <script type="text/babel">
+        (() => {
+            var { useState, useEffect } = React;
+            var icons = window.LucideReact || {};
+            
+            // Asignación segura de iconos
+            var getIcon = (name) => icons[name] || (({className}) => <span className={className || ''}></span>);
+            var PlayIcon = getIcon('Play');
+            var RotateCcwIcon = getIcon('RotateCcw');
+            var CalculatorIcon = getIcon('Calculator');
+            var SettingsIcon = getIcon('Settings');
+            var ArrowRightIcon = getIcon('ArrowRight');
+            var ArrowLeftIcon = getIcon('ArrowLeft');
+            var ZapIcon = getIcon('Zap');
+            var BatteryIcon = getIcon('Battery');
+            var ClockIcon = getIcon('Clock');
+            var ImagePlusIcon = getIcon('ImagePlus');
+            var BoxIcon = getIcon('Box');
+
+            var App = () => {
+                // Estados interactivos inicializados con los datos del enunciado
+                const [masa, setMasa] = useState(2.0); // kg
+                const [v0Kmh, setV0Kmh] = useState(40.0); // km/h
+                const [vfKmh, setVfKmh] = useState(10.0); // km/h
+                const [tiempo, setTiempo] = useState(30.0); // s
+
+                // Prevenir que vf sea mayor que v0 en este experimento de "pérdida"
+                useEffect(() => {
+                    if (vfKmh > v0Kmh) setVfKmh(v0Kmh);
+                }, [v0Kmh, vfKmh]);
+
+                // --- CÁLCULOS FÍSICOS TEÓRICOS ---
+                const v0Ms = v0Kmh / 3.6; // m/s
+                const vfMs = vfKmh / 3.6; // m/s
+                
+                const ec0 = 0.5 * masa * Math.pow(v0Ms, 2); // J
+                const ecf = 0.5 * masa * Math.pow(vfMs, 2); // J
+                
+                const deltaEc = ecf - ec0; // J (Variación de energía cinética, será negativa)
+                const energiaPerdida = Math.abs(deltaEc); // Magnitud de la energía disipada
+                
+                // Potencia media perdida
+                const potenciaPerdida = tiempo > 0 ? energiaPerdida / tiempo : 0; // W
+
+                // Aceleración media (para la animación)
+                const aceleracion = tiempo > 0 ? (vfMs - v0Ms) / tiempo : 0; // m/s^2 (negativa)
+
+                // --- ANIMACIÓN ---
+                const [timeSim, setTimeSim] = useState(0); 
+                const [isMoving, setIsMoving] = useState(false);
+
+                // Cinemática instantánea
+                const currentV = v0Ms + aceleracion * timeSim;
+                const currentEc = 0.5 * masa * Math.pow(currentV, 2);
+                
+                // Efecto visual: no calculamos la posición real (serían cientos de metros),
+                // simulamos una posición visual que fluye en la pantalla.
+                const distTotalAprox = (v0Ms + vfMs) / 2 * tiempo; // Distancia real recorrida
+                const [visualPos, setVisualPos] = useState(0);
+
+                useEffect(() => {
+                    let interval;
+                    if (isMoving && timeSim < tiempo) {
+                        interval = setInterval(() => {
+                            setTimeSim(prev => {
+                                // Aceleramos el tiempo visual x5 para no esperar 30s reales
+                                const nextTime = prev + (0.05 * 5); 
+                                if (nextTime >= tiempo) {
+                                    setIsMoving(false);
+                                    return tiempo;
+                                }
+                                return nextTime;
+                            });
+                        }, 50); // 20 FPS visuales
+                    }
+                    return () => clearInterval(interval);
+                }, [isMoving, timeSim, tiempo]);
+
+                // Actualizar posición visual basada en la velocidad
+                useEffect(() => {
+                    if (isMoving) {
+                        setVisualPos(prev => (prev + currentV * 0.1) % 400); // Bucle visual
+                    }
+                }, [timeSim, isMoving, currentV]);
+
+                const handlePlay = () => {
+                    if (timeSim < tiempo) setIsMoving(true);
+                };
+
+                const reset = () => {
+                    setTimeSim(0);
+                    setVisualPos(0);
+                    setIsMoving(false);
+                };
+
+                // Forzar reset si se cambian variables
+                useEffect(() => {
+                    reset();
+                }, [masa, v0Kmh, vfKmh, tiempo]);
+
+                // Generador de Diagrama de Cuerpo Libre
+                const [imgUrl, setImgUrl] = useState(null);
+                const [imgLoading, setImgLoading] = useState(false);
+
+                const generarDiagrama = async () => {
+                    setImgLoading(true);
+                    const apiKey = "AIzaSyDMyUo-WgmdNkCRW6-YK7h-bnRF_FLAjf0"; // API Key insertada por entorno; 
+                    try {
+                        const response = await fetch(
+                            `https://generativelanguage.googleapis.com/v1beta/models/imagen-4.0-generate-001:predict?key=${apiKey}`,
+                            {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({
+                                    instances: [{ prompt: "Diagrama técnico de física. Un bloque desplazándose hacia la derecha. Vector Velocidad v hacia la derecha. Vector Fuerza de Fricción F_r hacia la izquierda. Gráficos de barras comparando E_c0 (grande) y E_cf (pequeña). Estilo educativo minimalista, fondo blanco" }],
+                                    parameters: { sampleCount: 1 }
+                                })
+                            }
+                        );
+                        if (!response.ok) throw new Error("Error en red");
+                        const data = await response.json();
+                        setImgUrl(`data:image/png;base64,${data.predictions[0].bytesBase64Encoded}`);
+                    } catch (error) {
+                        console.error(error);
+                    } finally {
+                        setImgLoading(false);
+                    }
+                };
+
+                return (
+                    <div className="min-h-screen bg-slate-900 text-slate-100 p-4 md:p-8">
+                        <header className="max-w-5xl mx-auto mb-8 border-b border-slate-700 pb-6">
+                            <div className="flex items-center gap-3 mb-2">
+                                <span className="bg-violet-600 text-white px-3 py-1 rounded-full text-xs font-black uppercase tracking-widest">Trabajo y Energía</span>
+                                <h1 className="text-3xl font-black text-violet-400 uppercase tracking-tight tracking-widest">Pérdida de Potencia</h1>
+                            </div>
+                            <div className="bg-slate-800/50 p-4 rounded-xl border border-slate-700 mt-4">
+                                <p className="text-slate-300 text-sm leading-relaxed">
+                                    <strong>Enunciado:</strong> Un cuerpo de 2 kg de masa lleva una velocidad inicial de 40 km/h. Si al cabo de 30 s la velocidad es de 10 km/h, ¿cuánto vale, en unidades del SI, la potencia media perdida por el cuerpo?
+                                </p>
+                            </div>
+                        </header>
+
+                        <main className="max-w-5xl mx-auto grid md:grid-cols-2 gap-8">
+                            {/* Panel Visual */}
+                            <div className="bg-slate-800 rounded-3xl border border-slate-700 h-[500px] relative overflow-hidden shadow-2xl flex flex-col">
+                                
+                                {/* HUD Superior */}
+                                <div className="p-6 flex justify-between z-30 bg-slate-900/50 border-b border-slate-700">
+                                    <div className="flex flex-col gap-1">
+                                        <div className="flex items-center gap-2">
+                                            <ClockIcon size={14} className="text-slate-400" />
+                                            <span className="text-[10px] text-slate-400 uppercase font-black">Cronómetro (t)</span>
+                                        </div>
+                                        <p className="text-2xl font-mono font-black text-white">{timeSim.toFixed(1)} <span className="text-sm">s</span></p>
+                                    </div>
+                                    <div className="flex flex-col gap-1 text-right">
+                                        <div className="flex items-center justify-end gap-2">
+                                            <span className="text-[10px] text-slate-400 uppercase font-black">Potencia Perdida</span>
+                                            <ZapIcon size={14} className="text-violet-400" />
+                                        </div>
+                                        <p className="text-3xl font-mono font-black text-violet-400">{potenciaPerdida.toFixed(2)} <span className="text-sm">W</span></p>
+                                    </div>
+                                </div>
+
+                                {/* Pilares de Energía Dinámicos */}
+                                <div className="absolute top-32 left-6 flex gap-8 z-30 pointer-events-none">
+                                    <div className="flex flex-col items-center">
+                                        <p className="text-[10px] text-emerald-400 font-bold mb-1">Ec (Actual)</p>
+                                        <div className="flex flex-col justify-end h-32 w-8 bg-slate-900 border border-slate-700 rounded-lg overflow-hidden">
+                                            <div className="w-full bg-emerald-500 transition-all duration-100" style={{ height: `${(currentEc / ec0) * 100}%` }}></div>
+                                        </div>
+                                        <p className="font-mono text-[10px] mt-1 text-emerald-300">{currentEc.toFixed(1)} J</p>
+                                    </div>
+                                    
+                                    <div className="flex flex-col items-center">
+                                        <p className="text-[10px] text-rose-400 font-bold mb-1">E Perdida</p>
+                                        <div className="flex flex-col justify-end h-32 w-8 bg-slate-900 border border-slate-700 rounded-lg overflow-hidden">
+                                            <div className="w-full bg-rose-500 transition-all duration-100" style={{ height: `${((ec0 - currentEc) / ec0) * 100}%` }}></div>
+                                        </div>
+                                        <p className="font-mono text-[10px] mt-1 text-rose-300">{(ec0 - currentEc).toFixed(1)} J</p>
+                                    </div>
+                                </div>
+
+                                {/* Escena (Carretera y Cuerpo) */}
+                                <div className="relative w-full flex-1 flex justify-center items-end bg-slate-900/30">
+                                    {/* Carretera (Se mueve hacia atrás para dar sensación de velocidad) */}
+                                    <div 
+                                        className="absolute bottom-0 w-[200%] h-16 road-pattern border-t-4 border-slate-600"
+                                        style={{ transform: `translateX(${-visualPos}px)` }}
+                                    ></div>
+
+                                    {/* El Cuerpo */}
+                                    <div className="absolute bottom-16 z-20 flex flex-col items-center">
+                                        
+                                        <div className="w-20 h-20 bg-violet-600 border-4 border-violet-400 rounded-xl shadow-[0_0_20px_rgba(139,92,246,0.3)] flex items-center justify-center relative">
+                                            <BoxIcon size={32} className="text-violet-300 opacity-80" />
+                                            <span className="absolute -top-3 right-[-10px] font-black text-slate-800 bg-white/90 px-1 rounded text-[10px]">{masa} kg</span>
+                                        </div>
+
+                                        {/* Vector Velocidad (Verde, hacia adelante) */}
+                                        <div className="absolute bottom-full mb-4 left-1/2 flex items-center pointer-events-none" style={{ width: Math.max(30, currentV * 10) }}>
+                                            <div className="h-1 bg-emerald-400 w-full relative">
+                                                <div className="absolute right-0 -top-1.5">{ArrowRightIcon && <ArrowRightIcon className="text-emerald-400" size={16} />}</div>
+                                            </div>
+                                            <span className="ml-1 text-[12px] font-mono font-black text-emerald-300 bg-slate-900/80 px-1 rounded shadow">{currentV.toFixed(1)} m/s</span>
+                                        </div>
+
+                                        {/* Efecto de frenado (Fricción hacia atrás) */}
+                                        {isMoving && (
+                                            <div className="absolute top-1/2 right-full flex items-center pr-2 pointer-events-none opacity-70">
+                                                <span className="mr-1 text-[10px] font-black text-rose-400 bg-slate-900/80 px-1 rounded">Frenando</span>
+                                                <div className="h-1 bg-rose-500 w-16 relative">
+                                                    <div className="absolute left-0 -top-1.5">{ArrowLeftIcon && <ArrowLeftIcon className="text-rose-500" size={16} />}</div>
+                                                </div>
+                                            </div>
+                                        )}
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* Controles y Resolución */}
+                            <div className="space-y-6">
+                                <div className="bg-slate-800 p-6 rounded-3xl border border-slate-700 shadow-xl">
+                                    <h3 className="text-xl font-bold mb-4 flex items-center gap-2 text-violet-400">
+                                        {SettingsIcon && <SettingsIcon size={20} />} Parámetros Físicos
+                                    </h3>
+                                    
+                                    <div className="space-y-4 mb-6">
+                                        <div>
+                                            <div className="flex justify-between text-xs mb-1">
+                                                <span className="text-slate-300 font-bold uppercase">Masa del Cuerpo (m)</span>
+                                            </div>
+                                            <input type="range" min="1" max="10" step="0.5" value={masa} onChange={e => {setMasa(Number(e.target.value)); reset();}} className="w-full h-1.5 bg-slate-700 rounded-lg appearance-none cursor-pointer accent-slate-400 mb-1" />
+                                            <span className="font-mono text-white text-xs">{masa.toFixed(1)} kg</span>
+                                        </div>
+
+                                        <div className="grid grid-cols-2 gap-4 pt-2 border-t border-slate-700">
+                                            <div>
+                                                <div className="flex justify-between text-[10px] mb-1"><span className="text-emerald-400 font-bold uppercase">Vel. Inicial (v₀)</span></div>
+                                                <input type="range" min="10" max="100" step="5" value={v0Kmh} onChange={e => {setV0Kmh(Number(e.target.value)); reset();}} className="w-full h-1.5 bg-slate-700 rounded-lg appearance-none cursor-pointer accent-emerald-500 mb-1" />
+                                                <span className="font-mono text-emerald-200 text-xs">{v0Kmh.toFixed(1)} km/h</span>
+                                            </div>
+                                            <div>
+                                                <div className="flex justify-between text-[10px] mb-1"><span className="text-rose-400 font-bold uppercase">Vel. Final (v_f)</span></div>
+                                                <input type="range" min="0" max={v0Kmh} step="2" value={vfKmh} onChange={e => {setVfKmh(Number(e.target.value)); reset();}} className="w-full h-1.5 bg-slate-700 rounded-lg appearance-none cursor-pointer accent-rose-500 mb-1" />
+                                                <span className="font-mono text-rose-200 text-xs">{vfKmh.toFixed(1)} km/h</span>
+                                            </div>
+                                        </div>
+
+                                        <div className="pt-2 border-t border-slate-700">
+                                            <div className="flex justify-between text-[10px] mb-1"><span className="text-blue-400 font-bold uppercase">Tiempo Transcurrido (t)</span></div>
+                                            <input type="range" min="5" max="60" step="5" value={tiempo} onChange={e => {setTiempo(Number(e.target.value)); reset();}} className="w-full h-1.5 bg-slate-700 rounded-lg appearance-none cursor-pointer accent-blue-500 mb-1" />
+                                            <span className="font-mono text-blue-200 text-xs">{tiempo.toFixed(1)} s</span>
+                                        </div>
+                                    </div>
+
+                                    <div className="flex gap-2">
+                                        <button 
+                                            onClick={handlePlay} 
+                                            disabled={isMoving || timeSim >= tiempo}
+                                            className="flex-1 bg-violet-600 hover:bg-violet-500 text-white font-black py-3 rounded-xl shadow-lg flex justify-center items-center gap-2 disabled:opacity-50 transition-all active:scale-95"
+                                        >
+                                            {PlayIcon && <PlayIcon size={18} />} SIMULAR FRENADO
+                                        </button>
+                                        <button onClick={reset} className="bg-slate-700 hover:bg-slate-600 text-white font-bold px-4 rounded-xl transition-all shadow-md">
+                                            {RotateCcwIcon && <RotateCcwIcon size={18} />}
+                                        </button>
+                                    </div>
+                                </div>
+
+                                <div className="bg-violet-950/20 p-6 rounded-3xl border border-violet-500/20">
+                                    <div className="flex justify-between items-center mb-4 border-b border-violet-500/30 pb-2">
+                                        <h4 className="font-bold text-violet-300 flex items-center gap-2">
+                                            {CalculatorIcon && <CalculatorIcon size={18} />} Resolución Paso a Paso
+                                        </h4>
+                                        <button onClick={generarDiagrama} className="text-[10px] uppercase font-bold bg-slate-800 hover:bg-slate-700 text-slate-300 px-3 py-1.5 rounded flex items-center gap-1 border border-slate-600">
+                                            {imgLoading ? <span className="animate-pulse">Cargando...</span> : <>{ImagePlusIcon && <ImagePlusIcon size={14}/>} Generar DCL</>}
+                                        </button>
+                                    </div>
+
+                                    {imgUrl && (
+                                        <div className="mb-4 bg-slate-900 p-2 rounded-xl border border-slate-700 text-center">
+                                            <img src={imgUrl} alt="Diagrama de Energía y Trabajo" className="mx-auto max-h-40 rounded-lg" />
+                                        </div>
+                                    )}
+
+                                    <div className="text-xs text-slate-300 space-y-3 leading-relaxed">
+                                        <p><strong>1. Pasar Unidades al S.I.:</strong><br/>
+                                        La velocidad debe estar en m/s (dividiendo entre 3.6).</p>
+                                        <div className="bg-slate-900/80 p-2 rounded-lg border-l-4 border-slate-500 font-mono text-slate-300">
+                                            v₀ = {v0Kmh} / 3.6 = <strong>{v0Ms.toFixed(3)} m/s</strong><br/>
+                                            v_f = {vfKmh} / 3.6 = <strong>{vfMs.toFixed(3)} m/s</strong>
+                                        </div>
+
+                                        <p className="mt-2"><strong>2. Teorema de las Fuerzas Vivas:</strong><br/>
+                                        El trabajo neto realizado es igual a la variación de su Energía Cinética (ΔEc). No necesitamos conocer la aceleración ni la distancia.</p>
+                                        <div className="bg-slate-900/80 p-3 rounded-lg border-l-4 border-emerald-500 font-mono text-emerald-200 overflow-x-auto">
+                                            E_c0 = ½ · m · v₀² = 0.5 · {masa} · ({v0Ms.toFixed(3)})² = <strong>{ec0.toFixed(2)} J</strong><br/>
+                                            E_cf = ½ · m · v_f² = 0.5 · {masa} · ({vfMs.toFixed(3)})² = <strong>{ecf.toFixed(2)} J</strong><br/><br/>
+                                            W = ΔE_c = E_cf - E_c0 = {ecf.toFixed(2)} - {ec0.toFixed(2)} = <strong>{deltaEc.toFixed(2)} J</strong>
+                                        </div>
+                                        <p className="text-[10px] text-slate-400 italic mt-1">El Trabajo es negativo porque frena al cuerpo (quita energía).</p>
+
+                                        <p className="mt-2"><strong>3. Potencia Media (P):</strong><br/>
+                                        Es el trabajo realizado dividido por el tiempo que ha tardado. Nos piden la potencia "perdida" (valor absoluto).</p>
+                                        <div className="bg-slate-900/80 p-3 rounded-lg border-l-4 border-violet-500 font-mono text-violet-200 shadow-inner">
+                                            P = |W| / t<br/>
+                                            P = {energiaPerdida.toFixed(2)} / {tiempo}<br/>
+                                            <strong>P = {potenciaPerdida.toFixed(3)} W (Vatios)</strong>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </main>
+
+                        <footer className="max-w-5xl mx-auto mt-12 pt-6 border-t border-slate-800 text-center text-slate-500 text-[10px] font-bold uppercase tracking-widest">
+                            Profe Física | Teorema del Trabajo y la Energía Cinética
+                        </footer>
+                    </div>
+                );
+            };
+
+            const container = document.getElementById('root');
+            const root = ReactDOM.createRoot(container);
+            root.render(<App />);
+        })();
+    </script>
+</body>
+</html>

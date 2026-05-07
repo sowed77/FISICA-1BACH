@@ -1,0 +1,421 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Laboratorio: Rozamiento del Aire</title>
+    <!-- Bibliotecas externas -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <script src="https://unpkg.com/lucide-react@latest"></script>
+
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&family=Fira+Code&display=swap');
+        body { font-family: 'Inter', sans-serif; background-color: #0f172a; }
+        .font-mono { font-family: 'Fira Code', monospace; }
+        input[type=range]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            height: 20px;
+            width: 20px;
+            border-radius: 50%;
+            background: #f43f5e; /* Rose 500 */
+            cursor: pointer;
+            border: 2px solid #ffffff;
+            box-shadow: 0 0 10px rgba(244, 63, 94, 0.5);
+        }
+        .sky-bg {
+            background-color: #38bdf8;
+            background-image: linear-gradient(to top, #bae6fd, #0284c7 80%, #0f172a);
+        }
+        .wind-lines {
+            background-image: repeating-linear-gradient(0deg, transparent, transparent 20px, rgba(255,255,255,0.05) 20px, rgba(255,255,255,0.05) 40px);
+        }
+    </style>
+</head>
+<body>
+    <div id="root"></div>
+
+    <script type="text/babel">
+        (() => {
+            var { useState, useEffect } = React;
+            var icons = window.LucideReact || {};
+            
+            // Asignación segura de iconos
+            var getIcon = (name) => icons[name] || (({className}) => <span className={className || ''}></span>);
+            var PlayIcon = getIcon('Play');
+            var RotateCcwIcon = getIcon('RotateCcw');
+            var CalculatorIcon = getIcon('Calculator');
+            var SettingsIcon = getIcon('Settings');
+            var InfoIcon = getIcon('Info');
+            var ArrowUpIcon = getIcon('ArrowUp');
+            var ArrowDownIcon = getIcon('ArrowDown');
+            var WindIcon = getIcon('Wind');
+            var FlameIcon = getIcon('Flame');
+            var BatteryChargingIcon = getIcon('BatteryCharging');
+            var ImagePlusIcon = getIcon('ImagePlus');
+
+            var App = () => {
+                // Estados interactivos (Inicializados con el enunciado)
+                const [masaGramos, setMasaGramos] = useState(225); // g
+                const [v0, setV0] = useState(100.0); // m/s
+                const [vf, setVf] = useState(95.0); // m/s
+                const [hMax, setHMax] = useState(495); // m
+                
+                // Asegurar que vf nunca supere a v0
+                useEffect(() => {
+                    if (vf >= v0) setVf(Math.max(0, v0 - 1));
+                }, [v0, vf]);
+
+                // Cálculos Físicos
+                const m = masaGramos / 1000; // kg
+                
+                const ec0 = 0.5 * m * Math.pow(v0, 2); // J
+                const ecf = 0.5 * m * Math.pow(vf, 2); // J
+                
+                const energiaPerdida = ec0 - ecf; // J (Trabajo de rozamiento en valor absoluto)
+                const distanciaTotal = 2 * hMax; // m (Subida + Bajada)
+                
+                const fMediaRozamiento = energiaPerdida / distanciaTotal; // N
+
+                // Animación
+                const [time, setTime] = useState(0);
+                const [phase, setPhase] = useState('ready'); // ready, up, down, done
+
+                // Cinématica (Para la animación forzamos aceleraciones constantes que cuadren con hMax, v0 y vf)
+                // Esto es una simplificación visual, ya que en la realidad el rozamiento del aire varía con v^2.
+                const aUp = -(v0 * v0) / (2 * hMax); // Aceleración de subida
+                const tUp = -v0 / aUp; // Tiempo de subida
+                
+                const aDown = (vf * vf) / (2 * hMax); // Aceleración de bajada
+                const tDown = vf / aDown; // Tiempo de bajada
+                
+                const tTotal = tUp + tDown;
+
+                let currentY = 0;
+                let currentV = 0;
+                
+                if (phase === 'ready') {
+                    currentY = 0;
+                    currentV = 0;
+                } else if (phase === 'up') {
+                    currentY = (v0 * time) + (0.5 * aUp * time * time);
+                    currentV = v0 + (aUp * time);
+                } else if (phase === 'down') {
+                    const tLocal = time - tUp;
+                    currentY = hMax - (0.5 * aDown * tLocal * tLocal);
+                    currentV = -(aDown * tLocal); // Negativo porque va hacia abajo
+                } else if (phase === 'done') {
+                    currentY = 0;
+                    currentV = 0;
+                }
+
+                // Energías instantáneas
+                const currentEc = 0.5 * m * Math.pow(currentV, 2);
+                const currentEp = m * 9.8 * currentY; // Usamos g=9.8 para la Ep
+                const currentEm = currentEc + currentEp;
+                const currentLoss = ec0 - currentEm; // Calor disipado
+
+                useEffect(() => {
+                    let interval;
+                    if ((phase === 'up' || phase === 'down') && time < tTotal) {
+                        interval = setInterval(() => {
+                            setTime(prev => {
+                                const nextTime = prev + (tTotal / 100); // Visualmente tardará unos 3-4 segundos independientemente del tiempo real
+                                
+                                if (phase === 'up' && nextTime >= tUp) {
+                                    setPhase('down');
+                                    return tUp;
+                                }
+                                if (phase === 'down' && nextTime >= tTotal) {
+                                    setPhase('done');
+                                    return tTotal;
+                                }
+                                return nextTime;
+                            });
+                        }, 30);
+                    }
+                    return () => clearInterval(interval);
+                }, [phase, time, tUp, tTotal]);
+
+                const handlePlay = () => {
+                    if (phase === 'ready' || phase === 'done') {
+                        setTime(0);
+                        setPhase('up');
+                    }
+                };
+
+                const reset = () => {
+                    setTime(0);
+                    setPhase('ready');
+                };
+
+                // Si cambiamos variables, reseteamos
+                useEffect(() => {
+                    reset();
+                }, [masaGramos, v0, vf, hMax]);
+
+                // Escala visual
+                const pxPerMeter = 300 / hMax; 
+                const visualY = currentY * pxPerMeter;
+
+                // DCL con IA
+                const [imgUrl, setImgUrl] = useState(null);
+                const [imgLoading, setImgLoading] = useState(false);
+
+                const generarDiagrama = async () => {
+                    setImgLoading(true);
+                    const apiKey = "AIzaSyDMyUo-WgmdNkCRW6-YK7h-bnRF_FLAjf0"; // API Key insertada por entorno; 
+                    try {
+                        const response = await fetch(
+                            `https://generativelanguage.googleapis.com/v1beta/models/imagen-4.0-generate-001:predict?key=${apiKey}`,
+                            {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({
+                                    instances: [{ prompt: "Diagrama técnico de física de cuerpo libre. Una pelota volando verticalmente hacia arriba. Un gran vector Peso P apuntando hacia abajo. Un pequeño vector de Fricción Fr apuntando hacia abajo (frenando la pelota). Vector de velocidad v hacia arriba. Fondo blanco, minimalista, estilo educativo" }],
+                                    parameters: { sampleCount: 1 }
+                                })
+                            }
+                        );
+                        if (!response.ok) throw new Error("Error en red");
+                        const data = await response.json();
+                        setImgUrl(`data:image/png;base64,${data.predictions[0].bytesBase64Encoded}`);
+                    } catch (error) {
+                        console.error(error);
+                    } finally {
+                        setImgLoading(false);
+                    }
+                };
+
+                return (
+                    <div className="min-h-screen bg-slate-900 text-slate-100 p-4 md:p-8">
+                        <header className="max-w-5xl mx-auto mb-8 border-b border-slate-700 pb-6">
+                            <div className="flex items-center gap-3 mb-2">
+                                <span className="bg-rose-600 text-white px-3 py-1 rounded-full text-xs font-black uppercase tracking-widest">Trabajo y Energía</span>
+                                <h1 className="text-3xl font-black text-rose-400 uppercase tracking-tight tracking-widest">Fricción Aerodinámica</h1>
+                            </div>
+                            <div className="bg-slate-800/50 p-4 rounded-xl border border-slate-700 mt-4">
+                                <p className="text-slate-300 text-sm leading-relaxed">
+                                    <strong>Enunciado:</strong> Se lanza verticalmente hacia arriba un cuerpo de 225 g con una velocidad de 100 m/s y vuelve al punto de partida con una velocidad de 95 m/s. Calcula la fuerza media de rozamiento con el aire si ha alcanzado una altura de 495 m.
+                                </p>
+                            </div>
+                        </header>
+
+                        <main className="max-w-5xl mx-auto grid md:grid-cols-2 gap-8">
+                            {/* Panel Visual */}
+                            <div className="bg-slate-800 rounded-3xl border border-slate-700 h-[500px] relative overflow-hidden shadow-2xl flex flex-col justify-end pt-4">
+                                
+                                {/* HUD Superior: Gráfico de Barras de Energía */}
+                                <div className="absolute top-4 w-full px-6 flex justify-between z-30 pointer-events-none">
+                                    <div className="bg-slate-900/90 p-3 rounded-lg border border-slate-700 backdrop-blur-md flex gap-4 items-end">
+                                        <div className="flex flex-col items-center">
+                                            <p className="text-[8px] text-emerald-400 uppercase font-black mb-1">Ec</p>
+                                            <div className="w-4 h-24 bg-slate-800 border border-slate-600 rounded-sm flex flex-col justify-end overflow-hidden">
+                                                <div className="w-full bg-emerald-500 transition-all duration-75" style={{ height: `${(currentEc / ec0) * 100}%` }}></div>
+                                            </div>
+                                        </div>
+                                        <div className="flex flex-col items-center">
+                                            <p className="text-[8px] text-blue-400 uppercase font-black mb-1">Ep</p>
+                                            <div className="w-4 h-24 bg-slate-800 border border-slate-600 rounded-sm flex flex-col justify-end overflow-hidden">
+                                                <div className="w-full bg-blue-500 transition-all duration-75" style={{ height: `${(currentEp / ec0) * 100}%` }}></div>
+                                            </div>
+                                        </div>
+                                        <div className="flex flex-col items-center">
+                                            <p className="text-[8px] text-rose-400 uppercase font-black mb-1">Perdida</p>
+                                            <div className="w-4 h-24 bg-slate-800 border border-slate-600 rounded-sm flex flex-col justify-end overflow-hidden">
+                                                <div className="w-full bg-rose-500 transition-all duration-75" style={{ height: `${(currentLoss / ec0) * 100}%` }}></div>
+                                            </div>
+                                        </div>
+                                        <div className="ml-2 pb-1">
+                                            <p className="text-[10px] text-slate-500 uppercase font-black">Pérdida por Calor</p>
+                                            <p className="text-xl font-mono font-black text-rose-400">{currentLoss.toFixed(1)} <span className="text-sm">J</span></p>
+                                        </div>
+                                    </div>
+                                    
+                                    <div className="bg-slate-900/90 p-3 rounded-lg border border-slate-700 backdrop-blur-md text-right border-b-4 border-b-rose-500">
+                                        <p className="text-[10px] text-slate-500 uppercase font-black">F. Rozamiento Media</p>
+                                        <p className="text-2xl font-mono font-black text-rose-400">{fMediaRozamiento.toFixed(3)} N</p>
+                                    </div>
+                                </div>
+
+                                {/* Escena: Cielo y Pelota */}
+                                <div className="relative w-full h-full sky-bg flex justify-center items-end border-b-8 border-slate-700">
+                                    <div className="absolute inset-0 wind-lines pointer-events-none"></div>
+
+                                    {/* Regla de Altura */}
+                                    <div className="absolute left-10 h-[300px] border-l-2 border-dashed border-white/30 flex flex-col justify-between items-start pl-2 pb-2" style={{ bottom: '0px' }}>
+                                        <span className="text-[10px] font-mono font-bold text-white/70 bg-slate-900/50 px-1 rounded absolute -top-2">{hMax}m</span>
+                                        <span className="text-[10px] font-mono font-bold text-white/70 bg-slate-900/50 px-1 rounded absolute bottom-0">0m</span>
+                                    </div>
+
+                                    {/* La Pelota */}
+                                    <div 
+                                        className="absolute z-20 flex flex-col items-center transition-transform"
+                                        style={{ bottom: `${visualY}px` }}
+                                    >
+                                        <div className="w-8 h-8 bg-white rounded-full shadow-[0_0_15px_rgba(255,255,255,0.8)] border-2 border-slate-300 relative">
+                                            {/* Rastro de fuego/calor si hay fricción */}
+                                            {currentV !== 0 && (
+                                                <div className={`absolute w-full flex justify-center opacity-70 ${currentV > 0 ? 'top-full' : 'bottom-full rotate-180'}`}>
+                                                    <FlameIcon size={20} className="text-rose-500" />
+                                                </div>
+                                            )}
+                                        </div>
+                                        <span className="font-black text-slate-800 text-[9px] bg-white/80 px-1 rounded mt-1 absolute top-full left-6 whitespace-nowrap">{masaGramos}g</span>
+
+                                        {/* Vectores (Velocidad y Rozamiento) */}
+                                        {currentV !== 0 && (
+                                            <div className="absolute top-1/2 left-full pl-4 w-0 h-0 flex flex-col items-center pointer-events-none">
+                                                
+                                                {/* Rozamiento (Siempre se opone a V) */}
+                                                <div className={`absolute flex flex-col items-center ${currentV > 0 ? 'top-0 pt-1' : 'bottom-0 pb-1 flex-col-reverse'}`} style={{ height: 50 }}>
+                                                    <div className="w-1 bg-rose-500 h-full relative shadow-[0_0_8px_rgba(244,63,94,0.8)]">
+                                                        <div className={`absolute left-1/2 -translate-x-1/2 ${currentV > 0 ? 'bottom-0' : 'top-0'}`}>{currentV > 0 ? <ArrowDownIcon size={16} className="text-rose-500"/> : <ArrowUpIcon size={16} className="text-rose-500"/>}</div>
+                                                    </div>
+                                                    <span className={`text-[9px] font-black text-rose-300 bg-slate-900/80 px-1 rounded shadow ${currentV > 0 ? 'mt-1' : 'mb-1'}`}>Fr</span>
+                                                </div>
+
+                                                {/* Velocidad */}
+                                                <div className={`absolute flex flex-col items-center opacity-60 ${currentV > 0 ? 'bottom-0 pb-1 flex-col-reverse' : 'top-0 pt-1'}`} style={{ height: Math.max(30, Math.abs(currentV) * 0.8) }}>
+                                                    <div className="w-1.5 bg-emerald-400 h-full relative">
+                                                        <div className={`absolute left-1/2 -translate-x-1/2 ${currentV > 0 ? 'top-0' : 'bottom-0'}`}>{currentV > 0 ? <ArrowUpIcon size={16} className="text-emerald-400"/> : <ArrowDownIcon size={16} className="text-emerald-400"/>}</div>
+                                                    </div>
+                                                    <span className={`text-[9px] font-black text-emerald-300 bg-slate-900/80 px-1 rounded shadow ${currentV > 0 ? 'mb-1' : 'mt-1'}`}>v</span>
+                                                </div>
+                                            </div>
+                                        )}
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* Controles y Resolución */}
+                            <div className="space-y-6">
+                                <div className="bg-slate-800 p-6 rounded-3xl border border-slate-700 shadow-xl">
+                                    <h3 className="text-xl font-bold mb-4 flex items-center gap-2 text-rose-400">
+                                        {SettingsIcon && <SettingsIcon size={20} />} Datos del Lanzamiento
+                                    </h3>
+                                    
+                                    <div className="space-y-6 mb-6">
+                                        <div className="grid grid-cols-2 gap-4">
+                                            <div>
+                                                <div className="flex justify-between text-xs mb-2">
+                                                    <span className="text-slate-300 font-bold uppercase">Masa (m)</span>
+                                                    <span className="font-mono bg-slate-900 px-2 py-0.5 rounded text-white">{masaGramos} g</span>
+                                                </div>
+                                                <input type="range" min="50" max="1000" step="25" value={masaGramos} onChange={e => {setMasaGramos(Number(e.target.value)); reset();}} className="w-full h-1.5 bg-slate-700 rounded-lg appearance-none cursor-pointer" />
+                                            </div>
+                                            <div>
+                                                <div className="flex justify-between text-xs mb-2">
+                                                    <span className="text-slate-300 font-bold uppercase">Altura Máx (h)</span>
+                                                    <span className="font-mono bg-slate-900 px-2 py-0.5 rounded text-white">{hMax} m</span>
+                                                </div>
+                                                <input type="range" min="10" max="1000" step="5" value={hMax} onChange={e => {setHMax(Number(e.target.value)); reset();}} className="w-full h-1.5 bg-slate-700 rounded-lg appearance-none cursor-pointer" />
+                                            </div>
+                                        </div>
+
+                                        <div className="pt-2 border-t border-slate-700">
+                                            <div className="flex justify-between text-xs mb-2">
+                                                <span className="text-emerald-400 font-bold uppercase">Vel. Lanzamiento (v₀)</span>
+                                                <span className="font-mono bg-slate-900 px-2 py-0.5 rounded text-emerald-300">{v0.toFixed(1)} m/s</span>
+                                            </div>
+                                            <input type="range" min="10" max="200" step="1" value={v0} onChange={e => {setV0(Number(e.target.value)); reset();}} className="w-full h-2 bg-slate-700 rounded-lg appearance-none cursor-pointer accent-emerald-500" />
+                                        </div>
+
+                                        <div>
+                                            <div className="flex justify-between text-xs mb-2">
+                                                <span className="text-orange-400 font-bold uppercase">Vel. Retorno (v_f)</span>
+                                                <span className="font-mono bg-slate-900 px-2 py-0.5 rounded text-orange-300">{vf.toFixed(1)} m/s</span>
+                                            </div>
+                                            <input type="range" min="5" max={v0 - 1} step="1" value={vf} onChange={e => {setVf(Number(e.target.value)); reset();}} className="w-full h-2 bg-slate-700 rounded-lg appearance-none cursor-pointer accent-orange-500" />
+                                            <p className="text-[10px] text-slate-500 mt-2 text-center">La velocidad de retorno siempre será menor por la pérdida de energía debida a la fricción.</p>
+                                        </div>
+                                    </div>
+
+                                    <div className="flex gap-2">
+                                        <button 
+                                            onClick={handlePlay} 
+                                            disabled={phase !== 'ready' && phase !== 'done'}
+                                            className="flex-1 bg-rose-600 hover:bg-rose-500 text-white font-black py-4 rounded-xl shadow-lg flex justify-center items-center gap-2 disabled:opacity-50 transition-all active:scale-95"
+                                        >
+                                            {PlayIcon && <PlayIcon size={18} />} LANZAR PELOTA
+                                        </button>
+                                        <button onClick={reset} className="bg-slate-700 hover:bg-slate-600 text-white font-bold px-5 rounded-xl transition-all shadow-md">
+                                            {RotateCcwIcon && <RotateCcwIcon size={18} />}
+                                        </button>
+                                    </div>
+                                </div>
+
+                                <div className="bg-rose-950/20 p-6 rounded-3xl border border-rose-500/20">
+                                    <div className="flex justify-between items-center mb-4 border-b border-rose-500/30 pb-2">
+                                        <h4 className="font-bold text-rose-300 flex items-center gap-2">
+                                            {CalculatorIcon && <CalculatorIcon size={18} />} Resolución por Energías
+                                        </h4>
+                                        <button onClick={generarDiagrama} className="text-[10px] uppercase font-bold bg-slate-800 hover:bg-slate-700 text-slate-300 px-3 py-1.5 rounded flex items-center gap-1 border border-slate-600">
+                                            {imgLoading ? <span className="animate-pulse">Cargando...</span> : <>{ImagePlusIcon && <ImagePlusIcon size={14}/>} Generar DCL</>}
+                                        </button>
+                                    </div>
+
+                                    {imgUrl && (
+                                        <div className="mb-4 bg-slate-900 p-2 rounded-xl border border-slate-700 text-center">
+                                            <img src={imgUrl} alt="Diagrama de Fuerzas" className="mx-auto max-h-40 rounded-lg" />
+                                        </div>
+                                    )}
+
+                                    <div className="text-xs text-slate-300 space-y-4 leading-relaxed">
+                                        <div className="bg-slate-900/80 p-3 rounded-lg border-l-4 border-rose-500 font-mono text-center text-rose-300 shadow-inner font-bold mb-4">
+                                            Teorema: ΔE_m = W_fricción
+                                        </div>
+
+                                        <p><strong>1. Energía Mecánica Inicial y Final:</strong><br/>
+                                        Como el objeto empieza y termina en el suelo ($h=0$), no hay energía potencial gravitatoria en los puntos a comparar. Solo calculamos la Energía Cinética.</p>
+                                        
+                                        <div className="grid grid-cols-2 gap-2 text-center">
+                                            <div className="bg-slate-900/80 p-2 rounded-lg border-l-4 border-emerald-500 font-mono text-emerald-200">
+                                                E_m0 = ½ · m · v₀²<br/>
+                                                E_m0 = 0.5 · {m} · {v0.toFixed(0)}²<br/>
+                                                <strong>{ec0.toFixed(1)} J</strong>
+                                            </div>
+                                            <div className="bg-slate-900/80 p-2 rounded-lg border-l-4 border-blue-500 font-mono text-blue-200">
+                                                E_mf = ½ · m · v_f²<br/>
+                                                E_mf = 0.5 · {m} · {vf.toFixed(0)}²<br/>
+                                                <strong>{ecf.toFixed(1)} J</strong>
+                                            </div>
+                                        </div>
+
+                                        <p className="mt-3"><strong>2. Variación de Energía (Trabajo de rozamiento):</strong><br/>
+                                        Toda la energía que "falta" al volver se ha perdido en forma de calor por rozar con el aire.</p>
+                                        <div className="bg-slate-900/80 p-2 rounded-lg border-l-4 border-rose-500 font-mono text-rose-200">
+                                            W_fr = ΔE_m = E_mf - E_m0<br/>
+                                            W_fr = {ecf.toFixed(1)} - {ec0.toFixed(1)} = <strong>-{energiaPerdida.toFixed(2)} J</strong>
+                                        </div>
+
+                                        <p className="mt-3"><strong>3. Fuerza de Rozamiento Media:</strong><br/>
+                                        El trabajo de la fuerza de fricción es $W = -F_r \cdot d$. <br/>¡Atención! La distancia total ($d$) es subida + bajada.</p>
+                                        <div className="bg-slate-900/80 p-3 rounded-lg border-l-4 border-orange-500 font-mono text-orange-200 shadow-inner">
+                                            Distancia total = {hMax} m + {hMax} m = <strong>{distanciaTotal} m</strong><br/><br/>
+                                            - F_r · {distanciaTotal} = -{energiaPerdida.toFixed(2)}<br/>
+                                            F_r = {energiaPerdida.toFixed(2)} / {distanciaTotal}<br/>
+                                            <strong>F_r = {fMediaRozamiento.toFixed(4)} N</strong>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </main>
+
+                        <footer className="max-w-5xl mx-auto mt-12 pt-6 border-t border-slate-800 text-center text-slate-500 text-[10px] font-bold uppercase tracking-widest">
+                            Profe Física | Trabajo de Fuerzas No Conservativas
+                        </footer>
+                    </div>
+                );
+            };
+
+            const container = document.getElementById('root');
+            const root = ReactDOM.createRoot(container);
+            root.render(<App />);
+        })();
+    </script>
+</body>
+</html>
