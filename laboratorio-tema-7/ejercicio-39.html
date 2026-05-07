@@ -1,0 +1,255 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Laboratorio: Masa vs Peso</title>
+    <!-- Bibliotecas externas -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <script src="https://unpkg.com/lucide-react@latest"></script>
+
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&family=Fira+Code&display=swap');
+        body { font-family: 'Inter', sans-serif; background-color: #0f172a; }
+        .font-mono { font-family: 'Fira Code', monospace; }
+        input[type=range]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            height: 20px;
+            width: 20px;
+            border-radius: 50%;
+            background: #3b82f6; /* Blue 500 */
+            cursor: pointer;
+            border: 2px solid #ffffff;
+            box-shadow: 0 0 10px rgba(59, 130, 246, 0.5);
+        }
+        .moon-surface {
+            background-color: #334155;
+            background-image: 
+                radial-gradient(circle at 20% 30%, #1e293b 10px, transparent 11px),
+                radial-gradient(circle at 70% 60%, #1e293b 15px, transparent 16px),
+                radial-gradient(circle at 40% 80%, #1e293b 8px, transparent 9px);
+        }
+        .earth-surface {
+            background-color: #064e3b; /* Emerald 900 */
+            background-image: linear-gradient(90deg, #065f46 25%, transparent 25%, transparent 75%, #065f46 75%, #065f46);
+            background-size: 20px 20px;
+        }
+    </style>
+</head>
+<body>
+    <div id="root"></div>
+
+    <script type="text/babel">
+        (() => {
+            var { useState, useEffect } = React;
+            var icons = window.LucideReact || {};
+            
+            // Asignación segura de iconos
+            var getIcon = (name) => icons[name] || (({className}) => <span className={className || ''}></span>);
+            var CalculatorIcon = getIcon('Calculator');
+            var SettingsIcon = getIcon('Settings');
+            var InfoIcon = getIcon('Info');
+            var Globe2Icon = getIcon('Globe2');
+            var MoonIcon = getIcon('Moon');
+            var ArrowDownIcon = getIcon('ArrowDown');
+            var ScaleIcon = getIcon('Scale');
+            var CheckCircleIcon = getIcon('CheckCircle2');
+
+            var App = () => {
+                // Constantes Físicas
+                const g_tierra = 9.8; // m/s^2
+                const g_luna = 1.62; // m/s^2 (Aprox 1/6 de la Tierra)
+
+                // Estados Interactivos (Dato del enunciado)
+                const [masa, setMasa] = useState(40.0); // kg
+
+                // Cálculos Físicos
+                const pesoTierra = masa * g_tierra;
+                const pesoLuna = masa * g_luna;
+
+                // Escala visual para los vectores (100 px = ~400 N)
+                const vScale = 100 / 400;
+
+                return (
+                    <div className="min-h-screen bg-slate-950 text-slate-100 p-4 md:p-8">
+                        <header className="max-w-5xl mx-auto mb-8 border-b border-slate-800 pb-6">
+                            <div className="flex items-center gap-3 mb-2">
+                                <span className="bg-indigo-600 text-white px-3 py-1 rounded-full text-xs font-black uppercase tracking-widest">Conceptos Fundamentales</span>
+                                <h1 className="text-3xl font-black text-indigo-400 uppercase tracking-tight tracking-widest">Masa vs Peso</h1>
+                            </div>
+                            <div className="bg-slate-900/80 p-4 rounded-xl border border-slate-800 mt-4">
+                                <p className="text-slate-300 text-sm leading-relaxed">
+                                    <strong>Enunciado:</strong> Calcula la masa y el peso de un cuerpo de 40,0 kg en la Tierra y en la Luna.
+                                </p>
+                            </div>
+                        </header>
+
+                        <main className="max-w-5xl mx-auto grid md:grid-cols-2 gap-8">
+                            {/* Panel Visual: LA TIERRA */}
+                            <div className="bg-slate-900 rounded-3xl border border-blue-500/30 h-[450px] relative overflow-hidden shadow-[0_0_30px_rgba(59,130,246,0.15)] flex flex-col justify-end">
+                                
+                                {/* Título del Planeta */}
+                                <div className="absolute top-6 left-1/2 -translate-x-1/2 flex flex-col items-center z-30">
+                                    <div className="bg-blue-900/80 text-blue-200 px-4 py-2 rounded-full font-black uppercase tracking-widest flex items-center gap-2 border border-blue-500/50 backdrop-blur-md">
+                                        <Globe2Icon size={18} /> LA TIERRA
+                                    </div>
+                                    <span className="text-xs text-blue-400 mt-2 font-mono">g = 9.8 m/s²</span>
+                                </div>
+
+                                {/* Marcadores Flotantes */}
+                                <div className="absolute top-24 w-full px-6 flex justify-between z-30 pointer-events-none">
+                                    <div className="bg-slate-950/90 p-3 rounded-lg border border-slate-800 backdrop-blur-md">
+                                        <p className="text-[10px] text-slate-500 uppercase font-black">Masa (Constante)</p>
+                                        <p className="text-xl font-mono font-black text-white">{masa.toFixed(1)} kg</p>
+                                    </div>
+                                    <div className="bg-slate-950/90 p-3 rounded-lg border border-blue-900 backdrop-blur-md text-right border-b-4 border-b-blue-500">
+                                        <p className="text-[10px] text-blue-400 uppercase font-black">Peso en la Tierra</p>
+                                        <p className="text-2xl font-mono font-black text-blue-500">{pesoTierra.toFixed(1)} N</p>
+                                    </div>
+                                </div>
+
+                                {/* Escena: Tierra */}
+                                <div className="relative w-full h-72 flex justify-center items-end pb-8">
+                                    {/* El Cuerpo (Caja) - El tamaño visual NO cambia porque la masa es la misma */}
+                                    <div className="relative w-24 h-24 bg-slate-200 border-4 border-slate-400 rounded-lg flex items-center justify-center shadow-lg z-20">
+                                        <span className="font-black text-slate-800">{masa.toFixed(1)} kg</span>
+
+                                        {/* Vector Peso (Tierra) */}
+                                        <div className="absolute top-full left-1/2 -translate-x-1/2 flex flex-col items-center pt-1 pointer-events-none" style={{ height: Math.min(180, pesoTierra * vScale) }}>
+                                            <div className="w-2 bg-blue-500 h-full relative shadow-[0_0_10px_rgba(59,130,246,0.8)]">
+                                                <div className="absolute bottom-0 -translate-x-1.5">{ArrowDownIcon && <ArrowDownIcon size={20} className="text-blue-500" />}</div>
+                                            </div>
+                                            <span className="mt-1 text-[10px] font-black text-blue-400 bg-slate-900/80 px-1 rounded whitespace-nowrap">P_T = {pesoTierra.toFixed(0)} N</span>
+                                        </div>
+                                    </div>
+                                    
+                                    {/* Suelo Terrestre */}
+                                    <div className="absolute bottom-0 w-full h-10 earth-surface border-t-4 border-emerald-700"></div>
+                                </div>
+                            </div>
+
+                            {/* Panel Visual: LA LUNA */}
+                            <div className="bg-slate-900 rounded-3xl border border-slate-600 h-[450px] relative overflow-hidden shadow-2xl flex flex-col justify-end">
+                                
+                                {/* Título del Planeta */}
+                                <div className="absolute top-6 left-1/2 -translate-x-1/2 flex flex-col items-center z-30">
+                                    <div className="bg-slate-800/80 text-slate-200 px-4 py-2 rounded-full font-black uppercase tracking-widest flex items-center gap-2 border border-slate-500/50 backdrop-blur-md">
+                                        <MoonIcon size={18} /> LA LUNA
+                                    </div>
+                                    <span className="text-xs text-slate-400 mt-2 font-mono">g = 1.62 m/s²</span>
+                                </div>
+
+                                {/* Marcadores Flotantes */}
+                                <div className="absolute top-24 w-full px-6 flex justify-between z-30 pointer-events-none">
+                                    <div className="bg-slate-950/90 p-3 rounded-lg border border-slate-800 backdrop-blur-md">
+                                        <p className="text-[10px] text-slate-500 uppercase font-black">Masa (Constante)</p>
+                                        <p className="text-xl font-mono font-black text-white">{masa.toFixed(1)} kg</p>
+                                    </div>
+                                    <div className="bg-slate-950/90 p-3 rounded-lg border border-slate-700 backdrop-blur-md text-right border-b-4 border-b-slate-400">
+                                        <p className="text-[10px] text-slate-400 uppercase font-black">Peso en la Luna</p>
+                                        <p className="text-2xl font-mono font-black text-slate-300">{pesoLuna.toFixed(1)} N</p>
+                                    </div>
+                                </div>
+
+                                {/* Escena: Luna */}
+                                <div className="relative w-full h-72 flex justify-center items-end pb-8">
+                                    {/* El Cuerpo (Caja) - ¡Mismo tamaño visual que en la Tierra! */}
+                                    <div className="relative w-24 h-24 bg-slate-200 border-4 border-slate-400 rounded-lg flex items-center justify-center shadow-lg z-20">
+                                        <span className="font-black text-slate-800">{masa.toFixed(1)} kg</span>
+
+                                        {/* Vector Peso (Luna) - Mucho más pequeño */}
+                                        <div className="absolute top-full left-1/2 -translate-x-1/2 flex flex-col items-center pt-1 pointer-events-none" style={{ height: Math.max(20, pesoLuna * vScale) }}>
+                                            <div className="w-1.5 bg-slate-400 h-full relative">
+                                                <div className="absolute bottom-0 -translate-x-1.5">{ArrowDownIcon && <ArrowDownIcon size={16} className="text-slate-400" />}</div>
+                                            </div>
+                                            <span className="mt-1 text-[10px] font-black text-slate-400 bg-slate-900/80 px-1 rounded whitespace-nowrap">P_L = {pesoLuna.toFixed(0)} N</span>
+                                        </div>
+                                    </div>
+                                    
+                                    {/* Suelo Lunar */}
+                                    <div className="absolute bottom-0 w-full h-10 moon-surface border-t-4 border-slate-500"></div>
+                                </div>
+                            </div>
+
+                            {/* Controles y Resolución */}
+                            <div className="space-y-6 md:col-span-2">
+                                <div className="grid md:grid-cols-2 gap-8">
+                                    <div className="bg-slate-900 p-6 rounded-3xl border border-slate-800 shadow-xl">
+                                        <h3 className="text-xl font-bold mb-4 flex items-center gap-2 text-indigo-400">
+                                            {SettingsIcon && <SettingsIcon size={20} />} Cambiar de Objeto
+                                        </h3>
+                                        
+                                        <div className="space-y-6 mb-2">
+                                            <div>
+                                                <div className="flex justify-between text-xs mb-2">
+                                                    <span className="text-slate-300 font-bold uppercase">Masa del Cuerpo (m)</span>
+                                                    <span className="font-mono bg-slate-950 px-2 py-0.5 rounded text-white">{masa.toFixed(1)} kg</span>
+                                                </div>
+                                                <input 
+                                                    type="range" min="5" max="150" step="5" value={masa} 
+                                                    onChange={e => setMasa(Number(e.target.value))} 
+                                                    className="w-full h-2 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-indigo-500" 
+                                                />
+                                            </div>
+                                            
+                                            {/* Explicación Conceptual Rápida */}
+                                            <div className="bg-indigo-950/40 p-4 rounded-xl border border-indigo-500/30 text-sm text-indigo-200 flex items-start gap-3">
+                                                <CheckCircleIcon size={20} className="shrink-0 text-indigo-400 mt-0.5" />
+                                                <p>Fíjate que al mover el deslizador, el tamaño del bloque y el texto de "kg" cambia en <strong>ambos planetas por igual</strong>. La masa es una propiedad intrínseca que no viaja con la gravedad.</p>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div className="bg-slate-900 p-6 rounded-3xl border border-slate-800 shadow-xl">
+                                        <h4 className="font-bold text-indigo-400 mb-4 flex items-center gap-2 border-b border-slate-800 pb-2">
+                                            {CalculatorIcon && <CalculatorIcon size={18} />} Resolución Paso a Paso
+                                        </h4>
+
+                                        <div className="text-sm text-slate-300 space-y-4 leading-relaxed">
+                                            <p><strong>1. La Masa (La Trampa Teórica):</strong><br/>
+                                            La masa es la cantidad de materia. No depende del planeta.</p>
+                                            <div className="grid grid-cols-2 gap-2 text-center">
+                                                <div className="bg-slate-950 p-2 rounded-lg border-l-4 border-blue-500 font-mono text-blue-300">
+                                                    Masa Tierra = <strong>{masa.toFixed(1)} kg</strong>
+                                                </div>
+                                                <div className="bg-slate-950 p-2 rounded-lg border-l-4 border-slate-500 font-mono text-slate-300">
+                                                    Masa Luna = <strong>{masa.toFixed(1)} kg</strong>
+                                                </div>
+                                            </div>
+                                            
+                                            <p className="mt-4"><strong>2. El Peso (Fuerza de Atracción):</strong><br/>
+                                            El peso es una fuerza, se mide en Newtons (N) y se calcula con la 2ª Ley de Newton: $P = m \cdot g$.</p>
+                                            <div className="grid grid-cols-2 gap-2 text-center">
+                                                <div className="bg-slate-950 p-2 rounded-lg border-l-4 border-blue-500 font-mono text-blue-300">
+                                                    P<sub>T</sub> = {masa.toFixed(1)} · 9.8<br/>
+                                                    P<sub>T</sub> = <strong>{pesoTierra.toFixed(1)} N</strong>
+                                                </div>
+                                                <div className="bg-slate-950 p-2 rounded-lg border-l-4 border-slate-500 font-mono text-slate-300">
+                                                    P<sub>L</sub> = {masa.toFixed(1)} · 1.62<br/>
+                                                    P<sub>L</sub> = <strong>{pesoLuna.toFixed(1)} N</strong>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </main>
+
+                        <footer className="max-w-5xl mx-auto mt-12 pt-6 border-t border-slate-800 text-center text-slate-500 text-[10px] font-bold uppercase tracking-widest">
+                            Profe Física | Dinámica: Masa e Interacción Gravitatoria
+                        </footer>
+                    </div>
+                );
+            };
+
+            const container = document.getElementById('root');
+            const root = ReactDOM.createRoot(container);
+            root.render(<App />);
+        })();
+    </script>
+</body>
+</html>

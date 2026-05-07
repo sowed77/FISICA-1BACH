@@ -1,0 +1,387 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Laboratorio: Estructura de Juguete</title>
+    <!-- Bibliotecas externas -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <script src="https://unpkg.com/lucide-react@latest"></script>
+
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&family=Fira+Code&display=swap');
+        body { font-family: 'Inter', sans-serif; background-color: #0f172a; }
+        .font-mono { font-family: 'Fira Code', monospace; }
+        input[type=range]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            height: 24px;
+            width: 24px;
+            border-radius: 50%;
+            background: #f59e0b; /* Amber 500 */
+            cursor: pointer;
+            border: 3px solid #ffffff;
+            box-shadow: 0 0 10px rgba(245, 158, 11, 0.5);
+        }
+        .floor-pattern {
+            background-color: #1e293b;
+            background-image: repeating-linear-gradient(45deg, #334155 0px, #334155 10px, transparent 10px, transparent 20px);
+        }
+    </style>
+</head>
+<body>
+    <div id="root"></div>
+
+    <script type="text/babel">
+        (() => {
+            var { useState, useEffect } = React;
+            var icons = window.LucideReact || {};
+            
+            // Asignación segura de iconos
+            var getIcon = (name) => icons[name] || (({className}) => <span className={className || ''}></span>);
+            var CalculatorIcon = getIcon('Calculator');
+            var SettingsIcon = getIcon('Settings');
+            var InfoIcon = getIcon('Info');
+            var ArrowDownIcon = getIcon('ArrowDown');
+            var ArrowRightIcon = getIcon('ArrowRight');
+            var ArrowLeftIcon = getIcon('ArrowLeft');
+            var ArrowUpIcon = getIcon('ArrowUp');
+            var ImagePlusIcon = getIcon('ImagePlus');
+            var AlertTriangleIcon = getIcon('AlertTriangle');
+            var ConstructionIcon = getIcon('Construction');
+
+            var App = () => {
+                // Estados interactivos inicializados con los datos del enunciado
+                const [cargaP, setCargaP] = useState(20); // N
+                const [aperturaTotal, setAperturaTotal] = useState(45); // Grados (ángulo entre las dos patas)
+                const [baseCm, setBaseCm] = useState(30); // cm
+                const [reposoGomaCm, setReposoGomaCm] = useState(20); // cm
+
+                // Cálculos Físicos
+                // Ángulo de cada columna con la vertical
+                const thetaDeg = aperturaTotal / 2;
+                const thetaRad = thetaDeg * (Math.PI / 180);
+
+                // Por simetría, la fuerza vertical en cada apoyo es la mitad de la carga
+                const fyColumna = cargaP / 2;
+                
+                // La fuerza que la columna empuja hacia afuera en el suelo (Fx = Fy * tan(theta))
+                const fxOutward = fyColumna * Math.tan(thetaRad);
+
+                // Alargamiento de la goma
+                const dxCm = baseCm - reposoGomaCm;
+                const dxM = dxCm / 100;
+                
+                // La goma está floja si la base es menor o igual a su longitud en reposo
+                const gomaFloja = dxCm <= 0;
+
+                // Tensión que debe hacer la goma para que no se abra la estructura
+                const tensionGoma = fxOutward;
+
+                // Constante elástica de la goma (k = F / x)
+                const k = gomaFloja ? 0 : tensionGoma / dxM;
+
+                // Escala visual y geometría SVG
+                const scale = 8; // píxeles por cm
+                const basePx = baseCm * scale;
+                // Calculamos la altura de la estructura visualmente: tan(theta) = (b/2) / h => h = (b/2) / tan(theta)
+                const heightCm = (baseCm / 2) / Math.tan(thetaRad);
+                const heightPx = heightCm * scale;
+
+                const centerX = 200;
+                const floorY = 320;
+                const apexY = floorY - heightPx;
+                
+                const leftFootX = centerX - (basePx / 2);
+                const rightFootX = centerX + (basePx / 2);
+
+                // Renderizado de la goma elástica (zig-zag)
+                const generateSpringPath = () => {
+                    const coils = 15;
+                    const width = 8;
+                    const padding = 10;
+                    
+                    let path = `M ${leftFootX} ${floorY - 10} L ${leftFootX + padding} ${floorY - 10} `;
+                    const coilWidth = (basePx - padding * 2) / coils;
+                    
+                    for(let i=0; i<coils; i++) {
+                        const y = i % 2 === 0 ? floorY - 10 - width : floorY - 10 + width;
+                        const x = leftFootX + padding + coilWidth * (i + 0.5);
+                        path += `L ${x} ${y} `;
+                    }
+                    
+                    path += `L ${rightFootX - padding} ${floorY - 10} L ${rightFootX} ${floorY - 10}`;
+                    return path;
+                };
+
+                // Generador de DCL IA
+                const [imgUrl, setImgUrl] = useState(null);
+                const [imgLoading, setImgLoading] = useState(false);
+
+                const generarDiagrama = async () => {
+                    setImgLoading(true);
+                    const apiKey = "AIzaSyDMyUo-WgmdNkCRW6-YK7h-bnRF_FLAjf0"; 
+                    try {
+                        const response = await fetch(
+                            `https://generativelanguage.googleapis.com/v1beta/models/imagen-4.0-generate-001:predict?key=${apiKey}`,
+                            {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({
+                                    instances: [{ prompt: "Diagrama técnico de física de estática de estructuras. Un nodo inferior de una estructura en V invertida. Vector de fuerza de compresión apuntando hacia abajo en diagonal. Vector Normal N hacia arriba. Vector Tensión T hacia la izquierda (hecho por una banda elástica). Fondo blanco, minimalista, educativo" }],
+                                    parameters: { sampleCount: 1 }
+                                })
+                            }
+                        );
+                        if (!response.ok) throw new Error("Error en red");
+                        const data = await response.json();
+                        setImgUrl(`data:image/png;base64,${data.predictions[0].bytesBase64Encoded}`);
+                    } catch (error) {
+                        console.error(error);
+                    } finally {
+                        setImgLoading(false);
+                    }
+                };
+
+                return (
+                    <div className="min-h-screen bg-slate-900 text-slate-100 p-4 md:p-8">
+                        <header className="max-w-5xl mx-auto mb-8 border-b border-slate-700 pb-6">
+                            <div className="flex items-center gap-3 mb-2">
+                                <span className="bg-amber-600 text-slate-900 px-3 py-1 rounded-full text-xs font-black uppercase tracking-widest">Estática y Elasticidad</span>
+                                <h1 className="text-3xl font-black text-amber-400 uppercase tracking-tight tracking-widest">El Juguete y la Goma</h1>
+                            </div>
+                            <div className="bg-slate-800/50 p-4 rounded-xl border border-slate-700 mt-4">
+                                <p className="text-slate-300 text-sm leading-relaxed">
+                                    <strong>Enunciado:</strong> Una estructura de juguete tiene una carga que genera 20 N en su vértice superior, con una apertura de 45° entre sus dos columnas. La distancia en la base es de 30 cm, y se unen con una goma de 20 cm en reposo. Calcula la constante elástica (k) de la goma.
+                                </p>
+                            </div>
+                        </header>
+
+                        <main className="max-w-5xl mx-auto grid md:grid-cols-2 gap-8">
+                            {/* Panel Visual */}
+                            <div className="bg-slate-800 rounded-3xl border border-slate-700 h-[550px] relative overflow-hidden shadow-2xl flex flex-col pt-12">
+                                
+                                {/* Marcadores Superiores */}
+                                <div className="absolute top-4 w-full px-6 flex justify-between z-30 pointer-events-none">
+                                    <div className="bg-slate-900/90 p-3 rounded-lg border border-slate-700 backdrop-blur-md">
+                                        <p className="text-[10px] text-slate-500 uppercase font-black">Fuerza expansiva (Empuje base)</p>
+                                        <p className="text-xl font-mono font-black text-rose-400">{fxOutward.toFixed(2)} N</p>
+                                    </div>
+                                    <div className={`bg-slate-900/90 p-3 rounded-lg border backdrop-blur-md text-right border-b-4 ${gomaFloja ? 'border-b-red-500' : 'border-b-emerald-500 shadow-[0_0_15px_rgba(16,185,129,0.2)]'}`}>
+                                        <p className="text-[10px] text-slate-500 uppercase font-black">Constante de la Goma (k)</p>
+                                        <p className={`text-xl font-mono font-black ${gomaFloja ? 'text-red-400' : 'text-emerald-400'}`}>
+                                            {gomaFloja ? 'N/A' : `${k.toFixed(1)} N/m`}
+                                        </p>
+                                    </div>
+                                </div>
+
+                                {gomaFloja && (
+                                    <div className="absolute top-24 left-1/2 -translate-x-1/2 z-40 bg-red-600/90 text-white px-6 py-3 rounded-xl border-2 border-red-400 shadow-[0_0_30px_rgba(220,38,38,0.8)] text-center animate-pulse flex items-center gap-3">
+                                        <AlertTriangleIcon size={24} />
+                                        <span className="font-black uppercase text-xs">La goma está floja.<br/>¡Estructura colapsando!</span>
+                                    </div>
+                                )}
+
+                                {/* Escena Estructural */}
+                                <div className="relative w-full h-[400px] flex items-center justify-center overflow-hidden">
+                                    
+                                    <svg width="400" height="400" className="absolute z-10 overflow-visible">
+                                        {/* Suelo */}
+                                        <rect x="0" y={floorY} width="400" height="80" fill="#1e293b" />
+                                        <line x1="0" y1={floorY} x2="400" y2={floorY} stroke="#475569" strokeWidth="4" />
+
+                                        {/* Regla Distancia Basal */}
+                                        <line x1={leftFootX} y1={floorY + 20} x2={rightFootX} y2={floorY + 20} stroke="#94a3b8" strokeWidth="2" strokeDasharray="4 4" />
+                                        <line x1={leftFootX} y1={floorY + 15} x2={leftFootX} y2={floorY + 25} stroke="#94a3b8" strokeWidth="2" />
+                                        <line x1={rightFootX} y1={floorY + 15} x2={rightFootX} y2={floorY + 25} stroke="#94a3b8" strokeWidth="2" />
+                                        <text x={centerX} y={floorY + 35} fill="#94a3b8" fontSize="12" fontWeight="bold" textAnchor="middle" fontFamily="monospace">Base: {baseCm} cm</text>
+
+                                        {/* Columna Izquierda */}
+                                        <line x1={centerX} y1={apexY} x2={leftFootX} y2={floorY} stroke="#b45309" strokeWidth="12" strokeLinecap="round" />
+                                        {/* Columna Derecha */}
+                                        <line x1={centerX} y1={apexY} x2={rightFootX} y2={floorY} stroke="#b45309" strokeWidth="12" strokeLinecap="round" />
+                                        
+                                        {/* Articulación Apex */}
+                                        <circle cx={centerX} cy={apexY} r="8" fill="#fcd34d" stroke="#b45309" strokeWidth="3" />
+
+                                        {/* Pies */}
+                                        <rect x={leftFootX - 10} y={floorY - 10} width="20" height="10" fill="#94a3b8" rx="2" />
+                                        <rect x={rightFootX - 10} y={floorY - 10} width="20" height="10" fill="#94a3b8" rx="2" />
+
+                                        {/* Goma Elástica */}
+                                        {!gomaFloja && (
+                                            <path 
+                                                d={generateSpringPath()} 
+                                                fill="none" stroke="#10b981" strokeWidth="4" strokeLinecap="round" strokeLinejoin="round"
+                                            />
+                                        )}
+                                        {gomaFloja && (
+                                            <path 
+                                                d={`M ${leftFootX} ${floorY - 10} Q ${centerX} ${floorY + 20} ${rightFootX} ${floorY - 10}`} 
+                                                fill="none" stroke="#64748b" strokeWidth="4" strokeLinecap="round"
+                                            />
+                                        )}
+
+                                        {/* Arco Ángulo Apertura */}
+                                        <path 
+                                            d={`M ${centerX - 20 * Math.sin(thetaRad)} ${apexY + 20 * Math.cos(thetaRad)} A 20 20 0 0 0 ${centerX + 20 * Math.sin(thetaRad)} ${apexY + 20 * Math.cos(thetaRad)}`}
+                                            fill="none" stroke="#fbbf24" strokeWidth="2" strokeDasharray="2 2"
+                                        />
+                                        <text x={centerX} y={apexY + 35} fill="#fbbf24" fontSize="10" fontWeight="bold" textAnchor="middle">{aperturaTotal}º</text>
+
+                                        {/* VECTORES DE FUERZA */}
+                                        
+                                        {/* Carga P (Centro) */}
+                                        <line x1={centerX} y1={apexY - 50} x2={centerX} y2={apexY - 10} stroke="#f43f5e" strokeWidth="3" markerEnd="url(#arrow-rose)" />
+                                        <text x={centerX + 10} y={apexY - 30} fill="#fda4af" fontSize="12" fontWeight="bold" fontFamily="monospace">P = {cargaP} N</text>
+
+                                        {/* Vectores en el pie derecho (para el DCL local) */}
+                                        {!gomaFloja && (
+                                            <>
+                                                {/* Componente Fx empujando hacia afuera */}
+                                                <line x1={rightFootX} y1={floorY} x2={rightFootX + Math.min(60, fxOutward * 10)} y2={floorY} stroke="#fb7185" strokeWidth="2" strokeDasharray="3 3" markerEnd="url(#arrow-rose-light)" />
+                                                <text x={rightFootX + 15} y={floorY - 5} fill="#fb7185" fontSize="10" fontWeight="bold">Fx</text>
+                                                
+                                                {/* Tensión de la Goma hacia adentro */}
+                                                <line x1={rightFootX} y1={floorY - 10} x2={rightFootX - Math.min(60, tensionGoma * 10)} y2={floorY - 10} stroke="#10b981" strokeWidth="3" markerEnd="url(#arrow-emerald)" />
+                                                <text x={rightFootX - 25} y={floorY - 15} fill="#6ee7b7" fontSize="10" fontWeight="bold">T</text>
+                                            </>
+                                        )}
+
+                                        {/* Definición de Flechas */}
+                                        <defs>
+                                            <marker id="arrow-rose" viewBox="0 0 10 10" refX="5" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+                                                <path d="M 0 0 L 10 5 L 0 10 z" fill="#f43f5e" />
+                                            </marker>
+                                            <marker id="arrow-rose-light" viewBox="0 0 10 10" refX="5" refY="5" markerWidth="5" markerHeight="5" orient="auto-start-reverse">
+                                                <path d="M 0 0 L 10 5 L 0 10 z" fill="#fb7185" />
+                                            </marker>
+                                            <marker id="arrow-emerald" viewBox="0 0 10 10" refX="5" refY="5" markerWidth="5" markerHeight="5" orient="auto-start-reverse">
+                                                <path d="M 0 0 L 10 5 L 0 10 z" fill="#10b981" />
+                                            </marker>
+                                        </defs>
+                                    </svg>
+                                </div>
+                            </div>
+
+                            {/* Controles y Resolución */}
+                            <div className="space-y-6">
+                                <div className="bg-slate-800 p-6 rounded-3xl border border-slate-700 shadow-xl">
+                                    <h3 className="text-xl font-bold mb-4 flex items-center gap-2 text-amber-400">
+                                        {ConstructionIcon && <ConstructionIcon size={20} />} Modificar Estructura
+                                    </h3>
+                                    
+                                    <div className="space-y-5 mb-2">
+                                        <div>
+                                            <div className="flex justify-between text-xs mb-2">
+                                                <span className="text-rose-400 font-bold uppercase">Carga en el vértice (P)</span>
+                                                <span className="font-mono bg-slate-900 px-2 py-0.5 rounded text-rose-200">{cargaP} N</span>
+                                            </div>
+                                            <input 
+                                                type="range" min="10" max="100" step="2" value={cargaP} 
+                                                onChange={e => setCargaP(Number(e.target.value))} 
+                                                className="w-full h-2 bg-slate-700 rounded-lg appearance-none cursor-pointer accent-rose-500" 
+                                            />
+                                        </div>
+
+                                        <div>
+                                            <div className="flex justify-between text-xs mb-2">
+                                                <span className="text-amber-400 font-bold uppercase">Ángulo de Apertura Total (α)</span>
+                                                <span className="font-mono bg-slate-900 px-2 py-0.5 rounded text-amber-200">{aperturaTotal}º</span>
+                                            </div>
+                                            <input 
+                                                type="range" min="20" max="120" step="5" value={aperturaTotal} 
+                                                onChange={e => setAperturaTotal(Number(e.target.value))} 
+                                                className="w-full h-2 bg-slate-700 rounded-lg appearance-none cursor-pointer accent-amber-500" 
+                                            />
+                                        </div>
+
+                                        <div className="grid grid-cols-2 gap-4 pt-3 border-t border-slate-700">
+                                            <div>
+                                                <div className="flex justify-between text-[10px] mb-1">
+                                                    <span className="text-slate-300 font-bold uppercase">Distancia Basal</span>
+                                                    <span className="font-mono text-white">{baseCm} cm</span>
+                                                </div>
+                                                <input type="range" min="15" max="60" step="1" value={baseCm} onChange={e => setBaseCm(Number(e.target.value))} className="w-full h-1.5 bg-slate-700 rounded-lg appearance-none cursor-pointer accent-slate-400" />
+                                            </div>
+                                            <div>
+                                                <div className="flex justify-between text-[10px] mb-1">
+                                                    <span className="text-emerald-400 font-bold uppercase">Goma en Reposo (L₀)</span>
+                                                    <span className="font-mono text-emerald-200">{reposoGomaCm} cm</span>
+                                                </div>
+                                                <input type="range" min="10" max="50" step="1" value={reposoGomaCm} onChange={e => setReposoGomaCm(Number(e.target.value))} className="w-full h-1.5 bg-slate-700 rounded-lg appearance-none cursor-pointer accent-emerald-500" />
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div className="bg-amber-950/20 p-6 rounded-3xl border border-amber-500/20">
+                                    <div className="flex justify-between items-center mb-4 border-b border-amber-500/30 pb-2">
+                                        <h4 className="font-bold text-amber-300 flex items-center gap-2">
+                                            {CalculatorIcon && <CalculatorIcon size={18} />} Resolución Paso a Paso
+                                        </h4>
+                                        <button onClick={generarDiagrama} className="text-[10px] uppercase font-bold bg-slate-800 hover:bg-slate-700 text-slate-300 px-3 py-1.5 rounded flex items-center gap-1 border border-slate-600">
+                                            {imgLoading ? <span className="animate-pulse">Cargando...</span> : <>{ImagePlusIcon && <ImagePlusIcon size={14}/>} Generar DCL</>}
+                                        </button>
+                                    </div>
+
+                                    {imgUrl && (
+                                        <div className="mb-4 bg-slate-900 p-2 rounded-xl border border-slate-700 text-center">
+                                            <img src={imgUrl} alt="Diagrama Técnico" className="mx-auto max-h-40 rounded-lg" />
+                                        </div>
+                                    )}
+
+                                    <div className="text-xs text-slate-300 space-y-3 leading-relaxed">
+                                        <p><strong>1. Simetría y Ángulo de la Columna:</strong><br/>
+                                        La carga de {cargaP} N se reparte entre las dos columnas (F<sub>y</sub> = {cargaP}/2 = <strong>{fyColumna} N</strong> en cada apoyo).<br/>
+                                        El ángulo que forma cada columna con la vertical es la mitad de la apertura (θ = α/2 = {aperturaTotal}º/2 = <strong>{thetaDeg}º</strong>).</p>
+                                        
+                                        <p className="mt-2"><strong>2. Descomposición Vectorial en la base:</strong><br/>
+                                        La columna transmite la fuerza en diagonal. La parte que intenta "abrir" la estructura es la componente horizontal F<sub>x</sub>.</p>
+                                        <div className="bg-slate-900/80 p-2 rounded-lg border-l-4 border-rose-500 font-mono text-rose-200">
+                                            tan(θ) = F<sub>x</sub> / F<sub>y</sub>  ⇒  F<sub>x</sub> = F<sub>y</sub> · tan(θ)<br/>
+                                            F<sub>x</sub> = {fyColumna} · tan({thetaDeg}º) = <strong>{fxOutward.toFixed(3)} N</strong>
+                                        </div>
+
+                                        <p className="mt-2"><strong>3. Tensión y Alargamiento de la Goma:</strong><br/>
+                                        Para que no se escurra, la goma debe tirar hacia adentro (Tensión T) con la misma fuerza que F<sub>x</sub>.</p>
+                                        <div className="bg-slate-900/80 p-2 rounded-lg border-l-4 border-slate-500 font-mono text-slate-200">
+                                            T = F<sub>x</sub> = <strong>{fxOutward.toFixed(3)} N</strong><br/>
+                                            Δx = L<sub>final</sub> - L₀ = {baseCm} cm - {reposoGomaCm} cm = {dxCm} cm = <strong>{dxM.toFixed(2)} m</strong>
+                                        </div>
+
+                                        {gomaFloja ? (
+                                            <div className="bg-red-900/40 border border-red-500/50 p-2 rounded text-red-200 mt-2 font-bold text-center">
+                                                No se puede calcular 'k' porque la goma no está estirada (Δx ≤ 0).
+                                            </div>
+                                        ) : (
+                                            <>
+                                                <p className="mt-2"><strong>4. Constante Elástica (Ley de Hooke):</strong></p>
+                                                <div className="bg-slate-900/80 p-3 rounded-lg border-l-4 border-emerald-500 font-mono text-emerald-300 shadow-inner">
+                                                    T = k · Δx  ⇒  k = T / Δx<br/>
+                                                    k = {fxOutward.toFixed(3)} / {dxM.toFixed(2)} = <strong>{k.toFixed(1)} N/m</strong>
+                                                </div>
+                                            </>
+                                        )}
+                                    </div>
+                                </div>
+                            </div>
+                        </main>
+
+                        <footer className="max-w-5xl mx-auto mt-12 pt-6 border-t border-slate-800 text-center text-slate-500 text-[10px] font-bold uppercase tracking-widest">
+                            Profe Física | Estática de Estructuras y Ley de Hooke
+                        </footer>
+                    </div>
+                );
+            };
+
+            const container = document.getElementById('root');
+            const root = ReactDOM.createRoot(container);
+            root.render(<App />);
+        })();
+    </script>
+</body>
+</html>

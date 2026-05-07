@@ -1,0 +1,412 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Laboratorio: Superficies Mixtas (Horizontal y Rampa)</title>
+    <!-- Bibliotecas externas -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <script src="https://unpkg.com/lucide-react@latest"></script>
+
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&family=Fira+Code&display=swap');
+        body { font-family: 'Inter', sans-serif; background-color: #0f172a; }
+        .font-mono { font-family: 'Fira Code', monospace; }
+        input[type=range]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            height: 20px;
+            width: 20px;
+            border-radius: 50%;
+            background: #0ea5e9; /* Sky 500 */
+            cursor: pointer;
+            border: 2px solid #ffffff;
+            box-shadow: 0 0 10px rgba(14, 165, 233, 0.5);
+        }
+    </style>
+</head>
+<body>
+    <div id="root"></div>
+
+    <script type="text/babel">
+        (() => {
+            var { useState, useEffect } = React;
+            var icons = window.LucideReact || {};
+            
+            var PlayIcon = icons.Play || (({className}) => <span className={className}></span>);
+            var RotateCcwIcon = icons.RotateCcw || (({className}) => <span className={className}></span>);
+            var InfoIcon = icons.Info || (({className}) => <span className={className}></span>);
+            var CalculatorIcon = icons.Calculator || (({className}) => <span className={className}></span>);
+            var ArrowRightIcon = icons.ArrowRight || (({className}) => <span className={className}></span>);
+            var ArrowLeftIcon = icons.ArrowLeft || (({className}) => <span className={className}></span>);
+            var ArrowDownIcon = icons.ArrowDown || (({className}) => <span className={className}></span>);
+            var ArrowUpIcon = icons.ArrowUp || (({className}) => <span className={className}></span>);
+            var LinkIcon = icons.Link || (({className}) => <span className={className}></span>);
+            var ImagePlusIcon = icons.ImagePlus || (({className}) => <span className={className}></span>);
+            var LayersIcon = icons.Layers || (({className}) => <span className={className}></span>);
+
+            var App = () => {
+                // Parámetros iniciales del enunciado
+                const g = 9.8; // m/s^2
+                
+                // Estados interactivos
+                const [m1, setM1] = useState(2.0); // Masa 1 (Horizontal)
+                const [m2, setM2] = useState(5.0); // Masa 2 (Rampa)
+                const [mu, setMu] = useState(0.200); // Rozamiento igual para ambas
+                const [angulo, setAngulo] = useState(30);
+
+                // Estados de animación
+                const [pos, setPos] = useState(0); 
+                const [vel, setVel] = useState(0);
+                const [isMoving, setIsMoving] = useState(false);
+
+                // CÁLCULOS FÍSICOS
+                const anguloRad = angulo * (Math.PI / 180);
+                const senA = Math.sin(anguloRad);
+                const cosA = Math.cos(anguloRad);
+
+                // Fuerzas Masa 1 (Horizontal)
+                const p1 = m1 * g;
+                const n1 = p1;
+                const fr1 = mu * n1;
+
+                // Fuerzas Masa 2 (Rampa)
+                const p2 = m2 * g;
+                const p2x = p2 * senA;
+                const p2y = p2 * cosA;
+                const n2 = p2y;
+                const fr2 = mu * n2;
+
+                // Análisis del movimiento (Fuerzas a favor vs en contra)
+                // A favor: P2x (tira del sistema hacia abajo por la rampa)
+                // En contra: Fr1 (frena a m1) y Fr2 (frena a m2)
+                const fNeta = p2x - fr1 - fr2;
+                const canMove = fNeta > 0;
+
+                // Aceleración del sistema
+                const a = canMove ? fNeta / (m1 + m2) : 0;
+
+                // Tensión (Aislamos m1 horizontal: T - Fr1 = m1 * a  =>  T = m1*a + Fr1)
+                const tension = (m1 * a) + fr1;
+
+                // Constantes visuales
+                const maxDesplazamiento = 150; // Límite de la mesa
+
+                useEffect(() => {
+                    let interval;
+                    if (isMoving && pos < maxDesplazamiento) {
+                        interval = setInterval(() => {
+                            setVel(v => v + a * 0.05);
+                            setPos(p => {
+                                const newP = p + vel;
+                                if (newP >= maxDesplazamiento) {
+                                    setIsMoving(false);
+                                    return maxDesplazamiento;
+                                }
+                                return newP;
+                            });
+                        }, 20); // 50 fps
+                    }
+                    return () => clearInterval(interval);
+                }, [isMoving, pos, vel, a]);
+
+                const handlePlay = () => {
+                    if (pos < maxDesplazamiento && canMove) setIsMoving(true);
+                };
+
+                const reset = () => {
+                    setPos(0);
+                    setVel(0);
+                    setIsMoving(false);
+                };
+
+                // Geometría SVG para el renderizado
+                const pX = 220; // Posición X de la polea
+                const pY = 100; // Posición Y de la polea
+                
+                // M1 (Horizontal)
+                const m1_X = pX - 140 + pos; // Empieza a -140px de la polea
+                const m1_Y = pY - 20; // Sobre la mesa
+                
+                // M2 (Rampa)
+                const d2_inicial = 50; // Distancia inicial por la rampa
+                const m2_dist = d2_inicial + pos;
+                const m2_X = pX + m2_dist * cosA;
+                const m2_Y = pY + m2_dist * senA;
+
+                // Generador de Diagrama de Cuerpo Libre
+                const [imgUrl, setImgUrl] = useState(null);
+                const [imgLoading, setImgLoading] = useState(false);
+
+                const generarDiagrama = async () => {
+                    setImgLoading(true);
+                    const apiKey = "AIzaSyDMyUo-WgmdNkCRW6-YK7h-bnRF_FLAjf0"; 
+                    try {
+                        const response = await fetch(
+                            `https://generativelanguage.googleapis.com/v1beta/models/imagen-4.0-generate-001:predict?key=${apiKey}`,
+                            {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({
+                                    instances: [{ prompt: "Diagrama técnico de física. Dos bloques m1 y m2 conectados por una cuerda a través de una polea. m1 está en una superficie horizontal. m2 está en un plano inclinado. Vectores P2x bajando rampa, Fr1 a la izquierda, Fr2 subiendo rampa. Vectores Tensión T conectándolos. Estilo minimalista educativo, fondo blanco" }],
+                                    parameters: { sampleCount: 1 }
+                                })
+                            }
+                        );
+                        if (!response.ok) throw new Error("Error en red");
+                        const data = await response.json();
+                        setImgUrl(`data:image/png;base64,${data.predictions[0].bytesBase64Encoded}`);
+                    } catch (error) {
+                        console.error(error);
+                    } finally {
+                        setImgLoading(false);
+                    }
+                };
+
+                return (
+                    <div className="min-h-screen bg-slate-900 text-slate-100 p-4 md:p-8">
+                        <header className="max-w-5xl mx-auto mb-8 border-b border-slate-700 pb-6">
+                            <div className="flex items-center gap-3 mb-2">
+                                <span className="bg-sky-600 text-white px-3 py-1 rounded-full text-xs font-black uppercase tracking-widest">Sistemas Combinados</span>
+                                <h1 className="text-3xl font-black text-sky-400 uppercase tracking-tight tracking-widest">Plano Horizontal e Inclinado</h1>
+                            </div>
+                            <div className="bg-slate-800/50 p-4 rounded-xl border border-slate-700 mt-4">
+                                <p className="text-slate-300 text-sm leading-relaxed">
+                                    <strong>Enunciado:</strong> Una masa m₁ (2 kg) apoyada en un plano horizontal está atada mediante una cuerda que pasa por una polea a otra masa m₂ (5 kg) apoyada en un plano inclinado 30°. El coeficiente de rozamiento es 0,200 para ambas. Calcula la aceleración del sistema y la tensión de la cuerda.
+                                </p>
+                            </div>
+                        </header>
+
+                        <main className="max-w-5xl mx-auto grid md:grid-cols-2 gap-8">
+                            {/* Panel Visual */}
+                            <div className="bg-slate-800 rounded-3xl border border-slate-700 h-[500px] relative overflow-hidden shadow-2xl flex flex-col pt-4">
+                                
+                                {/* Marcadores Flotantes */}
+                                <div className="px-6 flex justify-between z-30 pointer-events-none mb-2">
+                                    <div className="bg-slate-900/90 p-3 rounded-lg border border-slate-700 backdrop-blur-md">
+                                        <p className="text-[10px] text-slate-500 uppercase font-black">Aceleración (a)</p>
+                                        <p className={`text-xl font-mono font-black ${canMove ? 'text-sky-400' : 'text-red-400'}`}>
+                                            {canMove ? `${a.toFixed(3)} m/s²` : '0.00 m/s²'}
+                                        </p>
+                                    </div>
+                                    <div className="bg-slate-900/90 p-3 rounded-lg border border-slate-700 backdrop-blur-md text-right">
+                                        <p className="text-[10px] text-slate-500 uppercase font-black">Tensión (T)</p>
+                                        <p className="text-xl font-mono font-black text-indigo-400">{tension.toFixed(2)} N</p>
+                                    </div>
+                                </div>
+
+                                <div className="absolute top-28 left-1/2 -translate-x-1/2 z-30 pointer-events-none">
+                                    <div className={`px-6 py-2 rounded-full font-black uppercase text-xs tracking-widest shadow-lg border-2 ${canMove ? 'bg-sky-900/80 text-sky-400 border-sky-500' : 'bg-red-900/80 text-red-400 border-red-500'}`}>
+                                        {canMove ? 'Sistema Deslizándose' : 'Equilibrio Estático'}
+                                    </div>
+                                </div>
+
+                                {/* Escena SVG y HTML Mixta */}
+                                <div className="relative w-full flex-1 flex justify-center mt-4 overflow-hidden">
+                                    
+                                    {/* SVG para dibujar las cuerdas y la rampa limpia */}
+                                    <svg width="100%" height="100%" className="absolute inset-0 z-10 pointer-events-none">
+                                        {/* Mesa Horizontal */}
+                                        <rect x="-100" y={pY} width={pX + 100} height="200" fill="#334155" stroke="#475569" strokeWidth="4" />
+                                        
+                                        {/* Rampa Inclinada */}
+                                        <polygon 
+                                            points={`${pX},${pY} ${pX + 400*cosA},${pY + 400*senA} ${pX},${pY + 400*senA}`}
+                                            fill="#334155" stroke="#475569" strokeWidth="4"
+                                        />
+
+                                        {/* Cuerda Horizontal */}
+                                        <line 
+                                            x1={m1_X + 20} y1={pY - 10} 
+                                            x2={pX} y2={pY - 10} 
+                                            stroke="#cbd5e1" strokeWidth="3" strokeDasharray={isMoving ? "4 4" : "none"}
+                                        />
+
+                                        {/* Cuerda Rampa */}
+                                        <line 
+                                            x1={pX + 10*senA} y1={pY - 10*cosA} 
+                                            x2={m2_X - 20*cosA} y2={m2_Y - 20*senA} 
+                                            stroke="#cbd5e1" strokeWidth="3" strokeDasharray={isMoving ? "4 4" : "none"}
+                                        />
+
+                                        {/* Polea */}
+                                        <circle cx={pX} cy={pY - 5} r="12" fill="#64748b" stroke="#94a3b8" strokeWidth="2" />
+                                        <circle cx={pX} cy={pY - 5} r="3" fill="#0f172a" />
+                                    </svg>
+
+                                    {/* M1 (Horizontal) */}
+                                    <div 
+                                        className="absolute w-12 h-10 bg-emerald-500 border-2 border-emerald-300 rounded flex items-center justify-center z-20 shadow-md transition-transform"
+                                        style={{ left: `${m1_X}px`, top: `${m1_Y}px`, transform: 'translate(-50%, -50%)' }}
+                                    >
+                                        <span className="font-black text-emerald-950 text-[10px]">m₁</span>
+                                        
+                                        {/* Tensión M1 */}
+                                        <div className="absolute top-1/2 left-full flex items-center pl-1 pointer-events-none" style={{ width: Math.max(20, tension * 3) }}>
+                                            <div className="h-0.5 bg-indigo-400 w-full relative">
+                                                <div className="absolute right-0 -top-1.5">{ArrowRightIcon && <ArrowRightIcon size={14} className="text-indigo-400" />}</div>
+                                            </div>
+                                            <span className="ml-1 text-[8px] font-bold text-indigo-300 absolute left-2">T</span>
+                                        </div>
+                                        
+                                        {/* Fricción M1 */}
+                                        <div className="absolute top-1/2 right-full flex items-center pr-1 pointer-events-none" style={{ width: Math.max(20, fr1 * 4) }}>
+                                            <span className="mr-1 text-[8px] font-bold text-red-400 absolute right-2">Fr₁</span>
+                                            <div className="h-0.5 bg-red-400 w-full relative">
+                                                <div className="absolute left-0 -top-1.5">{ArrowLeftIcon && <ArrowLeftIcon size={14} className="text-red-400" />}</div>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    {/* M2 (Rampa) */}
+                                    <div 
+                                        className="absolute w-12 h-12 bg-orange-500 border-2 border-orange-300 rounded flex flex-col items-center justify-center z-20 shadow-lg transition-transform"
+                                        style={{ 
+                                            left: `${m2_X}px`, top: `${m2_Y}px`, 
+                                            transform: `translate(-50%, -50%) rotate(${angulo}deg)` 
+                                        }}
+                                    >
+                                        <span className="font-black text-orange-950 text-[10px]">m₂</span>
+                                        
+                                        {/* P2x (Abajo Rampa = Derecha local) */}
+                                        <div className="absolute top-1/2 left-full flex items-center pl-1 pointer-events-none" style={{ width: Math.max(30, p2x * 1.5) }}>
+                                            <div className="h-1 bg-yellow-400 w-full relative">
+                                                <div className="absolute right-0 -top-1.5">{ArrowRightIcon && <ArrowRightIcon size={16} className="text-yellow-400" />}</div>
+                                            </div>
+                                            <span className="ml-1 text-[10px] font-bold text-yellow-300 absolute left-4">P₂x</span>
+                                        </div>
+
+                                        {/* Tensión y Fricción (Arriba Rampa = Izquierda local) */}
+                                        <div className="absolute top-1/3 right-full flex items-center pr-1 pointer-events-none" style={{ width: Math.max(20, tension * 3) }}>
+                                            <span className="mr-1 text-[8px] font-bold text-indigo-300 absolute right-2">T</span>
+                                            <div className="h-0.5 bg-indigo-400 w-full relative">
+                                                <div className="absolute left-0 -top-1.5">{ArrowLeftIcon && <ArrowLeftIcon size={14} className="text-indigo-400" />}</div>
+                                            </div>
+                                        </div>
+                                        <div className="absolute bottom-1/3 right-full flex items-center pr-1 pointer-events-none" style={{ width: Math.max(20, fr2 * 3) }}>
+                                            <span className="mr-1 text-[8px] font-bold text-red-400 absolute right-2">Fr₂</span>
+                                            <div className="h-0.5 bg-red-400 w-full relative">
+                                                <div className="absolute left-0 -top-1.5">{ArrowLeftIcon && <ArrowLeftIcon size={14} className="text-red-400" />}</div>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                </div>
+                            </div>
+
+                            {/* Controles y Resolución */}
+                            <div className="space-y-6">
+                                <div className="bg-slate-800 p-6 rounded-3xl border border-slate-700 shadow-xl">
+                                    <h3 className="text-xl font-bold mb-4 flex items-center gap-2 text-sky-400">
+                                        {LayersIcon && <LayersIcon size={20} />} Balance del Sistema
+                                    </h3>
+                                    
+                                    <div className="space-y-5 mb-6">
+                                        <div className="grid grid-cols-2 gap-4">
+                                            {/* Configuración M1 */}
+                                            <div className="bg-emerald-900/20 p-3 rounded-xl border border-emerald-500/20">
+                                                <div className="flex justify-between text-[10px] mb-1"><span className="text-emerald-400 font-bold uppercase">Mesa (m₁)</span><span className="font-mono text-white">{m1.toFixed(1)} kg</span></div>
+                                                <input type="range" min="1" max="10" step="0.5" value={m1} onChange={e => {setM1(Number(e.target.value)); reset();}} className="w-full h-1.5 bg-slate-700 rounded-lg appearance-none cursor-pointer accent-emerald-500 mb-2" />
+                                            </div>
+                                            
+                                            {/* Configuración M2 */}
+                                            <div className="bg-orange-900/20 p-3 rounded-xl border border-orange-500/20">
+                                                <div className="flex justify-between text-[10px] mb-1"><span className="text-orange-400 font-bold uppercase">Rampa (m₂)</span><span className="font-mono text-white">{m2.toFixed(1)} kg</span></div>
+                                                <input type="range" min="1" max="10" step="0.5" value={m2} onChange={e => {setM2(Number(e.target.value)); reset();}} className="w-full h-1.5 bg-slate-700 rounded-lg appearance-none cursor-pointer accent-orange-500 mb-2" />
+                                            </div>
+                                        </div>
+
+                                        <div className="grid grid-cols-2 gap-4">
+                                            <div>
+                                                <div className="flex justify-between text-[10px] mb-1"><span className="text-red-400 font-bold uppercase">Fricción (μ)</span><span className="font-mono text-white">{mu.toFixed(3)}</span></div>
+                                                <input type="range" min="0" max="0.8" step="0.05" value={mu} onChange={e => {setMu(Number(e.target.value)); reset();}} className="w-full h-1.5 bg-slate-700 rounded-lg appearance-none cursor-pointer accent-red-500" />
+                                            </div>
+                                            <div>
+                                                <div className="flex justify-between text-[10px] mb-1"><span className="text-yellow-400 font-bold uppercase">Rampa (α)</span><span className="font-mono text-white">{angulo}º</span></div>
+                                                <input type="range" min="10" max="80" step="1" value={angulo} onChange={e => {setAngulo(Number(e.target.value)); reset();}} className="w-full h-1.5 bg-slate-700 rounded-lg appearance-none cursor-pointer accent-yellow-500" />
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div className="flex gap-2">
+                                        <button 
+                                            onClick={handlePlay} 
+                                            disabled={isMoving || pos >= maxDesplazamiento || !canMove}
+                                            className={`flex-1 font-black py-3 rounded-xl shadow-lg flex justify-center items-center gap-2 disabled:opacity-50 transition-all active:scale-95 ${!canMove ? 'bg-slate-600 text-slate-400' : 'bg-sky-600 hover:bg-sky-500 text-white'}`}
+                                        >
+                                            {PlayIcon && <PlayIcon size={18} />} {!canMove ? 'BLOQUEADO' : 'LIBERAR SISTEMA'}
+                                        </button>
+                                        <button onClick={reset} className="bg-slate-700 hover:bg-slate-600 text-white font-bold px-4 rounded-xl transition-all shadow-md">
+                                            {RotateCcwIcon && <RotateCcwIcon size={18} />}
+                                        </button>
+                                    </div>
+                                </div>
+
+                                <div className="bg-sky-950/20 p-6 rounded-3xl border border-sky-500/20">
+                                    <div className="flex justify-between items-center mb-4 border-b border-sky-500/30 pb-2">
+                                        <h4 className="font-bold text-sky-300 flex items-center gap-2">
+                                            {CalculatorIcon && <CalculatorIcon size={18} />} Resolución Matemática
+                                        </h4>
+                                        <button onClick={generarDiagrama} className="text-[10px] uppercase font-bold bg-slate-800 hover:bg-slate-700 text-slate-300 px-3 py-1.5 rounded flex items-center gap-1 border border-slate-600">
+                                            {imgLoading ? <span className="animate-pulse">Cargando...</span> : <>{ImagePlusIcon && <ImagePlusIcon size={14}/>} Generar DCL</>}
+                                        </button>
+                                    </div>
+
+                                    {imgUrl && (
+                                        <div className="mb-4 bg-slate-900 p-2 rounded-xl border border-slate-700 text-center">
+                                            <img src={imgUrl} alt="Diagrama de Cuerpo Libre" className="mx-auto max-h-40 rounded-lg" />
+                                        </div>
+                                    )}
+
+                                    <div className="text-[11px] text-slate-300 space-y-3 leading-relaxed">
+                                        <p><strong>1. Análisis de Fuerzas Individuales:</strong><br/>
+                                        Calculamos el Peso P<sub>2x</sub> que empuja, y las dos fricciones que frenan.</p>
+                                        
+                                        <div className="grid grid-cols-2 gap-2 text-center">
+                                            <div className="bg-slate-900/80 p-2 rounded-lg border-l-4 border-emerald-500 font-mono text-emerald-200">
+                                                <strong>Masa 1 (Horizontal)</strong><br/>
+                                                N₁ = m₁·g = 19.6 N<br/>
+                                                Fr₁ = μ·N₁ = <strong>{fr1.toFixed(2)} N</strong>
+                                            </div>
+                                            <div className="bg-slate-900/80 p-2 rounded-lg border-l-4 border-orange-500 font-mono text-orange-200">
+                                                <strong>Masa 2 (Rampa)</strong><br/>
+                                                P₂x = m₂·g·sin(α) = <strong>{p2x.toFixed(2)} N</strong><br/>
+                                                Fr₂ = μ·m₂·g·cos(α) = <strong>{fr2.toFixed(2)} N</strong>
+                                            </div>
+                                        </div>
+
+                                        <p className="mt-2"><strong>2. Aceleración Global:</strong><br/>
+                                        La Fuerza Neta es P₂x menos ambas fricciones. La masa es total ({m1+m2} kg).</p>
+                                        <div className="bg-slate-900/80 p-2 rounded-lg border-l-4 border-sky-500 font-mono text-sky-200">
+                                            ΣF = P₂x - Fr₁ - Fr₂ = {p2x.toFixed(2)} - {fr1.toFixed(2)} - {fr2.toFixed(2)} = {fNeta.toFixed(2)} N<br/>
+                                            a = ΣF / m_total = {fNeta.toFixed(2)} / {m1+m2} = <strong>{Math.max(0, a).toFixed(3)} m/s²</strong>
+                                        </div>
+
+                                        <p className="mt-2"><strong>3. Tensión de la cuerda:</strong><br/>
+                                        Aislamos m₁ (es más fácil). Su ecuación es: <i>T - Fr₁ = m₁ · a</i></p>
+                                        <div className="bg-slate-900/80 p-2 rounded-lg border-l-4 border-indigo-500 font-mono text-indigo-200">
+                                            T = m₁ · a + Fr₁<br/>
+                                            T = {m1} · {Math.max(0, a).toFixed(3)} + {fr1.toFixed(2)} = <strong>{tension.toFixed(3)} N</strong>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </main>
+
+                        <footer className="max-w-5xl mx-auto mt-12 pt-6 border-t border-slate-800 text-center text-slate-500 text-[10px] font-bold uppercase tracking-widest">
+                            Profe Física | Dinámica: Sistemas de Planos Combinados
+                        </footer>
+                    </div>
+                );
+            };
+
+            const container = document.getElementById('root');
+            const root = ReactDOM.createRoot(container);
+            root.render(<App />);
+        })();
+    </script>
+</body>
+</html>

@@ -1,0 +1,412 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Laboratorio: Fuerza Inclinada en Rampa</title>
+    <!-- Bibliotecas externas -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <script src="https://unpkg.com/lucide-react@latest"></script>
+
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&family=Fira+Code&display=swap');
+        body { font-family: 'Inter', sans-serif; background-color: #0f172a; }
+        .font-mono { font-family: 'Fira Code', monospace; }
+        input[type=range]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            height: 20px;
+            width: 20px;
+            border-radius: 50%;
+            background: #0ea5e9; /* Sky 500 */
+            cursor: pointer;
+            border: 2px solid #ffffff;
+            box-shadow: 0 0 10px rgba(14, 165, 233, 0.5);
+        }
+        .ramp-pattern {
+            background-color: #334155;
+            background-image: linear-gradient(45deg, #1e293b 25%, transparent 25%, transparent 75%, #1e293b 75%, #1e293b), 
+                              linear-gradient(45deg, #1e293b 25%, transparent 25%, transparent 75%, #1e293b 75%, #1e293b);
+            background-size: 20px 20px;
+            background-position: 0 0, 10px 10px;
+        }
+    </style>
+</head>
+<body>
+    <div id="root"></div>
+
+    <script type="text/babel">
+        (() => {
+            var { useState, useEffect } = React;
+            var icons = window.LucideReact || {};
+            
+            // Asignación segura de iconos
+            var getIcon = (name) => icons[name] || (({className}) => <span className={className || ''}></span>);
+            var PlayIcon = getIcon('Play');
+            var RotateCcwIcon = getIcon('RotateCcw');
+            var InfoIcon = getIcon('Info');
+            var CalculatorIcon = getIcon('Calculator');
+            var ArrowRightIcon = getIcon('ArrowRight');
+            var ArrowLeftIcon = getIcon('ArrowLeft');
+            var ArrowUpIcon = getIcon('ArrowUp');
+            var ArrowDownIcon = getIcon('ArrowDown');
+            var ImagePlusIcon = getIcon('ImagePlus');
+            var AlertTriangleIcon = getIcon('AlertTriangle');
+            var SettingsIcon = getIcon('Settings');
+
+            var App = () => {
+                // Parámetros fijos
+                const g = 9.8; // m/s^2
+
+                // Estados interactivos (Inicializados con el enunciado)
+                const [m, setM] = useState(12.5); // kg
+                const [f, setF] = useState(122); // N
+                const [angRampa, setAngRampa] = useState(30); // grados
+                const [angFuerza, setAngFuerza] = useState(20); // grados respecto a la rampa
+                const [mu, setMu] = useState(0.48); // Coeficiente cinético
+                const [distanciaObj, setDistanciaObj] = useState(18.2); // m
+
+                // Estados de animación
+                const [pos, setPos] = useState(0); 
+                const [time, setTime] = useState(0);
+                const [isMoving, setIsMoving] = useState(false);
+
+                // --- CÁLCULOS FÍSICOS ---
+                const aRampaRad = angRampa * (Math.PI / 180);
+                const aFuerzaRad = angFuerza * (Math.PI / 180);
+
+                // Eje Y (Perpendicular al plano)
+                const py = m * g * Math.cos(aRampaRad);
+                const fy = f * Math.sin(aFuerzaRad);
+                const normal = py - fy; // La fuerza tira hacia arriba, "aligerando" el bloque
+
+                // Condición de despegue (Si Fy > Py, el bloque vuela)
+                const isFlying = normal < 0;
+
+                // Eje X (Paralelo al plano)
+                const px = m * g * Math.sin(aRampaRad);
+                const fx = f * Math.cos(aFuerzaRad);
+                const fr = isFlying ? 0 : mu * normal;
+
+                // Fuerza Neta
+                const fNeta = fx - px - fr;
+                const canMove = fNeta > 0 && !isFlying;
+
+                // Aceleración
+                const a = canMove ? fNeta / m : 0;
+
+                // Cinemática
+                const tTarget = canMove ? Math.sqrt((2 * distanciaObj) / a) : 0;
+                
+                // Animación Visual
+                const rampLength = 350; // px
+                const pxPerMeter = rampLength / Math.max(20, distanciaObj + 5);
+
+                useEffect(() => {
+                    let interval;
+                    if (isMoving && time < tTarget) {
+                        interval = setInterval(() => {
+                            setTime(prev => {
+                                const newTime = prev + 0.05; // dt visual
+                                if (newTime >= tTarget) {
+                                    setIsMoving(false);
+                                    return tTarget;
+                                }
+                                return newTime;
+                            });
+                        }, 20); // 50 fps (acelerado visualmente si tTarget es grande)
+                    }
+                    return () => clearInterval(interval);
+                }, [isMoving, time, tTarget]);
+
+                // Posición y Velocidad instantáneas
+                const currentPosM = 0.5 * a * Math.pow(time, 2);
+                const visualPosX = currentPosM * pxPerMeter;
+                const currentV = a * time;
+
+                const handlePlay = () => {
+                    if (canMove && time < tTarget) setIsMoving(true);
+                };
+
+                const reset = () => {
+                    setTime(0);
+                    setIsMoving(false);
+                };
+
+                // Generador de Diagrama de Cuerpo Libre
+                const [imgUrl, setImgUrl] = useState(null);
+                const [imgLoading, setImgLoading] = useState(false);
+
+                const generarDiagrama = async () => {
+                    setImgLoading(true);
+                    const apiKey = "AIzaSyDMyUo-WgmdNkCRW6-YK7h-bnRF_FLAjf0"; 
+                    try {
+                        const response = await fetch(
+                            `https://generativelanguage.googleapis.com/v1beta/models/imagen-4.0-generate-001:predict?key=${apiKey}`,
+                            {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({
+                                    instances: [{ prompt: "Diagrama técnico de física. Un bloque en un plano inclinado. Vector Fuerza F apuntando hacia arriba y desviado con un ángulo respecto a la rampa. Vectores Px y Friccion Fr apuntando hacia abajo de la rampa. Vector Normal N hacia arriba perpendicular a la rampa. Fondo blanco, minimalista, estilo educativo." }],
+                                    parameters: { sampleCount: 1 }
+                                })
+                            }
+                        );
+                        if (!response.ok) throw new Error("Error en red");
+                        const data = await response.json();
+                        setImgUrl(`data:image/png;base64,${data.predictions[0].bytesBase64Encoded}`);
+                    } catch (error) {
+                        console.error(error);
+                    } finally {
+                        setImgLoading(false);
+                    }
+                };
+
+                return (
+                    <div className="min-h-screen bg-slate-900 text-slate-100 p-4 md:p-8">
+                        <header className="max-w-5xl mx-auto mb-8 border-b border-slate-700 pb-6">
+                            <div className="flex items-center gap-3 mb-2">
+                                <span className="bg-sky-600 text-white px-3 py-1 rounded-full text-xs font-black uppercase tracking-widest">Sistemas Avanzados</span>
+                                <h1 className="text-3xl font-black text-sky-400 uppercase tracking-tight tracking-widest">Fuerza Inclinada en Rampa</h1>
+                            </div>
+                            <div className="bg-slate-800/50 p-4 rounded-xl border border-slate-700 mt-4">
+                                <p className="text-slate-300 text-sm leading-relaxed">
+                                    <strong>Enunciado:</strong> Un cuerpo de 12,5 kg asciende por un plano de 30° al aplicarle F = 122 N con un ángulo de 20° respecto al plano. μc = 0,480. Calcula a) Aceleración, b) Tiempo en recorrer 18,2 m.
+                                </p>
+                            </div>
+                        </header>
+
+                        <main className="max-w-5xl mx-auto grid md:grid-cols-2 gap-8">
+                            {/* Panel Visual */}
+                            <div className="bg-slate-800 rounded-3xl border border-slate-700 h-[550px] relative overflow-hidden shadow-2xl flex flex-col justify-end">
+                                
+                                {/* Marcadores Flotantes */}
+                                <div className="absolute top-4 w-full px-6 flex justify-between z-30 pointer-events-none">
+                                    <div className={`bg-slate-900/90 p-3 rounded-lg border backdrop-blur-md ${isFlying ? 'border-red-500' : 'border-slate-700'}`}>
+                                        <p className="text-[10px] text-slate-500 uppercase font-black">Aceleración (a)</p>
+                                        <p className={`text-xl font-mono font-black ${isFlying ? 'text-red-400' : canMove ? 'text-sky-400' : 'text-slate-400'}`}>
+                                            {isFlying ? '¡DESPEGUE!' : canMove ? `${a.toFixed(2)} m/s²` : '0.00 m/s²'}
+                                        </p>
+                                    </div>
+                                    <div className="bg-slate-900/90 p-3 rounded-lg border border-slate-700 backdrop-blur-md text-right border-b-4 border-b-emerald-500">
+                                        <p className="text-[10px] text-slate-500 uppercase font-black">Cronómetro (t)</p>
+                                        <p className="text-2xl font-mono font-black text-emerald-400">{time.toFixed(2)} s</p>
+                                        <p className="text-[10px] text-emerald-300 mt-1 font-mono">Distancia: {currentPosM.toFixed(1)} m</p>
+                                    </div>
+                                </div>
+
+                                {/* Escena del Plano Inclinado */}
+                                <div className="relative w-full h-[400px]">
+                                    <div className="absolute bottom-16 left-10 w-[450px] h-full pointer-events-none">
+                                        
+                                        {/* Rampa Rotada. Origin bottom-right para que suba hacia la izquierda visualmente. (Haremos que suba de izq a der) */}
+                                        <div 
+                                            className="absolute bottom-0 left-0 w-full h-full origin-bottom-left transition-transform duration-300 z-20"
+                                            style={{ transform: `rotate(${-angRampa}deg)` }}
+                                        >
+                                            {/* La Rampa */}
+                                            <div className="absolute bottom-0 left-0 w-full h-4 ramp-pattern shadow-xl rounded-r-full"></div>
+
+                                            {/* Bandera de Meta */}
+                                            <div className="absolute bottom-4 border-l-2 border-dashed border-emerald-500 h-24 z-10" style={{ left: `${40 + (distanciaObj * pxPerMeter)}px` }}>
+                                                <div className="bg-emerald-900/80 text-emerald-300 text-[10px] font-black px-2 py-1 absolute top-0 -left-12 rounded">OBJ: {distanciaObj}m</div>
+                                            </div>
+
+                                            {/* El Bloque */}
+                                            <div 
+                                                className={`absolute bottom-4 w-20 h-16 bg-blue-600 border-4 border-blue-400 rounded-lg flex items-center justify-center shadow-lg transition-transform z-30 ${isFlying ? 'translate-y-[-40px]' : ''}`}
+                                                style={{ transform: `translateX(${40 + visualPosX}px)` }}
+                                            >
+                                                <span className="font-black text-blue-100 text-xs">{m}kg</span>
+
+                                                {/* Vector F (Inclinada) */}
+                                                <div 
+                                                    className="absolute top-1/2 left-full origin-left flex items-center pl-1" 
+                                                    style={{ width: Math.max(50, f/1.5), transform: `rotate(${-angFuerza}deg) translateY(-50%)` }}
+                                                >
+                                                    <div className="h-1.5 bg-sky-400 w-full relative shadow-[0_0_8px_rgba(56,189,248,0.8)]">
+                                                        <div className="absolute right-0 -top-1.5">{ArrowRightIcon && <ArrowRightIcon size={16} className="text-sky-400" />}</div>
+                                                    </div>
+                                                    <span className="ml-1 text-[10px] font-black text-sky-300 bg-slate-900/80 px-1 rounded shadow" style={{ transform: `rotate(${angFuerza}deg)` }}>F = {f}N</span>
+                                                </div>
+
+                                                {/* Ángulo de la fuerza */}
+                                                {angFuerza > 0 && (
+                                                    <div className="absolute top-1/2 left-full w-12 h-12 border-t-2 border-r-2 border-sky-400/40 rounded-tr-full" style={{ transform: 'translateY(-100%)' }}>
+                                                        <span className="absolute -top-4 -right-4 text-[9px] text-sky-200">{angFuerza}º</span>
+                                                    </div>
+                                                )}
+
+                                                {/* Vectores en contra (Px y Fr) */}
+                                                {!isFlying && (
+                                                    <>
+                                                        <div className="absolute top-1/3 right-full flex items-center pr-1" style={{ width: px }}>
+                                                            <span className="mr-1 text-[8px] font-black text-red-300">P_x</span>
+                                                            <div className="h-1 bg-red-400 w-full relative">
+                                                                <div className="absolute left-0 -top-1.5">{ArrowLeftIcon && <ArrowLeftIcon size={14} className="text-red-400" />}</div>
+                                                            </div>
+                                                        </div>
+                                                        <div className="absolute bottom-1/3 right-full flex items-center pr-1" style={{ width: fr }}>
+                                                            <span className="mr-1 text-[8px] font-black text-orange-300">F_r</span>
+                                                            <div className="h-1 bg-orange-400 w-full relative">
+                                                                <div className="absolute left-0 -top-1.5">{ArrowLeftIcon && <ArrowLeftIcon size={14} className="text-orange-400" />}</div>
+                                                            </div>
+                                                        </div>
+                                                    </>
+                                                )}
+
+                                                {/* Normal y Peso (Y) */}
+                                                <div className="absolute bottom-full left-1/2 -translate-x-1/2 flex flex-col items-center pb-1 opacity-60" style={{ height: Math.max(0, normal/2) }}>
+                                                    <span className="mb-1 text-[8px] font-black text-indigo-300">N</span>
+                                                    <div className="w-1 bg-indigo-400 h-full relative">
+                                                        <div className="absolute top-0 -translate-x-1.5">{ArrowUpIcon && <ArrowUpIcon size={14} className="text-indigo-400" />}</div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        {/* Suelo Base y Arco */}
+                                        <div className="absolute bottom-0 left-0 w-full border-b-2 border-slate-600 border-dashed"></div>
+                                        {angRampa > 0 && (
+                                            <div className="absolute bottom-0 left-0 w-32 h-32 border-r-2 border-t-2 border-slate-500/50 rounded-tr-full flex items-end justify-end pb-4 pr-4">
+                                                <span className="text-slate-400 font-mono text-sm font-bold">{angRampa}º</span>
+                                            </div>
+                                        )}
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* Controles y Resolución */}
+                            <div className="space-y-6">
+                                <div className="bg-slate-800 p-6 rounded-3xl border border-slate-700 shadow-xl">
+                                    <h3 className="text-xl font-bold mb-4 flex items-center gap-2 text-sky-400">
+                                        {SettingsIcon && <SettingsIcon size={20} />} Configurar Sistema
+                                    </h3>
+                                    
+                                    <div className="space-y-4 mb-6">
+                                        <div className="grid grid-cols-2 gap-4">
+                                            <div className="bg-slate-900/50 p-3 rounded-xl border border-slate-700">
+                                                <div className="flex justify-between text-[10px] mb-1"><span className="text-slate-300 font-bold uppercase">Masa</span><span className="font-mono text-white">{m.toFixed(1)} kg</span></div>
+                                                <input type="range" min="5" max="30" step="0.5" value={m} onChange={e => {setM(Number(e.target.value)); reset();}} className="w-full h-1.5 bg-slate-700 rounded-lg appearance-none cursor-pointer" />
+                                            </div>
+                                            <div className="bg-slate-900/50 p-3 rounded-xl border border-slate-700">
+                                                <div className="flex justify-between text-[10px] mb-1"><span className="text-slate-300 font-bold uppercase">Inclinación Rampa</span><span className="font-mono text-white">{angRampa}º</span></div>
+                                                <input type="range" min="0" max="60" step="1" value={angRampa} onChange={e => {setAngRampa(Number(e.target.value)); reset();}} className="w-full h-1.5 bg-slate-700 rounded-lg appearance-none cursor-pointer" />
+                                            </div>
+                                        </div>
+
+                                        <div className="grid grid-cols-2 gap-4">
+                                            <div className="bg-sky-900/20 p-3 rounded-xl border border-sky-500/30">
+                                                <div className="flex justify-between text-[10px] mb-1"><span className="text-sky-300 font-bold uppercase">Fuerza (F)</span><span className="font-mono text-white">{f} N</span></div>
+                                                <input type="range" min="50" max="300" step="1" value={f} onChange={e => {setF(Number(e.target.value)); reset();}} className="w-full h-1.5 bg-slate-700 rounded-lg appearance-none cursor-pointer accent-sky-500" />
+                                            </div>
+                                            <div className="bg-sky-900/20 p-3 rounded-xl border border-sky-500/30">
+                                                <div className="flex justify-between text-[10px] mb-1"><span className="text-sky-300 font-bold uppercase">Ángulo de F</span><span className="font-mono text-white">{angFuerza}º</span></div>
+                                                <input type="range" min="0" max="60" step="1" value={angFuerza} onChange={e => {setAngFuerza(Number(e.target.value)); reset();}} className="w-full h-1.5 bg-slate-700 rounded-lg appearance-none cursor-pointer accent-sky-500" />
+                                            </div>
+                                        </div>
+
+                                        <div className="grid grid-cols-2 gap-4">
+                                            <div>
+                                                <div className="flex justify-between text-[10px] mb-1"><span className="text-orange-400 font-bold uppercase">Fricción (μ)</span><span className="font-mono text-white">{mu.toFixed(3)}</span></div>
+                                                <input type="range" min="0" max="0.8" step="0.01" value={mu} onChange={e => {setMu(Number(e.target.value)); reset();}} className="w-full h-1.5 bg-slate-700 rounded-lg appearance-none cursor-pointer accent-orange-500" />
+                                            </div>
+                                            <div>
+                                                <div className="flex justify-between text-[10px] mb-1"><span className="text-emerald-400 font-bold uppercase">Distancia Meta</span><span className="font-mono text-white">{distanciaObj.toFixed(1)} m</span></div>
+                                                <input type="range" min="5" max="40" step="0.1" value={distanciaObj} onChange={e => {setDistanciaObj(Number(e.target.value)); reset();}} className="w-full h-1.5 bg-slate-700 rounded-lg appearance-none cursor-pointer accent-emerald-500" />
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    {isFlying && (
+                                        <div className="mb-4 bg-red-900/50 p-3 rounded-lg border border-red-500/50 flex items-start gap-3">
+                                            <AlertTriangleIcon className="text-red-400 shrink-0" size={20} />
+                                            <p className="text-xs text-red-200"><strong>Cuerpo en Vuelo:</strong> La componente F_y tira hacia arriba con más fuerza que el propio peso. El bloque pierde contacto con la rampa.</p>
+                                        </div>
+                                    )}
+
+                                    {!canMove && !isFlying && (
+                                        <div className="mb-4 bg-orange-900/50 p-3 rounded-lg border border-orange-500/50 flex items-start gap-3">
+                                            <AlertTriangleIcon className="text-orange-400 shrink-0" size={20} />
+                                            <p className="text-xs text-orange-200"><strong>Atascado:</strong> La fuerza F_x no es suficiente para vencer al peso P_x y a la fricción combinados.</p>
+                                        </div>
+                                    )}
+
+                                    <div className="flex gap-2">
+                                        <button 
+                                            onClick={handlePlay} 
+                                            disabled={isMoving || time >= tTarget || !canMove || isFlying}
+                                            className={`flex-1 font-black py-3 rounded-xl shadow-lg flex justify-center items-center gap-2 disabled:opacity-50 transition-all active:scale-95 ${!canMove || isFlying ? 'bg-slate-600 text-slate-400' : 'bg-sky-600 hover:bg-sky-500 text-white'}`}
+                                        >
+                                            {PlayIcon && <PlayIcon size={18} />} {isFlying ? 'SISTEMA INVÁLIDO' : !canMove ? 'NO LOGRA SUBIR' : time >= tTarget ? 'META ALCANZADA' : 'INICIAR ASCENSO'}
+                                        </button>
+                                        <button onClick={reset} className="bg-slate-700 hover:bg-slate-600 text-white font-bold px-4 rounded-xl transition-all shadow-md">
+                                            {RotateCcwIcon && <RotateCcwIcon size={18} />}
+                                        </button>
+                                    </div>
+                                </div>
+
+                                <div className="bg-sky-950/20 p-6 rounded-3xl border border-sky-500/20">
+                                    <div className="flex justify-between items-center mb-4 border-b border-sky-500/30 pb-2">
+                                        <h4 className="font-bold text-sky-300 flex items-center gap-2">
+                                            {CalculatorIcon && <CalculatorIcon size={18} />} Resolución Paso a Paso
+                                        </h4>
+                                        <button onClick={generarDiagrama} className="text-[10px] uppercase font-bold bg-slate-800 hover:bg-slate-700 text-slate-300 px-3 py-1.5 rounded flex items-center gap-1 border border-slate-600">
+                                            {imgLoading ? <span className="animate-pulse">Cargando...</span> : <>{ImagePlusIcon && <ImagePlusIcon size={14}/>} Generar DCL</>}
+                                        </button>
+                                    </div>
+
+                                    {imgUrl && (
+                                        <div className="mb-4 bg-slate-900 p-2 rounded-xl border border-slate-700 text-center">
+                                            <img src={imgUrl} alt="Diagrama de Cuerpo Libre" className="mx-auto max-h-40 rounded-lg" />
+                                        </div>
+                                    )}
+
+                                    <div className="text-xs text-slate-300 space-y-3 leading-relaxed">
+                                        <p><strong>1. Eje Y (Fuerza Normal):</strong><br/>
+                                        ¡Trampa! La fuerza F tira hacia arriba (F_y = F · sin({angFuerza}º)), aligerando la carga sobre el suelo. La Normal no es igual a P_y.</p>
+                                        <div className="bg-slate-900/80 p-2 rounded-lg border-l-4 border-indigo-500 font-mono text-indigo-200">
+                                            P_y = m · g · cos({angRampa}º) = {py.toFixed(2)} N<br/>
+                                            F_y = F · sin({angFuerza}º) = {fy.toFixed(2)} N<br/>
+                                            N = P_y - F_y = {py.toFixed(2)} - {fy.toFixed(2)} = <strong>{normal.toFixed(2)} N</strong>
+                                        </div>
+                                        
+                                        <p className="mt-2"><strong>2. Eje X (Aceleración):</strong><br/>
+                                        La fuerza F_x empuja arriba. El P_x y la Fricción (μ·N) tiran abajo.</p>
+                                        <div className="bg-slate-900/80 p-2 rounded-lg border-l-4 border-sky-500 font-mono text-sky-200">
+                                            F_x = F · cos({angFuerza}º) = {fx.toFixed(2)} N<br/>
+                                            P_x = m · g · sin({angRampa}º) = {px.toFixed(2)} N<br/>
+                                            F_r = μ · N = {mu} · {normal.toFixed(2)} = {fr.toFixed(2)} N<br/>
+                                            ΣF = F_x - P_x - F_r = {fNeta.toFixed(2)} N<br/>
+                                            a = ΣF / m = {fNeta.toFixed(2)} / {m} = <strong>{a.toFixed(2)} m/s²</strong>
+                                        </div>
+
+                                        <p className="mt-2"><strong>3. Tiempo para recorrer {distanciaObj}m (MRUA):</strong><br/>
+                                        Como parte del reposo (v₀ = 0).</p>
+                                        <div className="bg-slate-900/80 p-2 rounded-lg border-l-4 border-emerald-500 font-mono text-emerald-200 shadow-inner">
+                                            d = 0.5 · a · t²  ⇒  t = √(2·d / a)<br/>
+                                            t = √(2 · {distanciaObj} / {a.toFixed(2)}) = √({(2*distanciaObj/a).toFixed(2)})<br/>
+                                            <strong>t = {tTarget.toFixed(2)} s</strong>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </main>
+
+                        <footer className="max-w-5xl mx-auto mt-12 pt-6 border-t border-slate-800 text-center text-slate-500 text-[10px] font-bold uppercase tracking-widest">
+                            Profe Física | Dinámica y Cinemática en Planos Inclinados Complejos
+                        </footer>
+                    </div>
+                );
+            };
+
+            const container = document.getElementById('root');
+            const root = ReactDOM.createRoot(container);
+            root.render(<App />);
+        })();
+    </script>
+</body>
+</html>

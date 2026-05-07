@@ -1,0 +1,405 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Laboratorio: Muelle y Fricción</title>
+    <!-- Bibliotecas externas -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <script src="https://unpkg.com/lucide-react@latest"></script>
+
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&family=Fira+Code&display=swap');
+        body { font-family: 'Inter', sans-serif; background-color: #0f172a; }
+        .font-mono { font-family: 'Fira Code', monospace; }
+        input[type=range]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            height: 20px;
+            width: 20px;
+            border-radius: 50%;
+            background: #06b6d4; /* Cyan 500 */
+            cursor: pointer;
+            border: 2px solid #ffffff;
+            box-shadow: 0 0 10px rgba(6, 182, 212, 0.5);
+        }
+        .ramp-pattern {
+            background-color: #334155;
+            background-image: repeating-linear-gradient(45deg, #1e293b 0, #1e293b 4px, transparent 4px, transparent 12px);
+        }
+        .lubricated {
+            background-image: none !important;
+            background-color: #93c5fd !important; /* Blue 300 */
+            box-shadow: inset 0 5px 15px rgba(255,255,255,0.8);
+        }
+    </style>
+</head>
+<body>
+    <div id="root"></div>
+
+    <script type="text/babel">
+        (() => {
+            var { useState, useEffect } = React;
+            var icons = window.LucideReact || {};
+            
+            var getIcon = (name) => icons[name] || (({className}) => <span className={className || ''}></span>);
+            var DropletsIcon = getIcon('Droplets');
+            var RotateCcwIcon = getIcon('RotateCcw');
+            var CalculatorIcon = getIcon('Calculator');
+            var SettingsIcon = getIcon('Settings');
+            var InfoIcon = getIcon('Info');
+            var ArrowRightIcon = getIcon('ArrowRight');
+            var ArrowLeftIcon = getIcon('ArrowLeft');
+            var ImagePlusIcon = getIcon('ImagePlus');
+            var AlertTriangleIcon = getIcon('AlertTriangle');
+
+            var App = () => {
+                // Constantes Físicas
+                const g = 9.8; // m/s^2
+
+                // Estados interactivos (Inicializados con el enunciado)
+                const [masa, setMasa] = useState(10.0); // kg
+                const [angulo, setAngulo] = useState(40); // grados
+                const [k, setK] = useState(1200); // N/m
+                const [dxInicialCm, setDxInicialCm] = useState(3.0); // cm
+
+                // Estado del laboratorio
+                const [isLubricated, setIsLubricated] = useState(false);
+                const [currentDxCm, setCurrentDxCm] = useState(3.0);
+
+                // Cálculos de la fase CON rozamiento
+                const anguloRad = angulo * (Math.PI / 180);
+                const peso = masa * g;
+                const px = peso * Math.sin(anguloRad);
+                const normal = peso * Math.cos(anguloRad);
+                
+                const feInicial = k * (dxInicialCm / 100);
+                
+                // Determinar dirección de la fricción
+                // Si Px > Fe, la caja tiende a caer, la fricción va hacia arriba (ayuda al muelle)
+                // Si Fe > Px, el muelle tira demasiado, la fricción va hacia abajo (ayuda al peso)
+                const friccion = px - feInicial; 
+                const direccionFriccion = friccion > 0 ? "Arriba" : "Abajo";
+                const frAbs = Math.abs(friccion);
+                const mu = normal > 0 ? frAbs / normal : 0;
+
+                // Cálculos de la fase SIN rozamiento (Lubricado)
+                // Equilibrio puro: Fe = Px  =>  k * dx = Px  =>  dx = Px / k
+                const dxFinalM = px / k;
+                const dxFinalCm = dxFinalM * 100;
+                const extraDxCm = dxFinalCm - dxInicialCm;
+
+                // Fuerza elástica actual basada en la posición visual
+                const feActual = k * (currentDxCm / 100);
+
+                // Manejo de la animación al lubricar
+                useEffect(() => {
+                    let interval;
+                    if (isLubricated && currentDxCm !== dxFinalCm) {
+                        interval = setInterval(() => {
+                            setCurrentDxCm(prev => {
+                                const diff = dxFinalCm - prev;
+                                if (Math.abs(diff) < 0.05) {
+                                    clearInterval(interval);
+                                    return dxFinalCm; // Llegó al objetivo
+                                }
+                                return prev + diff * 0.1; // Suavizado
+                            });
+                        }, 20); // 50 fps
+                    } else if (!isLubricated) {
+                        setCurrentDxCm(dxInicialCm);
+                    }
+                    return () => clearInterval(interval);
+                }, [isLubricated, dxInicialCm, dxFinalCm, currentDxCm]);
+
+                // Generador visual del muelle (Se alarga dinámicamente)
+                const generateSpring = (lengthPx) => {
+                    const coils = 12;
+                    const h = 16;
+                    const padding = 10;
+                    
+                    let path = `M 0 0 L ${padding} 0 `;
+                    const coilWidth = (lengthPx - padding * 2) / coils;
+                    
+                    for(let i=0; i<coils; i++) {
+                        const y = i % 2 === 0 ? -h/2 : h/2;
+                        const x = padding + coilWidth * (i + 0.5);
+                        path += `L ${x} ${y} `;
+                    }
+                    path += `L ${lengthPx - padding} 0 L ${lengthPx} 0`;
+                    return path;
+                };
+
+                const toggleLubrication = () => {
+                    setIsLubricated(!isLubricated);
+                };
+
+                const reset = () => {
+                    setIsLubricated(false);
+                    setCurrentDxCm(dxInicialCm);
+                };
+
+                // Si cambiamos los inputs, forzamos estado estático inicial
+                useEffect(() => {
+                    reset();
+                }, [masa, angulo, k, dxInicialCm]);
+
+                // Constantes visuales
+                const l0 = 60; // Longitud del muelle sin estirar (px)
+                const scale = 5; // Píxeles por cm
+                const springLength = l0 + (currentDxCm * scale);
+
+                // DCL con IA
+                const [imgUrl, setImgUrl] = useState(null);
+                const [imgLoading, setImgLoading] = useState(false);
+
+                const generarDiagrama = async () => {
+                    setImgLoading(true);
+                    const apiKey = "AIzaSyDMyUo-WgmdNkCRW6-YK7h-bnRF_FLAjf0"; 
+                    try {
+                        const response = await fetch(
+                            `https://generativelanguage.googleapis.com/v1beta/models/imagen-4.0-generate-001:predict?key=${apiKey}`,
+                            {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({
+                                    instances: [{ prompt: "Diagrama técnico de física de un plano inclinado. Un bloque sujeto a un resorte en la parte superior. Vectores: Px apuntando abajo de la rampa. Fe (fuerza elástica) apuntando arriba. Fr (rozamiento) apuntando arriba. Suma de Fe + Fr equilibra Px. Minimalista, educativo, fondo blanco" }],
+                                    parameters: { sampleCount: 1 }
+                                })
+                            }
+                        );
+                        if (!response.ok) throw new Error("Error en red");
+                        const data = await response.json();
+                        setImgUrl(`data:image/png;base64,${data.predictions[0].bytesBase64Encoded}`);
+                    } catch (error) {
+                        console.error(error);
+                    } finally {
+                        setImgLoading(false);
+                    }
+                };
+
+                return (
+                    <div className="min-h-screen bg-slate-900 text-slate-100 p-4 md:p-8">
+                        <header className="max-w-5xl mx-auto mb-8 border-b border-slate-700 pb-6">
+                            <div className="flex items-center gap-3 mb-2">
+                                <span className="bg-cyan-600 text-slate-900 px-3 py-1 rounded-full text-xs font-black uppercase tracking-widest">Estática y Elasticidad</span>
+                                <h1 className="text-3xl font-black text-cyan-400 uppercase tracking-tight tracking-widest">Muelle y Fricción</h1>
+                            </div>
+                            <div className="bg-slate-800/50 p-4 rounded-xl border border-slate-700 mt-4">
+                                <p className="text-slate-300 text-sm leading-relaxed">
+                                    <strong>Enunciado:</strong> Un cuerpo de 10 kg en una rampa de 40° está atado a un muelle (k=1200 N/m) estirado 3 cm. a) Calcula el coeficiente de rozamiento μ. b) ¿Cuánto más se estiraría si se elimina la fricción lubricando la superficie?
+                                </p>
+                            </div>
+                        </header>
+
+                        <main className="max-w-5xl mx-auto grid md:grid-cols-2 gap-8">
+                            {/* Panel Visual */}
+                            <div className="bg-slate-800 rounded-3xl border border-slate-700 h-[500px] relative overflow-hidden shadow-2xl flex flex-col justify-end pb-12">
+                                
+                                {/* Marcadores Flotantes */}
+                                <div className="absolute top-4 w-full px-6 flex justify-between z-30 pointer-events-none">
+                                    <div className="bg-slate-900/90 p-3 rounded-lg border border-slate-700 backdrop-blur-md">
+                                        <p className="text-[10px] text-slate-500 uppercase font-black">Alargamiento (Δx)</p>
+                                        <p className={`text-xl font-mono font-black ${isLubricated ? 'text-blue-400' : 'text-cyan-400'}`}>
+                                            {currentDxCm.toFixed(2)} cm
+                                        </p>
+                                    </div>
+                                    <div className={`bg-slate-900/90 p-3 rounded-lg border backdrop-blur-md text-right border-b-4 ${isLubricated ? 'border-b-blue-500 shadow-[0_0_15px_rgba(59,130,246,0.3)]' : 'border-b-cyan-500'}`}>
+                                        <p className="text-[10px] text-slate-500 uppercase font-black">Estado</p>
+                                        <p className={`text-xl font-black uppercase ${isLubricated ? 'text-blue-400' : 'text-slate-300'}`}>
+                                            {isLubricated ? 'Lubricado (μ = 0)' : 'Seco (Con Fricción)'}
+                                        </p>
+                                    </div>
+                                </div>
+
+                                {/* Escena de la Rampa */}
+                                <div className="relative w-full h-80">
+                                    <div className="absolute bottom-6 left-10 w-[400px] h-full pointer-events-none">
+                                        
+                                        {/* Grupo Rotado (Rampa + Bloque). Rotamos desde bottom-right para elevar la izquierda */}
+                                        <div 
+                                            className="absolute bottom-0 left-0 w-full h-full origin-bottom-right transition-transform duration-300 z-20"
+                                            style={{ transform: `rotate(${angulo}deg)` }}
+                                        >
+                                            {/* La Rampa */}
+                                            <div className={`absolute bottom-0 left-0 w-full h-4 shadow-xl rounded-l-full transition-all duration-700 ${isLubricated ? 'lubricated' : 'ramp-pattern'}`}></div>
+
+                                            {/* Anclaje superior del muelle */}
+                                            <div className="absolute bottom-4 left-6 w-4 h-12 bg-slate-500 rounded-t-sm border-2 border-slate-400 flex items-end justify-center pb-2 shadow-lg z-30"></div>
+
+                                            {/* Muelle Visual */}
+                                            <div className="absolute bottom-[28px] z-10" style={{ left: '30px' }}>
+                                                <svg width={springLength} height="30" className="overflow-visible">
+                                                    <path 
+                                                        d={generateSpring(springLength)} 
+                                                        fill="none" stroke="#0ea5e9" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"
+                                                    />
+                                                </svg>
+                                            </div>
+
+                                            {/* El Bloque */}
+                                            <div 
+                                                className="absolute bottom-4 h-14 bg-indigo-600 border-4 border-indigo-400 rounded-lg flex items-center justify-center shadow-xl z-30 transition-all"
+                                                style={{ left: `${30 + springLength}px`, width: '50px' }}
+                                            >
+                                                <span className="font-black text-indigo-100 text-xs">{masa} kg</span>
+
+                                                {/* VECTORES DE FUERZA */}
+                                                
+                                                {/* Px (Naranja, Hacia abajo del plano -> Derecha local) */}
+                                                <div className="absolute top-1/4 left-full flex items-center pl-1 opacity-90" style={{ width: Math.max(30, px) }}>
+                                                    <div className="h-1 bg-orange-400 w-full relative">
+                                                        <div className="absolute right-0 -top-1.5">{ArrowRightIcon && <ArrowRightIcon className="text-orange-400" size={16} />}</div>
+                                                    </div>
+                                                    <span className="ml-1 text-[9px] font-black text-orange-300 whitespace-nowrap bg-slate-900/50 px-1 rounded">P_x={px.toFixed(0)}</span>
+                                                </div>
+
+                                                {/* Fuerza Elástica Fe (Cyan, Hacia arriba del plano -> Izquierda local) */}
+                                                <div className="absolute bottom-1/4 right-full flex items-center pr-1 opacity-90" style={{ width: Math.max(30, feActual) }}>
+                                                    <span className="mr-1 text-[9px] font-black text-cyan-300 whitespace-nowrap bg-slate-900/50 px-1 rounded">F_e={feActual.toFixed(0)}</span>
+                                                    <div className="h-1 bg-cyan-400 w-full relative">
+                                                        <div className="absolute left-0 -top-1.5">{ArrowLeftIcon && <ArrowLeftIcon className="text-cyan-400" size={16} />}</div>
+                                                    </div>
+                                                </div>
+
+                                                {/* Fuerza Fricción Fr (Rojo, Solo visible si NO está lubricado) */}
+                                                {!isLubricated && frAbs > 0.1 && (
+                                                    <div 
+                                                        className={`absolute top-1/2 flex items-center opacity-90 ${direccionFriccion === 'Arriba' ? 'right-full pr-1' : 'left-full pl-1 flex-row-reverse'}`} 
+                                                        style={{ width: Math.max(20, frAbs) }}
+                                                    >
+                                                        <span className="mx-1 text-[9px] font-black text-red-300 whitespace-nowrap bg-slate-900/50 px-1 rounded">F_r={frAbs.toFixed(0)}</span>
+                                                        <div className="h-1 bg-red-400 w-full relative">
+                                                            <div className={direccionFriccion === 'Arriba' ? 'absolute left-0 -top-1.5' : 'absolute right-0 -top-1.5'}>
+                                                                {direccionFriccion === 'Arriba' ? <ArrowLeftIcon className="text-red-400" size={16} /> : <ArrowRightIcon className="text-red-400" size={16} />}
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                )}
+                                            </div>
+                                        </div>
+
+                                        {/* Suelo Base Decorativo */}
+                                        <div className="absolute bottom-0 left-0 w-full border-b-2 border-slate-600 border-dashed"></div>
+                                        
+                                        {/* Arco del Ángulo */}
+                                        {angulo > 0 && (
+                                            <div className="absolute bottom-0 right-0 w-24 h-24 border-l-2 border-t-2 border-cyan-500/50 rounded-tl-full flex items-end justify-start pb-2 pl-2">
+                                                <span className="text-cyan-300 font-mono text-sm font-bold">{angulo}º</span>
+                                            </div>
+                                        )}
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* Controles y Resolución */}
+                            <div className="space-y-6">
+                                <div className="bg-slate-800 p-6 rounded-3xl border border-slate-700 shadow-xl">
+                                    <h3 className="text-xl font-bold mb-4 flex items-center gap-2 text-cyan-400">
+                                        {SettingsIcon && <SettingsIcon size={20} />} Configurar Sistema Original
+                                    </h3>
+                                    
+                                    <div className="space-y-4 mb-6">
+                                        <div className="grid grid-cols-2 gap-4">
+                                            <div className="bg-slate-900/50 p-3 rounded-xl border border-slate-700">
+                                                <div className="flex justify-between text-[10px] mb-1"><span className="text-slate-300 font-bold uppercase">Masa (m)</span><span className="font-mono text-white">{masa.toFixed(1)} kg</span></div>
+                                                <input type="range" min="1" max="25" step="0.5" value={masa} onChange={e => setMasa(Number(e.target.value))} className="w-full h-1.5 bg-slate-700 rounded-lg appearance-none cursor-pointer" />
+                                            </div>
+                                            <div className="bg-slate-900/50 p-3 rounded-xl border border-slate-700">
+                                                <div className="flex justify-between text-[10px] mb-1"><span className="text-slate-300 font-bold uppercase">Inclinación (α)</span><span className="font-mono text-white">{angulo}º</span></div>
+                                                <input type="range" min="10" max="80" step="1" value={angulo} onChange={e => setAngulo(Number(e.target.value))} className="w-full h-1.5 bg-slate-700 rounded-lg appearance-none cursor-pointer" />
+                                            </div>
+                                        </div>
+
+                                        <div className="grid grid-cols-2 gap-4">
+                                            <div className="bg-slate-900/50 p-3 rounded-xl border border-slate-700">
+                                                <div className="flex justify-between text-[10px] mb-1"><span className="text-cyan-400 font-bold uppercase">Const. (k)</span><span className="font-mono text-cyan-300">{k} N/m</span></div>
+                                                <input type="range" min="500" max="3000" step="100" value={k} onChange={e => setK(Number(e.target.value))} className="w-full h-1.5 bg-slate-700 rounded-lg appearance-none cursor-pointer accent-cyan-500" />
+                                            </div>
+                                            <div className="bg-slate-900/50 p-3 rounded-xl border border-slate-700">
+                                                <div className="flex justify-between text-[10px] mb-1"><span className="text-cyan-400 font-bold uppercase">Estiramiento 1</span><span className="font-mono text-cyan-300">{dxInicialCm.toFixed(1)} cm</span></div>
+                                                <input type="range" min="0.5" max="15" step="0.5" value={dxInicialCm} onChange={e => setDxInicialCm(Number(e.target.value))} className="w-full h-1.5 bg-slate-700 rounded-lg appearance-none cursor-pointer accent-cyan-500" />
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    {friccion < -0.01 && (
+                                        <div className="mb-4 bg-orange-900/50 p-3 rounded-lg border border-orange-500/50 flex items-start gap-3">
+                                            <AlertTriangleIcon className="text-orange-400 shrink-0" size={20} />
+                                            <p className="text-xs text-orange-200">El muelle está tirando demasiado fuerte. La fricción tiene que ir hacia abajo para evitar que el bloque suba solo.</p>
+                                        </div>
+                                    )}
+
+                                    <div className="flex gap-2">
+                                        <button 
+                                            onClick={toggleLubrication} 
+                                            className={`flex-1 font-black py-4 rounded-xl shadow-lg flex justify-center items-center gap-2 transition-all active:scale-95 border-2 ${isLubricated ? 'bg-slate-700 border-slate-500 text-white' : 'bg-blue-600 border-blue-400 hover:bg-blue-500 text-white'}`}
+                                        >
+                                            {DropletsIcon && <DropletsIcon size={18} />} {isLubricated ? 'SECAR SUPERFICIE' : 'LUBRICAR (QUITAR FRICCIÓN)'}
+                                        </button>
+                                        <button onClick={reset} className="bg-slate-700 hover:bg-slate-600 text-white font-bold px-4 rounded-xl transition-all shadow-md">
+                                            {RotateCcwIcon && <RotateCcwIcon size={18} />}
+                                        </button>
+                                    </div>
+                                </div>
+
+                                <div className="bg-cyan-950/20 p-6 rounded-3xl border border-cyan-500/20">
+                                    <div className="flex justify-between items-center mb-4 border-b border-cyan-500/30 pb-2">
+                                        <h4 className="font-bold text-cyan-300 flex items-center gap-2">
+                                            {CalculatorIcon && <CalculatorIcon size={18} />} Resolución Matemática
+                                        </h4>
+                                        <button onClick={generarDiagrama} className="text-[10px] uppercase font-bold bg-slate-800 hover:bg-slate-700 text-slate-300 px-3 py-1.5 rounded flex items-center gap-1 border border-slate-600">
+                                            {imgLoading ? <span className="animate-pulse">Cargando...</span> : <>{ImagePlusIcon && <ImagePlusIcon size={14}/>} Generar DCL</>}
+                                        </button>
+                                    </div>
+
+                                    {imgUrl && (
+                                        <div className="mb-4 bg-slate-900 p-2 rounded-xl border border-slate-700 text-center">
+                                            <img src={imgUrl} alt="Diagrama de Cuerpo Libre" className="mx-auto max-h-40 rounded-lg" />
+                                        </div>
+                                    )}
+
+                                    <div className="text-xs text-slate-300 space-y-4 leading-relaxed">
+                                        <p><strong>A) Con Fricción (Cálculo de μ):</strong><br/>
+                                        El peso lo empuja hacia abajo ($P_x$). El muelle tira hacia arriba ($F_e$).</p>
+                                        <div className="bg-slate-900/80 p-2 rounded-lg border-l-4 border-orange-500 font-mono text-orange-200">
+                                            P_x = m·g·sin({angulo}º) = {masa} · 9.8 · {Math.sin(anguloRad).toFixed(3)} = <strong>{px.toFixed(2)} N</strong><br/>
+                                            F_e = k·x = {k} · {(dxInicialCm/100).toFixed(3)} = <strong>{feInicial.toFixed(2)} N</strong>
+                                        </div>
+                                        <p>Como P_x &gt; F_e ({px.toFixed(1)} &gt; {feInicial.toFixed(1)}), la caja quiere caer. La Fricción acude en ayuda del muelle.</p>
+                                        <div className="bg-slate-900/80 p-2 rounded-lg border-l-4 border-red-500 font-mono text-red-200">
+                                            P_x = F_e + F_r  ⇒  F_r = {px.toFixed(2)} - {feInicial.toFixed(2)} = <strong>{frAbs.toFixed(2)} N</strong><br/>
+                                            N = m·g·cos({angulo}º) = <strong>{normal.toFixed(2)} N</strong><br/>
+                                            μ = F_r / N = {frAbs.toFixed(2)} / {normal.toFixed(2)} = <strong>{mu.toFixed(3)}</strong>
+                                        </div>
+
+                                        <p className="border-t border-slate-700 pt-3"><strong>B) Al Lubricar (μ = 0):</strong><br/>
+                                        La Fricción desaparece. Ahora el muelle está solo contra P_x, así que tiene que estirarse más hasta generar {px.toFixed(2)} N él solito.</p>
+                                        <div className="bg-slate-900/80 p-3 rounded-lg border-l-4 border-blue-500 font-mono text-blue-200 shadow-inner">
+                                            F_e(nueva) = P_x = {px.toFixed(2)} N<br/>
+                                            x_nueva = F_e / k = {px.toFixed(2)} / {k} = <strong>{dxFinalM.toFixed(4)} m</strong> ({dxFinalCm.toFixed(2)} cm)<br/>
+                                            <br/>
+                                            <strong>Diferencia:</strong> Δx_extra = {dxFinalCm.toFixed(2)} - {dxInicialCm.toFixed(2)} = <strong>{extraDxCm.toFixed(2)} cm</strong>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </main>
+
+                        <footer className="max-w-5xl mx-auto mt-12 pt-6 border-t border-slate-800 text-center text-slate-500 text-[10px] font-bold uppercase tracking-widest">
+                            Profe Física | Dinámica: Sistemas en Equilibrio Modificados
+                        </footer>
+                    </div>
+                );
+            };
+
+            const container = document.getElementById('root');
+            const root = ReactDOM.createRoot(container);
+            root.render(<App />);
+        })();
+    </script>
+</body>
+</html>

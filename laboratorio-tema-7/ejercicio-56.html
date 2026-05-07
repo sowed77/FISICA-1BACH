@@ -1,0 +1,372 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Laboratorio: Separación por Muelle</title>
+    <!-- Bibliotecas externas -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <script src="https://unpkg.com/lucide-react@latest"></script>
+
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&family=Fira+Code&display=swap');
+        body { font-family: 'Inter', sans-serif; background-color: #0f172a; }
+        .font-mono { font-family: 'Fira Code', monospace; }
+        input[type=range]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            height: 20px;
+            width: 20px;
+            border-radius: 50%;
+            background: #0ea5e9; /* Sky 500 */
+            cursor: pointer;
+            border: 2px solid #ffffff;
+            box-shadow: 0 0 10px rgba(14, 165, 233, 0.5);
+        }
+        .floor-pattern {
+            background-color: #1e293b;
+            background-image: repeating-linear-gradient(45deg, #334155 0, #334155 2px, transparent 2px, transparent 10px);
+        }
+    </style>
+</head>
+<body>
+    <div id="root"></div>
+
+    <script type="text/babel">
+        (() => {
+            var { useState, useEffect } = React;
+            var icons = window.LucideReact || {};
+            
+            // Asignación segura de iconos
+            var getIcon = (name) => icons[name] || (({className}) => <span className={className || ''}></span>);
+            var PlayIcon = getIcon('Play');
+            var FlameIcon = getIcon('Flame');
+            var RotateCcwIcon = getIcon('RotateCcw');
+            var InfoIcon = getIcon('Info');
+            var CalculatorIcon = getIcon('Calculator');
+            var ArrowRightIcon = getIcon('ArrowRight');
+            var ArrowLeftIcon = getIcon('ArrowLeft');
+            var ImagePlusIcon = getIcon('ImagePlus');
+            var ScissorsIcon = getIcon('Scissors');
+
+            var App = () => {
+                // Estados interactivos inicializados con los datos del enunciado
+                const [mA, setMA] = useState(1.2); // kg
+                const [vA, setVA] = useState(2.1); // m/s (asumimos derecha positivo)
+                const [vBMag, setVBMag] = useState(3.3); // m/s (magnitud, asumimos izquierda negativo)
+
+                // Cálculos Físicos
+                // Conservación del momento: P_inicial = P_final
+                // 0 = m_A * v_A + m_B * (-v_B)
+                // m_B * v_B = m_A * v_A
+                // m_B = (m_A * v_A) / v_B
+                const momentoA = mA * vA;
+                const mB = momentoA / vBMag;
+                const momentoB = mB * vBMag; // Debería ser igual al momentoA en magnitud
+
+                // Estados de animación
+                const [time, setTime] = useState(0); 
+                const [isBurned, setIsBurned] = useState(false);
+
+                // Cinemática para la visualización
+                // Aceleración muy breve (0.1s) y luego MRU
+                const tExp = 0.1;
+                let posA = 0;
+                let posB = 0;
+                let currentVa = 0;
+                let currentVb = 0;
+
+                if (!isBurned) {
+                    posA = 0;
+                    posB = 0;
+                } else if (time <= tExp) {
+                    // Expansión del muelle (aceleración)
+                    const aA = vA / tExp;
+                    const aB = vBMag / tExp;
+                    posA = 0.5 * aA * Math.pow(time, 2);
+                    posB = -0.5 * aB * Math.pow(time, 2);
+                    currentVa = aA * time;
+                    currentVb = aB * time;
+                } else {
+                    // MRU tras separarse
+                    const xA_exp = 0.5 * (vA / tExp) * Math.pow(tExp, 2);
+                    const xB_exp = -0.5 * (vBMag / tExp) * Math.pow(tExp, 2);
+                    posA = xA_exp + vA * (time - tExp);
+                    posB = xB_exp - vBMag * (time - tExp);
+                    currentVa = vA;
+                    currentVb = vBMag;
+                }
+
+                // Escala visual
+                const pxPerMeter = 40; 
+                
+                // Muelle
+                const baseSpringWidth = 40;
+                const currentSpringWidth = isBurned && time > tExp ? 0 : baseSpringWidth + (posA - posB) * pxPerMeter;
+
+                useEffect(() => {
+                    let interval;
+                    if (isBurned && time < 3.0) { // Animamos 3 segundos
+                        interval = setInterval(() => {
+                            setTime(prev => prev + 0.02); // 50 FPS
+                        }, 20); 
+                    }
+                    return () => clearInterval(interval);
+                }, [isBurned, time]);
+
+                const handleBurn = () => {
+                    setTime(0);
+                    setIsBurned(true);
+                };
+
+                const reset = () => {
+                    setTime(0);
+                    setIsBurned(false);
+                };
+
+                // IA DCL
+                const [imgUrl, setImgUrl] = useState(null);
+                const [imgLoading, setImgLoading] = useState(false);
+
+                const generarDiagrama = async () => {
+                    setImgLoading(true);
+                    const apiKey = "AIzaSyDMyUo-WgmdNkCRW6-YK7h-bnRF_FLAjf0"; 
+                    try {
+                        const response = await fetch(
+                            `https://generativelanguage.googleapis.com/v1beta/models/imagen-4.0-generate-001:predict?key=${apiKey}`,
+                            {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({
+                                    instances: [{ prompt: "Diagrama técnico de física. Dos bloques A y B separados por un resorte expandiéndose. Vector Cantidad de Movimiento p_A apuntando a la derecha desde el bloque A. Vector Cantidad de Movimiento p_B apuntando a la izquierda desde el bloque B. Ambos vectores p son idénticos en longitud. Fondo blanco, minimalista, educativo" }],
+                                    parameters: { sampleCount: 1 }
+                                })
+                            }
+                        );
+                        if (!response.ok) throw new Error("Error en red");
+                        const data = await response.json();
+                        setImgUrl(`data:image/png;base64,${data.predictions[0].bytesBase64Encoded}`);
+                    } catch (error) {
+                        console.error(error);
+                    } finally {
+                        setImgLoading(false);
+                    }
+                };
+
+                return (
+                    <div className="min-h-screen bg-slate-900 text-slate-100 p-4 md:p-8">
+                        <header className="max-w-5xl mx-auto mb-8 border-b border-slate-700 pb-6">
+                            <div className="flex items-center gap-3 mb-2">
+                                <span className="bg-sky-600 text-white px-3 py-1 rounded-full text-xs font-black uppercase tracking-widest">Conservación del Momento</span>
+                                <h1 className="text-3xl font-black text-sky-400 uppercase tracking-tight tracking-widest">El Muelle Comprimido</h1>
+                            </div>
+                            <div className="bg-slate-800/50 p-4 rounded-xl border border-slate-700 mt-4">
+                                <p className="text-slate-300 text-sm leading-relaxed">
+                                    <strong>Enunciado:</strong> Los objetos A (1,2 kg) y B están en reposo sobre una superficie lisa, separados por un muelle comprimido mantenido por una cuerda. Al quemar la cuerda, A se mueve a 2,1 m/s y B a 3,3 m/s en sentido opuesto. ¿Cuál es la masa de B?
+                                </p>
+                            </div>
+                        </header>
+
+                        <main className="max-w-5xl mx-auto grid md:grid-cols-2 gap-8">
+                            {/* Panel Visual */}
+                            <div className="bg-slate-800 rounded-3xl border border-slate-700 h-[450px] relative overflow-hidden shadow-2xl flex flex-col justify-end pt-12">
+                                
+                                {/* Marcadores superiores en vivo */}
+                                <div className="absolute top-4 w-full px-6 flex justify-between z-30 pointer-events-none">
+                                    <div className="bg-slate-900/90 p-3 rounded-lg border border-slate-700 backdrop-blur-md">
+                                        <p className="text-[10px] text-slate-500 uppercase font-black">Momento Objeto B (Izquierda)</p>
+                                        <p className="text-sm font-mono font-bold text-orange-400">p = {(mB * currentVb).toFixed(2)} kg·m/s</p>
+                                    </div>
+                                    <div className="bg-slate-900/90 p-3 rounded-lg border border-slate-700 backdrop-blur-md text-right">
+                                        <p className="text-[10px] text-slate-500 uppercase font-black">Momento Objeto A (Derecha)</p>
+                                        <p className="text-sm font-mono font-bold text-sky-400">p = {(mA * currentVa).toFixed(2)} kg·m/s</p>
+                                    </div>
+                                </div>
+
+                                {/* Escenario - Pista */}
+                                <div className="relative w-full h-64 flex justify-center items-end pb-12 floor-pattern border-t-4 border-slate-600">
+                                    
+                                    {/* Muelle */}
+                                    {(!isBurned || time <= tExp) && (
+                                        <div 
+                                            className="absolute bottom-12 h-6 border-y-2 border-slate-400 z-10 flex items-center justify-center overflow-hidden opacity-60 transition-all"
+                                            style={{ 
+                                                width: `${currentSpringWidth}px`, 
+                                                left: `calc(50% + ${posB * pxPerMeter + 20}px)`
+                                            }}
+                                        >
+                                            <div className="w-full h-full" style={{ backgroundImage: 'repeating-linear-gradient(90deg, transparent, transparent 4px, #94a3b8 4px, #94a3b8 8px)' }}></div>
+                                        </div>
+                                    )}
+
+                                    {/* Cuerda (Desaparece con efecto) */}
+                                    {!isBurned && (
+                                        <div className="absolute bottom-14 w-10 h-0.5 bg-yellow-600 z-30">
+                                            <div className="w-2 h-4 bg-yellow-500 absolute -top-1.5 left-1/2 -translate-x-1/2 rounded-sm shadow-[0_0_5px_yellow]"></div>
+                                        </div>
+                                    )}
+                                    {isBurned && time < 0.2 && (
+                                        <div className="absolute bottom-14 z-30 text-orange-500 animate-ping">
+                                            {FlameIcon && <FlameIcon size={24} />}
+                                        </div>
+                                    )}
+
+                                    {/* OBJETO B (Izquierda) */}
+                                    <div 
+                                        className="absolute bottom-12 flex flex-col items-center z-20"
+                                        style={{ left: `calc(50% - 20px)`, transform: `translateX(${posB * pxPerMeter}px)` }}
+                                    >
+                                        <div className="w-14 h-14 bg-orange-600 border-4 border-orange-400 rounded-lg shadow-xl flex items-center justify-center relative">
+                                            <span className="font-black text-white text-xs text-center">B<br/>{mB.toFixed(2)}kg</span>
+                                        </div>
+                                        {/* Vector Velocidad B */}
+                                        {currentVb > 0.1 && (
+                                            <div className="absolute top-1/2 right-full pr-2 flex items-center flex-row-reverse" style={{ width: Math.max(40, currentVb * 15) }}>
+                                                <div className="h-1 bg-orange-400 w-full relative">
+                                                    <div className="absolute left-0 -top-1.5">{ArrowLeftIcon && <ArrowLeftIcon size={16} className="text-orange-400" />}</div>
+                                                </div>
+                                                <span className="mr-1 text-[10px] font-bold text-orange-300">v={currentVb.toFixed(1)}</span>
+                                            </div>
+                                        )}
+                                    </div>
+
+                                    {/* OBJETO A (Derecha) */}
+                                    <div 
+                                        className="absolute bottom-12 flex flex-col items-center z-20"
+                                        style={{ left: `calc(50% + 20px)`, transform: `translateX(${posA * pxPerMeter}px)` }}
+                                    >
+                                        <div className="w-14 h-14 bg-sky-600 border-4 border-sky-400 rounded-lg shadow-xl flex items-center justify-center relative">
+                                            <span className="font-black text-white text-xs text-center">A<br/>{mA.toFixed(1)}kg</span>
+                                        </div>
+                                        {/* Vector Velocidad A */}
+                                        {currentVa > 0.1 && (
+                                            <div className="absolute top-1/2 left-full pl-2 flex items-center" style={{ width: Math.max(40, currentVa * 15) }}>
+                                                <div className="h-1 bg-sky-400 w-full relative">
+                                                    <div className="absolute right-0 -top-1.5">{ArrowRightIcon && <ArrowRightIcon size={16} className="text-sky-400" />}</div>
+                                                </div>
+                                                <span className="ml-1 text-[10px] font-bold text-sky-300">v={currentVa.toFixed(1)}</span>
+                                            </div>
+                                        )}
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* Controles y Resolución */}
+                            <div className="space-y-6">
+                                <div className="bg-slate-800 p-6 rounded-3xl border border-slate-700 shadow-xl">
+                                    <h3 className="text-xl font-bold mb-4 flex items-center gap-2 text-sky-400">
+                                        {CalculatorIcon && <CalculatorIcon size={20} />} Variables del Experimento
+                                    </h3>
+                                    
+                                    <div className="space-y-4 mb-6">
+                                        <div className="bg-sky-900/30 p-4 rounded-xl border border-sky-500/20">
+                                            <h4 className="font-bold text-sky-300 mb-3 text-xs uppercase">Objeto A (Derecha)</h4>
+                                            <div className="mb-3">
+                                                <div className="flex justify-between text-xs mb-1">
+                                                    <span className="text-slate-300">Masa (m_A)</span>
+                                                    <span className="font-mono text-white">{mA.toFixed(1)} kg</span>
+                                                </div>
+                                                <input type="range" min="0.5" max="5.0" step="0.1" value={mA} onChange={e => {setMA(Number(e.target.value)); reset();}} className="w-full h-1.5 bg-slate-700 rounded-lg appearance-none cursor-pointer accent-sky-500" />
+                                            </div>
+                                            <div>
+                                                <div className="flex justify-between text-xs mb-1">
+                                                    <span className="text-slate-300">Velocidad (v_A)</span>
+                                                    <span className="font-mono text-white">{vA.toFixed(1)} m/s</span>
+                                                </div>
+                                                <input type="range" min="0.5" max="8.0" step="0.1" value={vA} onChange={e => {setVA(Number(e.target.value)); reset();}} className="w-full h-1.5 bg-slate-700 rounded-lg appearance-none cursor-pointer accent-sky-500" />
+                                            </div>
+                                        </div>
+                                        
+                                        <div className="bg-orange-900/30 p-4 rounded-xl border border-orange-500/20">
+                                            <h4 className="font-bold text-orange-300 mb-3 text-xs uppercase">Objeto B (Izquierda)</h4>
+                                            <div>
+                                                <div className="flex justify-between text-xs mb-1">
+                                                    <span className="text-slate-300">Velocidad (v_B)</span>
+                                                    <span className="font-mono text-white">{vBMag.toFixed(1)} m/s</span>
+                                                </div>
+                                                <input type="range" min="0.5" max="8.0" step="0.1" value={vBMag} onChange={e => {setVBMag(Number(e.target.value)); reset();}} className="w-full h-1.5 bg-slate-700 rounded-lg appearance-none cursor-pointer accent-orange-500" />
+                                            </div>
+                                            <div className="mt-3 bg-slate-900/50 p-2 rounded flex justify-between items-center border border-slate-700">
+                                                <span className="text-xs text-orange-400 font-bold uppercase">Masa Desconocida (m_B)</span>
+                                                <span className="font-mono font-black text-lg text-white">{mB.toFixed(2)} kg</span>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div className="flex gap-2">
+                                        <button 
+                                            onClick={handleBurn} 
+                                            disabled={isBurned}
+                                            className="flex-1 bg-red-600 hover:bg-red-500 text-white font-black py-4 rounded-xl shadow-lg flex justify-center items-center gap-2 disabled:opacity-50 transition-all active:scale-95"
+                                        >
+                                            {FlameIcon && <FlameIcon size={18} />} QUEMAR CUERDA
+                                        </button>
+                                        <button onClick={reset} className="bg-slate-700 hover:bg-slate-600 text-white font-bold px-5 rounded-xl transition-all shadow-md">
+                                            {RotateCcwIcon && <RotateCcwIcon size={18} />}
+                                        </button>
+                                    </div>
+                                </div>
+
+                                <div className="bg-sky-950/20 p-6 rounded-3xl border border-sky-500/20">
+                                    <div className="flex justify-between items-center mb-4 border-b border-sky-500/30 pb-2">
+                                        <h4 className="font-bold text-sky-300 flex items-center gap-2">
+                                            {InfoIcon && <InfoIcon size={18} />} Resolución Paso a Paso
+                                        </h4>
+                                        <button onClick={generarDiagrama} className="text-[10px] uppercase font-bold bg-slate-800 hover:bg-slate-700 text-slate-300 px-3 py-1.5 rounded flex items-center gap-1 border border-slate-700">
+                                            {imgLoading ? <span className="animate-pulse">Cargando...</span> : <>{ImagePlusIcon && <ImagePlusIcon size={14}/>} Generar DCL</>}
+                                        </button>
+                                    </div>
+
+                                    {imgUrl && (
+                                        <div className="mb-4 bg-slate-900 p-2 rounded-xl border border-slate-800 text-center">
+                                            <img src={imgUrl} alt="Diagrama de Momentos" className="mx-auto max-h-40 rounded-lg" />
+                                        </div>
+                                    )}
+
+                                    <div className="text-xs text-slate-300 space-y-4 leading-relaxed">
+                                        <p><strong>1. Estado Inicial (Reposo):</strong><br/>
+                                        Como el sistema completo (bloques y muelle) está parado, el momento lineal inicial es cero.</p>
+                                        <div className="bg-slate-900/80 p-2 rounded-lg border-l-4 border-slate-600 font-mono text-slate-300">
+                                            p_inicial = 0
+                                        </div>
+
+                                        <p><strong>2. Conservación de la Cantidad de Movimiento:</strong><br/>
+                                        El muelle ejerce fuerzas internas (Acción y Reacción), por lo que el momento total final debe seguir siendo cero.</p>
+                                        <div className="bg-slate-900/80 p-2 rounded-lg border-l-4 border-sky-500 font-mono text-sky-200">
+                                            p_final = p_A + p_B = 0<br/>
+                                            m_A · v_A + m_B · v_B = 0
+                                        </div>
+                                        
+                                        <p><strong>3. Sustitución y Ejes de coordenadas:</strong><br/>
+                                        La velocidad de A es hacia un lado (+{vA} m/s) y la de B es hacia el lado opuesto (-{vBMag} m/s).</p>
+                                        <div className="bg-slate-900/80 p-3 rounded-lg border-l-4 border-emerald-500 font-mono text-emerald-200 shadow-inner">
+                                            ({mA.toFixed(1)} · {vA.toFixed(1)}) + (m_B · -{vBMag.toFixed(1)}) = 0<br/>
+                                            {momentoA.toFixed(3)} - {vBMag.toFixed(1)} · m_B = 0<br/>
+                                            {momentoA.toFixed(3)} = {vBMag.toFixed(1)} · m_B<br/>
+                                            m_B = {momentoA.toFixed(3)} / {vBMag.toFixed(1)} = <strong>{mB.toFixed(3)} kg</strong>
+                                        </div>
+                                        <p className="text-[10px] text-slate-400 mt-2 italic text-center">
+                                            Si B adquiere más velocidad que A ({vBMag} &gt; {vA}), significa obligatoriamente que B es más ligero (tiene menos inercia).
+                                        </p>
+                                    </div>
+                                </div>
+                            </div>
+                        </main>
+
+                        <footer className="max-w-5xl mx-auto mt-12 pt-6 border-t border-slate-800 text-center text-slate-500 text-[10px] font-bold uppercase tracking-widest">
+                            Profe Física | Dinámica: Sistemas Aislados y Fuerzas Internas
+                        </footer>
+                    </div>
+                );
+            };
+
+            const container = document.getElementById('root');
+            const root = ReactDOM.createRoot(container);
+            root.render(<App />);
+        })();
+    </script>
+</body>
+</html>

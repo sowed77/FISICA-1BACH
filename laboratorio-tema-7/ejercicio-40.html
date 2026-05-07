@@ -1,0 +1,313 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Laboratorio: Densidad Planetaria</title>
+    <!-- Bibliotecas externas -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <script src="https://unpkg.com/lucide-react@latest"></script>
+
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&family=Fira+Code&display=swap');
+        body { font-family: 'Inter', sans-serif; background-color: #020617; } /* Slate 950 */
+        .font-mono { font-family: 'Fira Code', monospace; }
+        input[type=range]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            height: 20px;
+            width: 20px;
+            border-radius: 50%;
+            background: #a855f7; /* Purple 500 */
+            cursor: pointer;
+            border: 2px solid #ffffff;
+            box-shadow: 0 0 10px rgba(168, 85, 247, 0.5);
+        }
+        
+        .space-bg {
+            background-image: 
+                radial-gradient(white, rgba(255,255,255,.2) 2px, transparent 4px),
+                radial-gradient(white, rgba(255,255,255,.15) 1px, transparent 3px);
+            background-size: 550px 550px, 350px 350px;
+            background-position: 0 0, 40px 60px;
+            opacity: 0.6;
+        }
+
+        .planet-texture {
+            background: radial-gradient(circle at 30% 30%, #475569, #0f172a 90%);
+            box-shadow: inset -20px -20px 50px rgba(0,0,0,0.8), 0 0 40px rgba(168, 85, 247, 0.2);
+        }
+        
+        .planet-texture::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            border-radius: 50%;
+            background-image: radial-gradient(circle at 70% 30%, rgba(0,0,0,0.3) 10%, transparent 15%),
+                              radial-gradient(circle at 30% 70%, rgba(0,0,0,0.3) 15%, transparent 20%),
+                              radial-gradient(circle at 50% 50%, rgba(0,0,0,0.2) 20%, transparent 25%);
+            filter: blur(2px);
+        }
+    </style>
+</head>
+<body>
+    <div id="root"></div>
+
+    <script type="text/babel">
+        (() => {
+            var { useState, useEffect } = React;
+            var icons = window.LucideReact || {};
+            
+            // Asignación segura de iconos
+            var getIcon = (name) => icons[name] || (({className}) => <span className={className || ''}></span>);
+            var CalculatorIcon = getIcon('Calculator');
+            var SettingsIcon = getIcon('Settings');
+            var InfoIcon = getIcon('Info');
+            var Globe2Icon = getIcon('Globe2');
+            var ArrowDownIcon = getIcon('ArrowDown');
+            var ImagePlusIcon = getIcon('ImagePlus');
+            var DropletIcon = getIcon('Droplets');
+
+            var App = () => {
+                // Constantes Físicas Reales
+                const G = 6.674e-11; // N·m²/kg²
+                const pi = Math.PI;
+
+                // Estados Interactivos (Datos del enunciado)
+                const [rKm, setRKm] = useState(3000); // Radio en km
+                const [gPlanet, setGPlanet] = useState(6.00); // Gravedad en m/s²
+
+                // Cálculos Físicos
+                const rMetros = rKm * 1000;
+                
+                // 1. Masa del planeta: g = G * M / r²  =>  M = g * r² / G
+                const masa = (gPlanet * Math.pow(rMetros, 2)) / G;
+                
+                // 2. Volumen de la esfera: V = (4/3) * pi * r³
+                const volumen = (4 / 3) * pi * Math.pow(rMetros, 3);
+                
+                // 3. Densidad media: p = M / V
+                const densidad = masa / volumen;
+                const densidadGcm3 = densidad / 1000; // Pasarlo a g/cm³ para hacerlo más intuitivo
+
+                // Formateo de notación científica para pantalla
+                const masaExp = Math.floor(Math.log10(masa));
+                const masaBase = (masa / Math.pow(10, masaExp)).toFixed(2);
+                
+                const volExp = Math.floor(Math.log10(volumen));
+                const volBase = (volumen / Math.pow(10, volExp)).toFixed(2);
+
+                // Escala visual del planeta (de 1000km a 10000km mapeado a px)
+                const visualSize = Math.max(100, Math.min(300, 100 + (rKm / 10000) * 200));
+
+                // Generador de diagrama DCL con IA
+                const [imgUrl, setImgUrl] = useState(null);
+                const [imgLoading, setImgLoading] = useState(false);
+
+                const generarDiagrama = async () => {
+                    setImgLoading(true);
+                    const apiKey = "AIzaSyDMyUo-WgmdNkCRW6-YK7h-bnRF_FLAjf0"; // API Key insertada por entorno
+                    try {
+                        const response = await fetch(
+                            `https://generativelanguage.googleapis.com/v1beta/models/imagen-4.0-generate-001:predict?key=${apiKey}`,
+                            {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({
+                                    instances: [{ prompt: "Diagrama técnico de astrofísica. Un planeta esférico seccionado por la mitad mostrando su núcleo interno. Un vector marcando el radio R desde el centro hasta la superficie. Un vector de gravedad g apuntando hacia el centro desde la superficie. Fondo oscuro estrellado, educativo, estilo plano" }],
+                                    parameters: { sampleCount: 1 }
+                                })
+                            }
+                        );
+                        if (!response.ok) throw new Error("Error en red");
+                        const data = await response.json();
+                        setImgUrl(`data:image/png;base64,${data.predictions[0].bytesBase64Encoded}`);
+                    } catch (error) {
+                        console.error(error);
+                    } finally {
+                        setImgLoading(false);
+                    }
+                };
+
+                return (
+                    <div className="min-h-screen bg-slate-950 text-slate-100 p-4 md:p-8">
+                        <header className="max-w-5xl mx-auto mb-8 border-b border-slate-800 pb-6">
+                            <div className="flex items-center gap-3 mb-2">
+                                <span className="bg-purple-600 text-white px-3 py-1 rounded-full text-xs font-black uppercase tracking-widest">Astrofísica</span>
+                                <h1 className="text-3xl font-black text-purple-400 uppercase tracking-tight tracking-widest">Densidad Planetaria</h1>
+                            </div>
+                            <div className="bg-slate-900/80 p-4 rounded-xl border border-slate-800 mt-4">
+                                <p className="text-slate-300 text-sm leading-relaxed">
+                                    <strong>Enunciado:</strong> En un planeta esférico de 3000 km de radio, la aceleración de la gravedad es 6,00 m/s². Calcula la densidad media del planeta.
+                                </p>
+                            </div>
+                        </header>
+
+                        <main className="max-w-5xl mx-auto grid md:grid-cols-2 gap-8">
+                            {/* Panel Visual Espacial */}
+                            <div className="bg-slate-900 rounded-3xl border border-slate-800 h-[500px] relative overflow-hidden shadow-2xl flex flex-col items-center justify-center">
+                                
+                                <div className="absolute inset-0 space-bg pointer-events-none"></div>
+
+                                {/* HUD Flotante */}
+                                <div className="absolute top-4 w-full px-6 flex justify-between z-30 pointer-events-none">
+                                    <div className="bg-slate-950/90 p-3 rounded-lg border border-slate-800 backdrop-blur-md">
+                                        <p className="text-[10px] text-slate-500 uppercase font-black">Masa Estimada (M)</p>
+                                        <p className="text-lg font-mono font-black text-blue-400">{masaBase} × 10<sup className="text-xs">{masaExp}</sup> kg</p>
+                                    </div>
+                                    <div className="bg-slate-950/90 p-3 rounded-lg border border-purple-900 backdrop-blur-md text-right border-b-4 border-b-purple-500 shadow-[0_0_15px_rgba(168,85,247,0.2)]">
+                                        <p className="text-[10px] text-purple-400 uppercase font-black flex items-center justify-end gap-1"><DropletIcon size={12}/> Densidad (ρ)</p>
+                                        <p className="text-2xl font-mono font-black text-purple-300">{densidad.toFixed(0)} <span className="text-sm">kg/m³</span></p>
+                                    </div>
+                                </div>
+
+                                {/* Escena del Planeta */}
+                                <div className="relative flex flex-col items-center justify-center mt-10">
+                                    
+                                    {/* El Planeta */}
+                                    <div 
+                                        className="relative rounded-full planet-texture flex items-center justify-center transition-all duration-300 z-10"
+                                        style={{ width: `${visualSize}px`, height: `${visualSize}px` }}
+                                    >
+                                        {/* Línea del Radio */}
+                                        <div className="absolute top-1/2 left-1/2 w-1/2 h-0.5 bg-slate-400/50 origin-left border-t border-dashed border-white flex justify-center -translate-y-1/2">
+                                            <span className="absolute -top-4 text-[9px] font-mono text-slate-300 bg-slate-900/80 px-1 rounded">R = {rKm} km</span>
+                                        </div>
+                                        <div className="absolute top-1/2 left-1/2 w-1.5 h-1.5 bg-white rounded-full -translate-x-1/2 -translate-y-1/2 shadow-[0_0_5px_white]"></div>
+                                    </div>
+                                    
+                                    {/* Objeto de prueba (cayendo) indicando la gravedad */}
+                                    <div className="absolute z-20 flex flex-col items-center pointer-events-none" style={{ top: `calc(50% - ${visualSize/2 + 60}px)` }}>
+                                        <div className="w-3 h-3 bg-red-500 rounded-sm"></div>
+                                        <div className="flex flex-col items-center" style={{ height: Math.max(30, gPlanet * 4) }}>
+                                            <div className="w-0.5 bg-red-400 h-full relative">
+                                                <div className="absolute bottom-0 left-1/2 -translate-x-[5px]">{ArrowDownIcon && <ArrowDownIcon size={12} className="text-red-500" />}</div>
+                                            </div>
+                                            <span className="text-[10px] font-black text-red-400 mt-1 bg-slate-900/80 px-1 rounded">g = {gPlanet.toFixed(2)}</span>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                {/* Info visual extra */}
+                                <div className="absolute bottom-6 bg-slate-950/80 px-4 py-2 rounded-xl text-center border border-slate-800 z-30">
+                                    <p className="text-[10px] text-slate-500 uppercase font-black">Material probable del núcleo:</p>
+                                    <p className="text-sm font-bold text-white">
+                                        {densidadGcm3 < 2 ? 'Gelo / Gas (Coma Júpiter)' : 
+                                         densidadGcm3 < 4 ? 'Roca Silicatada (Coma la Luna)' : 
+                                         densidadGcm3 < 6 ? 'Roca i Ferro (Coma la Terra)' : 
+                                         'Metall Pur Molt Dens (Coma Mercuri)'}
+                                    </p>
+                                </div>
+                            </div>
+
+                            {/* Controles y Resolución */}
+                            <div className="space-y-6">
+                                <div className="bg-slate-900 p-6 rounded-3xl border border-slate-800 shadow-xl">
+                                    <h3 className="text-xl font-bold mb-4 flex items-center gap-2 text-purple-400">
+                                        {SettingsIcon && <SettingsIcon size={20} />} Datos de Exploración
+                                    </h3>
+                                    
+                                    <div className="space-y-6 mb-6">
+                                        <div>
+                                            <div className="flex justify-between text-xs mb-2">
+                                                <span className="text-slate-300 font-bold uppercase">Radio del Planeta (R)</span>
+                                                <span className="font-mono bg-slate-950 px-2 py-0.5 rounded text-blue-300">{rKm} km</span>
+                                            </div>
+                                            <input 
+                                                type="range" min="1000" max="10000" step="100" value={rKm} 
+                                                onChange={e => setRKm(Number(e.target.value))} 
+                                                className="w-full h-2 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-blue-500" 
+                                            />
+                                        </div>
+
+                                        <div>
+                                            <div className="flex justify-between text-xs mb-2">
+                                                <span className="text-red-400 font-bold uppercase">Gravedad Superficial (g)</span>
+                                                <span className="font-mono bg-slate-950 px-2 py-0.5 rounded text-red-300">{gPlanet.toFixed(2)} m/s²</span>
+                                            </div>
+                                            <input 
+                                                type="range" min="1" max="25" step="0.1" value={gPlanet} 
+                                                onChange={e => setGPlanet(Number(e.target.value))} 
+                                                className="w-full h-2 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-red-500" 
+                                            />
+                                        </div>
+                                    </div>
+
+                                    <div className="grid grid-cols-3 gap-2">
+                                        <button onClick={() => {setRKm(3000); setGPlanet(6.00);}} className="bg-purple-900/50 hover:bg-purple-800/50 text-xs font-bold py-2 rounded-lg border border-purple-500/50 text-purple-300">
+                                            Problema
+                                        </button>
+                                        <button onClick={() => {setRKm(6371); setGPlanet(9.81);}} className="bg-slate-800 hover:bg-slate-700 text-xs font-bold py-2 rounded-lg border border-slate-700 text-slate-300">
+                                            La Tierra
+                                        </button>
+                                        <button onClick={() => {setRKm(1737); setGPlanet(1.62);}} className="bg-slate-800 hover:bg-slate-700 text-xs font-bold py-2 rounded-lg border border-slate-700 text-slate-300">
+                                            La Luna
+                                        </button>
+                                    </div>
+                                </div>
+
+                                <div className="bg-purple-950/20 p-6 rounded-3xl border border-purple-500/20">
+                                    <div className="flex justify-between items-center mb-4 border-b border-purple-500/30 pb-2">
+                                        <h4 className="font-bold text-purple-300 flex items-center gap-2">
+                                            {CalculatorIcon && <CalculatorIcon size={18} />} Fórmula Directa
+                                        </h4>
+                                        <button onClick={generarDiagrama} className="text-[10px] uppercase font-bold bg-slate-900 hover:bg-slate-800 text-slate-300 px-3 py-1.5 rounded flex items-center gap-1 border border-slate-700">
+                                            {imgLoading ? <span className="animate-pulse">Cargando...</span> : <>{ImagePlusIcon && <ImagePlusIcon size={14}/>} Generar DCL</>}
+                                        </button>
+                                    </div>
+
+                                    {imgUrl && (
+                                        <div className="mb-4 bg-slate-950 p-2 rounded-xl border border-slate-800 text-center">
+                                            <img src={imgUrl} alt="Diagrama del Planeta" className="mx-auto max-h-40 rounded-lg" />
+                                        </div>
+                                    )}
+
+                                    <div className="text-xs text-slate-300 space-y-4 leading-relaxed">
+                                        <p><strong>1. Datos al S.I.:</strong> R = {rKm} km = <strong>{rMetros} m</strong>.</p>
+                                        
+                                        <p><strong>2. Masa del Planeta (M):</strong><br/>
+                                        Despejamos de la fórmula de la gravedad superficial ($g = G \cdot M / R^2$).</p>
+                                        <div className="bg-slate-950/80 p-2 rounded-lg border-l-4 border-blue-500 font-mono text-blue-200 shadow-inner overflow-x-auto">
+                                            M = (g · R²) / G<br/>
+                                            M = ({gPlanet.toFixed(2)} · {rMetros}²) / 6.674×10⁻¹¹<br/>
+                                            <strong>M = {masaBase} × 10^{masaExp} kg</strong>
+                                        </div>
+
+                                        <p><strong>3. Volumen de la Esfera (V):</strong></p>
+                                        <div className="bg-slate-950/80 p-2 rounded-lg border-l-4 border-emerald-500 font-mono text-emerald-200">
+                                            V = (4/3) · π · R³<br/>
+                                            V = (4/3) · π · {rMetros}³<br/>
+                                            <strong>V = {volBase} × 10^{volExp} m³</strong>
+                                        </div>
+
+                                        <p><strong>4. Densidad (ρ):</strong></p>
+                                        <div className="bg-slate-950/80 p-3 rounded-lg border-l-4 border-purple-500 font-mono text-purple-200 shadow-[inset_0_0_10px_rgba(168,85,247,0.1)]">
+                                            ρ = M / V<br/>
+                                            ρ = ({masaBase}×10^{masaExp}) / ({volBase}×10^{volExp})<br/>
+                                            <strong>ρ = {densidad.toFixed(0)} kg/m³</strong>
+                                        </div>
+                                        <p className="text-[10px] text-slate-400 italic text-center">
+                                            Dividiendo por 1000 sabemos que equivale a <strong>{densidadGcm3.toFixed(2)} g/cm³</strong>.
+                                        </p>
+                                    </div>
+                                </div>
+                            </div>
+                        </main>
+
+                        <footer className="max-w-5xl mx-auto mt-12 pt-6 border-t border-slate-800 text-center text-slate-500 text-[10px] font-bold uppercase tracking-widest">
+                            Profe Física | Gravitación y Propiedades de la Materia
+                        </footer>
+                    </div>
+                );
+            };
+
+            const container = document.getElementById('root');
+            const root = ReactDOM.createRoot(container);
+            root.render(<App />);
+        })();
+    </script>
+</body>
+</html>

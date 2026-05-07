@@ -1,0 +1,326 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Laboratorio: La Paradoja del Rozamiento</title>
+    <!-- Bibliotecas externas -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <script src="https://unpkg.com/lucide-react@latest"></script>
+
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&family=Fira+Code&display=swap');
+        body { font-family: 'Inter', sans-serif; background-color: #0f172a; }
+        .font-mono { font-family: 'Fira Code', monospace; }
+        input[type=range]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            height: 20px;
+            width: 20px;
+            border-radius: 50%;
+            background: #eab308; /* Yellow 500 */
+            cursor: pointer;
+            border: 2px solid #ffffff;
+            box-shadow: 0 0 10px rgba(234, 179, 8, 0.5);
+        }
+        .ramp-pattern {
+            background-color: #475569;
+            background-image: repeating-linear-gradient(45deg, #334155 0, #334155 2px, transparent 2px, transparent 10px);
+        }
+    </style>
+</head>
+<body>
+    <div id="root"></div>
+
+    <script type="text/babel">
+        (() => {
+            var { useState, useEffect } = React;
+            var icons = window.LucideReact || {};
+            
+            // Asignación segura de iconos
+            var getIcon = (name) => icons[name] || (({className}) => <span className={className || ''}></span>);
+            var PlayIcon = getIcon('Play');
+            var RotateCcwIcon = getIcon('RotateCcw');
+            var InfoIcon = getIcon('Info');
+            var CalculatorIcon = getIcon('Calculator');
+            var AlertTriangleIcon = getIcon('AlertTriangle');
+            var EyeIcon = getIcon('Eye');
+            var EyeOffIcon = getIcon('EyeOff');
+            var ArrowRightIcon = getIcon('ArrowRight');
+            var ArrowLeftIcon = getIcon('ArrowLeft');
+
+            var App = () => {
+                // Parámetros fijos
+                const g = 9.8; // m/s^2
+                const tObj = 5.0; // segundos (del enunciado)
+
+                // Estados interactivos
+                const [masa, setMasa] = useState(3.0); // kg
+                const [angulo, setAngulo] = useState(5); // grados
+                const [mu, setMu] = useState(0.50); // Coeficiente de rozamiento
+
+                // Modo de simulación: 'real' o 'falso'
+                const [mode, setMode] = useState('real');
+
+                // Estados de animación
+                const [time, setTime] = useState(0);
+                const [isMoving, setIsMoving] = useState(false);
+
+                // Cálculos Físicos
+                const anguloRad = angulo * (Math.PI / 180);
+                const peso = masa * g; // 29.4 N
+                const px = peso * Math.sin(anguloRad); // 2.56 N
+                const py = peso * Math.cos(anguloRad); // 29.29 N
+                const normal = py; 
+                const fr_max = mu * normal; // 14.64 N
+
+                // EVALUACIÓN DE LA FÍSICA
+                // Realidad Física
+                const deslizaReal = px > fr_max;
+                const fr_real = deslizaReal ? fr_max : px;
+                const a_real = deslizaReal ? (px - fr_real) / masa : 0;
+                const v_real_5s = a_real * tObj;
+
+                // Falsa Física (El cálculo ciego del alumno)
+                // Asume erróneamente que la fricción siempre actúa a su máximo valor oponiéndose al "eje principal"
+                const a_falsa = (px - fr_max) / masa; // Saldría negativa (-4.03)
+                const v_falsa_5s = a_falsa * tObj; // Saldría negativa (-20.15)
+
+                // Variables para la animación
+                const currentA = mode === 'real' ? a_real : a_falsa;
+                
+                // Cinemática en tiempo real
+                // Si el modo es real y no desliza, pos y vel son 0.
+                const currentV = currentA * time;
+                const currentPos = 0.5 * currentA * Math.pow(time, 2);
+
+                // Escala visual
+                const pxPerMeter = 10;
+                const visualPos = currentPos * pxPerMeter;
+
+                useEffect(() => {
+                    let interval;
+                    if (isMoving && time < tObj) {
+                        interval = setInterval(() => {
+                            setTime(prev => {
+                                const nextTime = prev + 0.05; // dt
+                                if (nextTime >= tObj) {
+                                    setIsMoving(false);
+                                    return tObj;
+                                }
+                                return nextTime;
+                            });
+                        }, 50); // 1x velocidad real aprox
+                    }
+                    return () => clearInterval(interval);
+                }, [isMoving, time]);
+
+                const handlePlayReal = () => {
+                    setMode('real');
+                    setTime(0);
+                    setIsMoving(true);
+                };
+
+                const handlePlayFalso = () => {
+                    setMode('falso');
+                    setTime(0);
+                    setIsMoving(true);
+                };
+
+                const reset = () => {
+                    setTime(0);
+                    setIsMoving(false);
+                };
+
+                return (
+                    <div className="min-h-screen bg-slate-900 text-slate-100 p-4 md:p-8">
+                        <header className="max-w-5xl mx-auto mb-8 border-b border-slate-700 pb-6">
+                            <div className="flex items-center gap-3 mb-2">
+                                <span className="bg-yellow-600 text-slate-900 px-3 py-1 rounded-full text-xs font-black uppercase tracking-widest">Paradojas de la Dinámica</span>
+                                <h1 className="text-3xl font-black text-yellow-400 uppercase tracking-tight tracking-widest">La Trampa del Rozamiento</h1>
+                            </div>
+                            <div className="bg-slate-800/50 p-4 rounded-xl border border-slate-700 mt-4 flex items-start gap-4">
+                                <AlertTriangleIcon className="text-yellow-500 shrink-0 mt-1" size={24} />
+                                <p className="text-slate-300 text-sm leading-relaxed">
+                                    <strong>Enunciado "Trampa":</strong> Un bloque de 3,0 kg está en un plano de 5°. μ = 0,50. ¿Con qué velocidad descenderá a los 5,0 s? ¿Obtienes una velocidad negativa?
+                                </p>
+                            </div>
+                        </header>
+
+                        <main className="max-w-5xl mx-auto grid md:grid-cols-2 gap-8">
+                            {/* Panel Visual */}
+                            <div className="bg-slate-800 rounded-3xl border border-slate-700 h-[500px] relative overflow-hidden shadow-2xl flex flex-col justify-end">
+                                
+                                {/* Marcadores Flotantes */}
+                                <div className="absolute top-4 w-full px-6 flex justify-between z-30 pointer-events-none">
+                                    <div className="bg-slate-900/90 p-3 rounded-lg border border-slate-700 backdrop-blur-md">
+                                        <p className="text-[10px] text-slate-500 uppercase font-black">Cronómetro (t)</p>
+                                        <p className="text-xl font-mono font-black text-white">{time.toFixed(2)} s</p>
+                                    </div>
+                                    <div className={`bg-slate-900/90 p-3 rounded-lg border backdrop-blur-md text-right border-b-4 ${mode === 'falso' ? 'border-b-red-500' : 'border-b-emerald-500'}`}>
+                                        <p className="text-[10px] text-slate-500 uppercase font-black">Velocidad Mostrada (v)</p>
+                                        <p className={`text-xl font-mono font-black ${mode === 'falso' ? 'text-red-400' : 'text-emerald-400'}`}>
+                                            {currentV.toFixed(2)} m/s
+                                        </p>
+                                    </div>
+                                </div>
+
+                                {/* Advertencia de Física Imposible */}
+                                {mode === 'falso' && currentV < 0 && (
+                                    <div className="absolute top-24 left-1/2 -translate-x-1/2 z-40 bg-red-600/90 text-white px-6 py-4 rounded-xl border-2 border-red-400 shadow-[0_0_30px_rgba(220,38,38,0.8)] text-center animate-pulse flex flex-col items-center">
+                                        <AlertTriangleIcon size={32} className="mb-2" />
+                                        <span className="font-black uppercase tracking-widest">¡Física Imposible!</span>
+                                        <span className="text-xs mt-1">El bloque está subiendo la rampa por sí solo.</span>
+                                    </div>
+                                )}
+
+                                {/* Escena del Plano Inclinado */}
+                                <div className="relative w-full h-[400px]">
+                                    <div className="absolute bottom-16 left-10 w-[400px] h-full pointer-events-none">
+                                        
+                                        {/* Rampa Rotada. Origin bottom-right. Subida visual hacia la izquierda. */}
+                                        <div 
+                                            className="absolute bottom-0 left-0 w-full h-full origin-bottom-left transition-transform duration-300 z-20"
+                                            style={{ transform: `rotate(${-angulo}deg)` }}
+                                        >
+                                            {/* La Rampa */}
+                                            <div className="absolute bottom-0 left-0 w-full h-6 ramp-pattern shadow-xl rounded-r-full border-t-2 border-slate-500"></div>
+
+                                            {/* El Bloque */}
+                                            <div 
+                                                className={`absolute bottom-6 w-16 h-16 border-4 rounded-lg flex items-center justify-center shadow-lg transition-transform z-30 ${mode === 'falso' ? 'bg-red-900 border-red-500 opacity-80' : 'bg-blue-600 border-blue-400'}`}
+                                                style={{ transform: `translateX(${100 + visualPos}px)` }}
+                                            >
+                                                <span className="font-black text-white text-xs">{masa.toFixed(1)}kg</span>
+
+                                                {/* Vectores de Fuerza */}
+                                                {!isMoving && (
+                                                    <>
+                                                        {/* Vector Px (Verde, hacia la derecha local = cuesta abajo) */}
+                                                        <div className="absolute top-1/4 left-full flex items-center pl-1" style={{ width: Math.max(30, px * 3) }}>
+                                                            <div className="h-1 bg-green-400 w-full relative shadow-[0_0_8px_rgba(74,222,128,0.8)]">
+                                                                <div className="absolute right-0 -top-1.5">{ArrowRightIcon && <ArrowRightIcon className="text-green-400" size={16} />}</div>
+                                                            </div>
+                                                            <span className="ml-1 text-[10px] font-black text-green-300 bg-slate-900/80 px-1 rounded shadow">P_x={px.toFixed(1)}</span>
+                                                        </div>
+
+                                                        {/* Vector Fr REAL (Rojo, hacia la izquierda local = cuesta arriba) */}
+                                                        {mode === 'real' && (
+                                                            <div className="absolute bottom-1/4 right-full flex items-center pr-1" style={{ width: Math.max(30, fr_real * 3) }}>
+                                                                <span className="mr-1 text-[10px] font-black text-red-300 bg-slate-900/80 px-1 rounded shadow">F_r={fr_real.toFixed(1)}</span>
+                                                                <div className="h-1 bg-red-400 w-full relative shadow-[0_0_8px_rgba(248,113,113,0.8)]">
+                                                                    <div className="absolute left-0 -top-1.5">{ArrowLeftIcon && <ArrowLeftIcon className="text-red-400" size={16} />}</div>
+                                                                </div>
+                                                            </div>
+                                                        )}
+
+                                                        {/* Vector Fr "FALSO" (Rojo brillante gigante, mostrando el cálculo erróneo) */}
+                                                        {mode === 'falso' && (
+                                                            <div className="absolute bottom-1/4 right-full flex items-center pr-1" style={{ width: fr_max * 3 }}>
+                                                                <span className="mr-1 text-[10px] font-black text-red-500 bg-slate-900/80 px-1 rounded shadow">F_r={fr_max.toFixed(1)} (Max)</span>
+                                                                <div className="h-2 bg-red-500 w-full relative shadow-[0_0_15px_rgba(239,68,68,1)] border-y border-red-300">
+                                                                    <div className="absolute left-0 -top-2">{ArrowLeftIcon && <ArrowLeftIcon className="text-red-500" size={24} />}</div>
+                                                                </div>
+                                                            </div>
+                                                        )}
+                                                    </>
+                                                )}
+                                            </div>
+                                        </div>
+
+                                        {/* Suelo Base y Arco */}
+                                        <div className="absolute bottom-0 left-0 w-full border-b-2 border-slate-600 border-dashed"></div>
+                                        {angulo > 0 && (
+                                            <div className="absolute bottom-0 left-0 w-32 h-32 border-r-2 border-t-2 border-slate-500/50 rounded-tr-full flex items-end justify-end pb-4 pr-4">
+                                                <span className="text-slate-400 font-mono text-sm font-bold">{angulo}º</span>
+                                            </div>
+                                        )}
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* Controles y Explicación */}
+                            <div className="space-y-6">
+                                <div className="bg-slate-800 p-6 rounded-3xl border border-slate-700 shadow-xl">
+                                    <h3 className="text-xl font-bold mb-4 flex items-center gap-2 text-yellow-400">
+                                        {EyeIcon && <EyeIcon size={20} />} Ver Diferentes Simulaciones
+                                    </h3>
+                                    
+                                    <div className="flex flex-col gap-4 mb-6">
+                                        <button 
+                                            onClick={handlePlayFalso} 
+                                            disabled={isMoving}
+                                            className="bg-red-900/50 hover:bg-red-800/50 text-red-200 font-black py-4 rounded-xl border border-red-500/50 shadow-lg flex justify-center items-center gap-2 transition-all active:scale-95"
+                                        >
+                                            {EyeOffIcon && <EyeOffIcon size={18} />} SIMULAR EL CÁLCULO "CIEGO"
+                                        </button>
+                                        
+                                        <button 
+                                            onClick={handlePlayReal} 
+                                            disabled={isMoving}
+                                            className="bg-emerald-600 hover:bg-emerald-500 text-white font-black py-4 rounded-xl shadow-lg flex justify-center items-center gap-2 transition-all active:scale-95"
+                                        >
+                                            {EyeIcon && <EyeIcon size={18} />} SIMULAR LA REALIDAD FÍSICA
+                                        </button>
+                                    </div>
+
+                                    <div className="flex gap-2">
+                                        <button onClick={reset} className="w-full bg-slate-700 hover:bg-slate-600 text-white font-bold py-3 rounded-xl transition-all flex justify-center items-center gap-2">
+                                            {RotateCcwIcon && <RotateCcwIcon size={18} />} REINICIAR POSICIÓN
+                                        </button>
+                                    </div>
+                                </div>
+
+                                <div className="bg-yellow-950/20 p-6 rounded-3xl border border-yellow-500/20">
+                                    <div className="flex justify-between items-center mb-4 border-b border-yellow-500/30 pb-2">
+                                        <h4 className="font-bold text-yellow-300 flex items-center gap-2">
+                                            {CalculatorIcon && <CalculatorIcon size={18} />} Análisis del Error
+                                        </h4>
+                                    </div>
+
+                                    <div className="text-xs text-slate-300 space-y-4 leading-relaxed">
+                                        <p><strong>1. Las fuerzas implicadas:</strong></p>
+                                        <div className="bg-slate-900/80 p-2 rounded-lg border-l-4 border-green-500 font-mono text-green-200">
+                                            P_x = m · g · sin(5º) = 3 · 9.8 · 0.087 = <strong>{px.toFixed(2)} N</strong>
+                                        </div>
+                                        <div className="bg-slate-900/80 p-2 rounded-lg border-l-4 border-orange-500 font-mono text-orange-200 mt-2">
+                                            F_r(max) = μ · m · g · cos(5º) = 0.5 · 3 · 9.8 · 0.996 = <strong>{fr_max.toFixed(2)} N</strong>
+                                        </div>
+
+                                        <div className="bg-red-900/30 border border-red-500/30 p-3 rounded-lg mt-4">
+                                            <h5 className="font-bold text-red-400 mb-1">El error matemático:</h5>
+                                            <p className="font-mono text-red-200 mb-1">Σ F = P_x - F_r(max) = m · a</p>
+                                            <p className="font-mono text-red-200">{px.toFixed(2)} - {fr_max.toFixed(2)} = 3 · a  ⇒  a = <strong>{a_falsa.toFixed(2)} m/s²</strong></p>
+                                            <p className="font-mono text-red-200">v (a los 5s) = {a_falsa.toFixed(2)} · 5 = <strong>{v_falsa_5s.toFixed(2)} m/s</strong></p>
+                                            <p className="mt-2 text-slate-400">Esto significa que una piedra puesta en una rampa casi plana saldría disparada hacia arriba a 72 km/h. ¡Absurdo!</p>
+                                        </div>
+
+                                        <div className="bg-emerald-900/30 border border-emerald-500/30 p-3 rounded-lg mt-4">
+                                            <h5 className="font-bold text-emerald-400 mb-1">La realidad física:</h5>
+                                            <p>La fuerza de rozamiento es "inteligente" (reactiva). No usa sus 14.64 N si no los necesita. Solo usa lo estrictamente necesario para contrarrestar el peso y mantener el bloque quieto.</p>
+                                            <p className="font-mono text-emerald-200 mt-2">F_r (real) = P_x = <strong>{px.toFixed(2)} N</strong></p>
+                                            <p className="font-mono text-emerald-200">Σ F = {px.toFixed(2)} - {px.toFixed(2)} = 0 N  ⇒  a = <strong>0 m/s²</strong></p>
+                                            <p className="font-mono text-emerald-200 text-lg text-center mt-2 font-black">v = 0.00 m/s</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </main>
+
+                        <footer className="max-w-5xl mx-auto mt-12 pt-6 border-t border-slate-800 text-center text-slate-500 text-[10px] font-bold uppercase tracking-widest">
+                            Profe Física | Dinámica: La Fuerza de Rozamiento como Fuerza Reactiva
+                        </footer>
+                    </div>
+                );
+            };
+
+            const container = document.getElementById('root');
+            const root = ReactDOM.createRoot(container);
+            root.render(<App />);
+        })();
+    </script>
+</body>
+</html>

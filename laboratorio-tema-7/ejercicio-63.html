@@ -1,0 +1,386 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Laboratorio: Accidente de Tráfico</title>
+    <!-- Bibliotecas externas -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <script src="https://unpkg.com/lucide-react@latest"></script>
+
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&family=Fira+Code&display=swap');
+        body { font-family: 'Inter', sans-serif; background-color: #0f172a; }
+        .font-mono { font-family: 'Fira Code', monospace; }
+        input[type=range]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            height: 20px;
+            width: 20px;
+            border-radius: 50%;
+            background: #f59e0b; /* Amber 500 */
+            cursor: pointer;
+            border: 2px solid #ffffff;
+            box-shadow: 0 0 10px rgba(245, 158, 11, 0.5);
+        }
+        .road-pattern {
+            background-color: #334155;
+            background-image: repeating-linear-gradient(90deg, #475569 0px, #475569 30px, transparent 30px, transparent 60px);
+            background-size: 60px 4px;
+            background-position: center;
+            background-repeat: repeat-x;
+        }
+    </style>
+</head>
+<body>
+    <div id="root"></div>
+
+    <script type="text/babel">
+        (() => {
+            var { useState, useEffect } = React;
+            var icons = window.LucideReact || {};
+            
+            // Asignación segura de iconos
+            var getIcon = (name) => icons[name] || (({className}) => <span className={className || ''}></span>);
+            var PlayIcon = getIcon('Play');
+            var RotateCcwIcon = getIcon('RotateCcw');
+            var CalculatorIcon = getIcon('Calculator');
+            var ImagePlusIcon = getIcon('ImagePlus');
+            var TruckIcon = getIcon('Truck');
+            var CarIcon = getIcon('Car');
+            var ArrowRightIcon = getIcon('ArrowRight');
+            var ArrowLeftIcon = getIcon('ArrowLeft');
+            var ShieldAlertIcon = getIcon('ShieldAlert');
+
+            var App = () => {
+                // Parámetros interactivos del problema
+                const [mFurgoneta, setMFurgoneta] = useState(1200); // kg
+                const [vFurgonetaKmh, setVFurgonetaKmh] = useState(45); // km/h
+                const [mUtilitario, setMUtilitario] = useState(950); // kg
+                const [vFinalMsAbs, setVFinalMsAbs] = useState(15); // m/s (en magnitud)
+
+                // Cálculos Físicos
+                // Convención de signos: Furgoneta a la derecha (+), Utilitario a la izquierda (-)
+                const vFurgoneta = vFurgonetaKmh / 3.6; // m/s
+                
+                // "Tras el impacto van unidos a 15 m/s en el sentido del utilitario" -> v_final es negativa
+                const vFinal = -vFinalMsAbs; 
+                
+                const masaTotal = mFurgoneta + mUtilitario;
+                const pFinal = masaTotal * vFinal;
+                
+                // Conservación: p_inicial = p_final
+                // m_f * v_f + m_u * v_u = p_final
+                // m_u * v_u = p_final - m_f * v_f
+                const pFurgoneta = mFurgoneta * vFurgoneta;
+                const pUtilitario = pFinal - pFurgoneta;
+                const vUtilitario = pUtilitario / mUtilitario; // Estará en m/s (y será negativa)
+                const vUtilitarioKmh = vUtilitario * 3.6;
+
+                // Animación
+                const [time, setTime] = useState(0); 
+                const [isMoving, setIsMoving] = useState(false);
+
+                // Configuración visual
+                const tImpact = 1.0; // El impacto ocurre en t = 1.0s
+                const scaleX = 4; // píxeles por metro
+
+                // Posiciones visuales
+                let posFurgoneta = 0;
+                let posUtilitario = 0;
+                let phase = 'Reposo';
+
+                // Cinemática de la animación
+                if (time === 0) {
+                    posFurgoneta = vFurgoneta * (-tImpact);
+                    posUtilitario = vUtilitario * (-tImpact);
+                    phase = 'Antes del choque';
+                } else if (time > 0 && time <= tImpact) {
+                    posFurgoneta = vFurgoneta * (time - tImpact);
+                    posUtilitario = vUtilitario * (time - tImpact);
+                    phase = 'Acercándose';
+                } else {
+                    // Ambos se mueven juntos
+                    const postImpactTime = time - tImpact;
+                    posFurgoneta = vFinal * postImpactTime;
+                    posUtilitario = posFurgoneta; 
+                    phase = 'Choque inelástico (Unidos)';
+                }
+
+                useEffect(() => {
+                    let interval;
+                    if (isMoving && time < 3.0) { // Simulación de 3s visuales
+                        interval = setInterval(() => {
+                            setTime(prev => prev + 0.02);
+                        }, 20); // 50 fps
+                    } else if (time >= 3.0) {
+                        setIsMoving(false);
+                    }
+                    return () => clearInterval(interval);
+                }, [isMoving, time]);
+
+                const handlePlay = () => {
+                    setTime(0);
+                    setIsMoving(true);
+                };
+
+                const reset = () => {
+                    setTime(0);
+                    setIsMoving(false);
+                };
+
+                // DCL con IA
+                const [imgUrl, setImgUrl] = useState(null);
+                const [imgLoading, setImgLoading] = useState(false);
+
+                const generarDiagrama = async () => {
+                    setImgLoading(true);
+                    const apiKey = "AIzaSyDMyUo-WgmdNkCRW6-YK7h-bnRF_FLAjf0"; 
+                    try {
+                        const response = await fetch(
+                            `https://generativelanguage.googleapis.com/v1beta/models/imagen-4.0-generate-001:predict?key=${apiKey}`,
+                            {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({
+                                    instances: [{ prompt: "Diagrama técnico de física de un choque inelástico. Una furgoneta grande choca de frente con un coche pequeño. Antes del impacto: vectores de cantidad de movimiento p1 (derecha) y p2 (izquierda, muy grande). Después del impacto: un solo bloque con un vector p_final hacia la izquierda. Estilo educativo minimalista, fondo blanco" }],
+                                    parameters: { sampleCount: 1 }
+                                })
+                            }
+                        );
+                        if (!response.ok) throw new Error("Error en red");
+                        const data = await response.json();
+                        setImgUrl(`data:image/png;base64,${data.predictions[0].bytesBase64Encoded}`);
+                    } catch (error) {
+                        console.error(error);
+                    } finally {
+                        setImgLoading(false);
+                    }
+                };
+
+                return (
+                    <div className="min-h-screen bg-slate-900 text-slate-100 p-4 md:p-8">
+                        <header className="max-w-5xl mx-auto mb-8 border-b border-slate-700 pb-6">
+                            <div className="flex items-center gap-3 mb-2">
+                                <span className="bg-amber-600 text-white px-3 py-1 rounded-full text-xs font-black uppercase tracking-widest">Choques Frontales</span>
+                                <h1 className="text-3xl font-black text-amber-400 uppercase tracking-tight tracking-widest">Colisión Inelástica</h1>
+                            </div>
+                            <div className="bg-slate-800/50 p-4 rounded-xl border border-slate-700 mt-4">
+                                <p className="text-slate-300 text-sm leading-relaxed">
+                                    <strong>Enunciado:</strong> Una furgoneta de 1200 kg circula a 45 km/h y choca frontalmente con un utilitario de 950 kg. Tras el impacto, van UNIDOS a 15 m/s en el sentido que llevaba el utilitario. ¿A qué velocidad iba el utilitario antes del choque?
+                                </p>
+                            </div>
+                        </header>
+
+                        <main className="max-w-5xl mx-auto grid md:grid-cols-2 gap-8">
+                            {/* Panel Visual */}
+                            <div className="bg-slate-800 rounded-3xl border border-slate-700 h-[450px] relative overflow-hidden shadow-2xl flex flex-col justify-end pb-8">
+                                
+                                {/* HUD de Estados */}
+                                <div className="absolute top-4 w-full px-6 flex justify-between z-30 pointer-events-none">
+                                    <div className="bg-slate-900/90 p-3 rounded-lg border border-slate-700 backdrop-blur-md">
+                                        <p className="text-[10px] text-slate-500 uppercase font-black">Fase de la Colisión</p>
+                                        <p className={`text-sm font-black uppercase ${time > tImpact ? 'text-red-400' : 'text-amber-400'}`}>
+                                            {phase}
+                                        </p>
+                                    </div>
+                                    <div className="bg-slate-900/90 p-3 rounded-lg border border-slate-700 backdrop-blur-md text-right">
+                                        <p className="text-[10px] text-slate-500 uppercase font-black">Velocidad del Utilitario</p>
+                                        <p className="text-xl font-mono font-black text-blue-400">{Math.abs(vUtilitarioKmh).toFixed(1)} km/h</p>
+                                    </div>
+                                </div>
+
+                                {Math.abs(vUtilitarioKmh) > 120 && (
+                                    <div className="absolute top-24 left-1/2 -translate-x-1/2 z-40 bg-red-600/90 text-white px-4 py-2 rounded-xl text-xs font-black uppercase shadow-lg border border-red-400 flex items-center gap-2 animate-pulse">
+                                        <ShieldAlertIcon size={16} /> Exceso de Velocidad Brutal
+                                    </div>
+                                )}
+
+                                {/* Escenario */}
+                                <div className="relative w-full h-64 flex items-center justify-center">
+                                    
+                                    {/* Carretera */}
+                                    <div className="absolute top-1/2 w-full h-16 bg-slate-700 -translate-y-1/2 flex items-center">
+                                        <div className="w-full road-pattern"></div>
+                                    </div>
+
+                                    {/* Furgoneta (Izquierda) */}
+                                    <div 
+                                        className={`absolute flex flex-col items-center z-10 transition-transform ${time > tImpact ? 'opacity-80 scale-y-90 origin-right' : ''}`}
+                                        style={{ left: `calc(50% + ${posFurgoneta * scaleX}px - 40px)`, top: '50%', transform: 'translate(-50%, -50%)' }}
+                                    >
+                                        <div className="w-20 h-14 bg-amber-600 border-2 border-amber-400 rounded-md shadow-lg flex items-center justify-center">
+                                            {TruckIcon && <TruckIcon size={24} className="text-amber-950" />}
+                                        </div>
+                                        <span className="text-[9px] font-black text-amber-200 mt-1 bg-slate-900/80 px-1 rounded">{mFurgoneta} kg</span>
+
+                                        {/* Vector Momento Furgoneta (Antes del impacto) */}
+                                        {time <= tImpact && (
+                                            <div className="absolute bottom-full mb-1 flex items-center pl-1 w-24 left-1/2 -translate-x-1/2">
+                                                <div className="h-1 bg-amber-400 w-full relative">
+                                                    <div className="absolute right-0 -top-1.5">{ArrowRightIcon && <ArrowRightIcon size={16} className="text-amber-400" />}</div>
+                                                </div>
+                                                <span className="absolute -top-4 right-0 text-[8px] font-bold text-amber-300">p₁</span>
+                                            </div>
+                                        )}
+                                    </div>
+
+                                    {/* Utilitario (Derecha) */}
+                                    <div 
+                                        className={`absolute flex flex-col items-center z-20 transition-transform ${time > tImpact ? 'opacity-80 scale-y-90 origin-left' : ''}`}
+                                        style={{ left: `calc(50% + ${posUtilitario * scaleX}px + 30px)`, top: '50%', transform: 'translate(-50%, -50%)' }}
+                                    >
+                                        <div className="w-14 h-10 bg-blue-500 border-2 border-blue-300 rounded-md shadow-lg flex items-center justify-center">
+                                            {CarIcon && <CarIcon size={20} className="text-blue-950" />}
+                                        </div>
+                                        <span className="text-[9px] font-black text-blue-200 mt-1 bg-slate-900/80 px-1 rounded">{mUtilitario} kg</span>
+
+                                        {/* Vector Momento Utilitario (Antes del impacto) */}
+                                        {time <= tImpact && (
+                                            <div className="absolute bottom-full mb-1 flex items-center pr-1 flex-row-reverse" style={{ width: Math.abs(pUtilitario/pFurgoneta) * 24 + 'px', left: '50%', transform: 'translateX(-50%)' }}>
+                                                <div className="h-1 bg-blue-400 w-full relative">
+                                                    <div className="absolute left-0 -top-1.5">{ArrowLeftIcon && <ArrowLeftIcon size={16} className="text-blue-400" />}</div>
+                                                </div>
+                                                <span className="absolute -top-4 left-0 text-[8px] font-bold text-blue-300">p₂</span>
+                                            </div>
+                                        )}
+                                    </div>
+
+                                    {/* Vector Momento Final Conjunto */}
+                                    {time > tImpact && (
+                                        <div 
+                                            className="absolute flex items-center pr-1 flex-row-reverse z-30 pointer-events-none" 
+                                            style={{ 
+                                                left: `calc(50% + ${posFurgoneta * scaleX}px)`, 
+                                                top: 'calc(50% - 40px)', 
+                                                transform: 'translateX(-50%)',
+                                                width: '100px'
+                                            }}
+                                        >
+                                            <div className="h-1.5 bg-red-500 w-full relative shadow-[0_0_8px_rgba(239,68,68,0.8)]">
+                                                <div className="absolute left-0 -top-2">{ArrowLeftIcon && <ArrowLeftIcon size={20} className="text-red-500" />}</div>
+                                            </div>
+                                            <span className="absolute -top-5 left-4 text-[10px] font-black text-red-400 bg-slate-900/80 px-1 rounded">p_final</span>
+                                        </div>
+                                    )}
+
+                                </div>
+                            </div>
+
+                            {/* Controles y Resolución */}
+                            <div className="space-y-6">
+                                <div className="bg-slate-800 p-6 rounded-3xl border border-slate-700 shadow-xl">
+                                    <h3 className="text-xl font-bold mb-4 flex items-center gap-2 text-amber-400">
+                                        {CalculatorIcon && <CalculatorIcon size={20} />} Datos del Atentado
+                                    </h3>
+                                    
+                                    <div className="space-y-5 mb-6">
+                                        <div className="grid grid-cols-2 gap-4">
+                                            <div className="bg-amber-900/20 p-3 rounded-xl border border-amber-500/20">
+                                                <div className="flex justify-between text-[10px] mb-1"><span className="text-amber-400 font-bold uppercase">Masa Furgo (m₁)</span></div>
+                                                <input type="range" min="1000" max="2500" step="50" value={mFurgoneta} onChange={e => {setMFurgoneta(Number(e.target.value)); reset();}} className="w-full h-1.5 bg-slate-700 rounded-lg appearance-none cursor-pointer accent-amber-500 mb-1" />
+                                                <span className="font-mono text-white text-xs">{mFurgoneta} kg</span>
+                                            </div>
+                                            <div className="bg-blue-900/20 p-3 rounded-xl border border-blue-500/20">
+                                                <div className="flex justify-between text-[10px] mb-1"><span className="text-blue-400 font-bold uppercase">Masa Coche (m₂)</span></div>
+                                                <input type="range" min="500" max="1500" step="50" value={mUtilitario} onChange={e => {setMUtilitario(Number(e.target.value)); reset();}} className="w-full h-1.5 bg-slate-700 rounded-lg appearance-none cursor-pointer accent-blue-500 mb-1" />
+                                                <span className="font-mono text-white text-xs">{mUtilitario} kg</span>
+                                            </div>
+                                        </div>
+
+                                        <div className="pt-3 border-t border-slate-700">
+                                            <div className="flex justify-between text-xs mb-1">
+                                                <span className="text-amber-400 font-bold uppercase">Vel. Furgoneta (v₁)</span>
+                                                <span className="font-mono bg-slate-900 px-2 py-0.5 rounded text-amber-200">{vFurgonetaKmh} km/h ({(vFurgonetaKmh/3.6).toFixed(1)} m/s)</span>
+                                            </div>
+                                            <input type="range" min="20" max="100" step="5" value={vFurgonetaKmh} onChange={e => {setVFurgonetaKmh(Number(e.target.value)); reset();}} className="w-full h-2 bg-slate-700 rounded-lg appearance-none cursor-pointer accent-amber-500" />
+                                        </div>
+
+                                        <div>
+                                            <div className="flex justify-between text-xs mb-1">
+                                                <span className="text-red-400 font-bold uppercase">Velocidad Conjunta (v_f)</span>
+                                                <span className="font-mono bg-slate-900 px-2 py-0.5 rounded text-red-200">{vFinalMsAbs} m/s</span>
+                                            </div>
+                                            <input type="range" min="5" max="30" step="1" value={vFinalMsAbs} onChange={e => {setVFinalMsAbs(Number(e.target.value)); reset();}} className="w-full h-2 bg-slate-700 rounded-lg appearance-none cursor-pointer accent-red-500" />
+                                        </div>
+                                    </div>
+
+                                    <div className="flex gap-2">
+                                        <button 
+                                            onClick={handlePlay} 
+                                            disabled={time > 0}
+                                            className="flex-1 bg-amber-600 hover:bg-amber-500 text-white font-black py-3 rounded-xl shadow-lg flex justify-center items-center gap-2 disabled:opacity-50 transition-all active:scale-95"
+                                        >
+                                            {PlayIcon && <PlayIcon size={18} />} SIMULAR CHOQUE
+                                        </button>
+                                        <button onClick={reset} className="bg-slate-700 hover:bg-slate-600 text-white font-bold px-4 rounded-xl transition-all shadow-md">
+                                            {RotateCcwIcon && <RotateCcwIcon size={18} />}
+                                        </button>
+                                    </div>
+                                </div>
+
+                                <div className="bg-amber-950/20 p-6 rounded-3xl border border-amber-500/20">
+                                    <div className="flex justify-between items-center mb-4 border-b border-amber-500/30 pb-2">
+                                        <h4 className="font-bold text-amber-300 flex items-center gap-2">
+                                            {CalculatorIcon && <CalculatorIcon size={18} />} Resolución Paso a Paso
+                                        </h4>
+                                        <button onClick={generarDiagrama} className="text-[10px] uppercase font-bold bg-slate-800 hover:bg-slate-700 text-slate-300 px-3 py-1.5 rounded flex items-center gap-1 border border-slate-600">
+                                            {imgLoading ? <span className="animate-pulse">Cargando...</span> : <>{ImagePlusIcon && <ImagePlusIcon size={14}/>} Generar DCL</>}
+                                        </button>
+                                    </div>
+
+                                    {imgUrl && (
+                                        <div className="mb-4 bg-slate-900 p-2 rounded-xl border border-slate-700 text-center">
+                                            <img src={imgUrl} alt="Diagrama Choque Inelástico" className="mx-auto max-h-40 rounded-lg" />
+                                        </div>
+                                    )}
+
+                                    <div className="text-xs text-slate-300 space-y-3 leading-relaxed">
+                                        <p><strong>1. Sistema de Referencia (Los signos):</strong><br/>
+                                        La clave para no fallar. Supongamos Furgoneta va a la derecha (+) y Utilitario a la izquierda (-).</p>
+                                        <div className="bg-slate-900/80 p-2 rounded-lg border-l-4 border-slate-500 font-mono">
+                                            v₁ = {vFurgonetaKmh} km/h / 3.6 = <strong>{vFurgoneta.toFixed(2)} m/s</strong><br/>
+                                            v_f = <strong>-{vFinalMsAbs} m/s</strong> (Sentido del utilitario)
+                                        </div>
+                                        
+                                        <p className="mt-3"><strong>2. Conservación del Momento Lineal:</strong><br/>
+                                        El momento total del sistema se mantiene constante.</p>
+                                        <div className="bg-slate-900/80 p-2 rounded-lg border-l-4 border-amber-500 font-mono text-amber-200">
+                                            P_antes = P_despues<br/>
+                                            m₁·v₁ + m₂·v₂ = (m₁ + m₂)·v_f
+                                        </div>
+
+                                        <p className="mt-3"><strong>3. Sustituir y Despejar v₂:</strong></p>
+                                        <div className="bg-slate-900/80 p-3 rounded-lg border-l-4 border-blue-500 font-mono text-blue-200 shadow-inner">
+                                            ({mFurgoneta} · {vFurgoneta.toFixed(2)}) + ({mUtilitario} · v₂) = ({masaTotal}) · (-{vFinalMsAbs})<br/>
+                                            {pFurgoneta.toFixed(1)} + {mUtilitario}·v₂ = {pFinal.toFixed(1)}<br/>
+                                            {mUtilitario}·v₂ = {pFinal.toFixed(1)} - {pFurgoneta.toFixed(1)}<br/>
+                                            {mUtilitario}·v₂ = {(pFinal - pFurgoneta).toFixed(1)}<br/>
+                                            v₂ = {(pFinal - pFurgoneta).toFixed(1)} / {mUtilitario}<br/>
+                                            <strong>v₂ = {vUtilitario.toFixed(2)} m/s</strong>
+                                        </div>
+                                        <p className="text-[10px] text-slate-400 mt-2 italic text-center">
+                                            (En km/h: {vUtilitario.toFixed(2)} · 3.6 = <strong>{vUtilitarioKmh.toFixed(1)} km/h</strong>. Un choque brutal.)
+                                        </p>
+                                    </div>
+                                </div>
+                            </div>
+                        </main>
+
+                        <footer className="max-w-5xl mx-auto mt-12 pt-6 border-t border-slate-800 text-center text-slate-500 text-[10px] font-bold uppercase tracking-widest">
+                            Profe Física | Dinámica: Choques Inelásticos e Importancia de los Signos Vectoriales
+                        </footer>
+                    </div>
+                );
+            };
+
+            const container = document.getElementById('root');
+            const root = ReactDOM.createRoot(container);
+            root.render(<App />);
+        })();
+    </script>
+</body>
+</html>

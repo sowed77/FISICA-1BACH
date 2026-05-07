@@ -1,0 +1,336 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Laboratorio: Choque Inelástico y Balística</title>
+    <!-- Bibliotecas externas -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <script src="https://unpkg.com/lucide-react@latest"></script>
+
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&family=Fira+Code&display=swap');
+        body { font-family: 'Inter', sans-serif; background-color: #0f172a; }
+        .font-mono { font-family: 'Fira Code', monospace; }
+        input[type=range]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            height: 20px;
+            width: 20px;
+            border-radius: 50%;
+            background: #ef4444; /* Red 500 */
+            cursor: pointer;
+            border: 2px solid #ffffff;
+            box-shadow: 0 0 10px rgba(239, 68, 68, 0.5);
+        }
+        .target-pattern {
+            background-image: repeating-linear-gradient(90deg, #334155 0px, #334155 20px, transparent 20px, transparent 40px);
+            background-size: 40px 10px;
+            background-position: bottom;
+            background-repeat: repeat-x;
+        }
+    </style>
+</head>
+<body>
+    <div id="root"></div>
+
+    <script type="text/babel">
+        (() => {
+            var { useState, useEffect } = React;
+            var icons = window.LucideReact || {};
+            
+            // Asignación segura de iconos
+            var getIcon = (name) => icons[name] || (({className}) => <span className={className || ''}></span>);
+            var PlayIcon = getIcon('Play');
+            var RotateCcwIcon = getIcon('RotateCcw');
+            var CalculatorIcon = getIcon('Calculator');
+            var ImagePlusIcon = getIcon('ImagePlus');
+            var TargetIcon = getIcon('Target');
+            var InfoIcon = getIcon('Info');
+            var ArrowRightIcon = getIcon('ArrowRight');
+
+            var App = () => {
+                // Parámetros interactivos del problema
+                const [mBalaGramos, setMBalaGramos] = useState(17); // g
+                const [mBlancoKg, setMBlancoKg] = useState(1.5); // kg (1500 g)
+                const [vFinal, setVFinal] = useState(0.64); // m/s
+
+                // Cálculos Físicos
+                const mBala = mBalaGramos / 1000; // kg
+                const masaTotal = mBala + mBlancoKg; // kg
+                
+                // Conservación del Momento Lineal: P_antes = P_despues
+                // m_bala * v_bala + m_blanco * 0 = (m_bala + m_blanco) * v_final
+                const pFinal = masaTotal * vFinal;
+                const vBala = pFinal / mBala;
+
+                // Animación
+                const [time, setTime] = useState(0); // Tiempo visual
+                const [isMoving, setIsMoving] = useState(false);
+
+                // Configuración visual
+                const tImpact = 0.5; // El impacto ocurre a los 0.5s visuales
+                const scaleX = 80; // píxeles por unidad de movimiento lento
+
+                // Posiciones visuales
+                let posBala = 0;
+                let posBlanco = 0;
+                let phase = 'Preparado';
+
+                if (time === 0) {
+                    posBala = -300;
+                    posBlanco = 0;
+                    phase = 'En reposo';
+                } else if (time > 0 && time <= tImpact) {
+                    // La bala viaja muy rápido hacia el bloque
+                    const progress = time / tImpact;
+                    posBala = -300 + (300 * progress);
+                    posBlanco = 0;
+                    phase = 'Disparo (P_antes)';
+                } else {
+                    // Ambos se mueven juntos más lentamente
+                    const postImpactTime = time - tImpact;
+                    posBlanco = postImpactTime * vFinal * scaleX;
+                    posBala = posBlanco; // Incrustada
+                    phase = 'Incrustados (P_después)';
+                }
+
+                useEffect(() => {
+                    let interval;
+                    if (isMoving && time < 2.5) { // Simulación de 2.5s visuales
+                        interval = setInterval(() => {
+                            setTime(prev => prev + 0.02);
+                        }, 20); // 50 fps
+                    } else if (time >= 2.5) {
+                        setIsMoving(false);
+                    }
+                    return () => clearInterval(interval);
+                }, [isMoving, time]);
+
+                const handlePlay = () => {
+                    setTime(0);
+                    setIsMoving(true);
+                };
+
+                const reset = () => {
+                    setTime(0);
+                    setIsMoving(false);
+                };
+
+                // DCL con IA
+                const [imgUrl, setImgUrl] = useState(null);
+                const [imgLoading, setImgLoading] = useState(false);
+
+                const generarDiagrama = async () => {
+                    setImgLoading(true);
+                    const apiKey = "AIzaSyDMyUo-WgmdNkCRW6-YK7h-bnRF_FLAjf0"; 
+                    try {
+                        const response = await fetch(
+                            `https://generativelanguage.googleapis.com/v1beta/models/imagen-4.0-generate-001:predict?key=${apiKey}`,
+                            {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({
+                                    instances: [{ prompt: "Diagrama técnico de física de un choque inelástico. Una bala incrustada dentro de un bloque de madera rectangular. Un gran vector de momento p hacia la derecha representando el movimiento conjunto del bloque y la bala. Estilo educativo minimalista, fondo blanco" }],
+                                    parameters: { sampleCount: 1 }
+                                })
+                            }
+                        );
+                        if (!response.ok) throw new Error("Error en red");
+                        const data = await response.json();
+                        setImgUrl(`data:image/png;base64,${data.predictions[0].bytesBase64Encoded}`);
+                    } catch (error) {
+                        console.error(error);
+                    } finally {
+                        setImgLoading(false);
+                    }
+                };
+
+                return (
+                    <div className="min-h-screen bg-slate-900 text-slate-100 p-4 md:p-8">
+                        <header className="max-w-5xl mx-auto mb-8 border-b border-slate-700 pb-6">
+                            <div className="flex items-center gap-3 mb-2">
+                                <span className="bg-red-600 text-white px-3 py-1 rounded-full text-xs font-black uppercase tracking-widest">Colisiones Inelásticas</span>
+                                <h1 className="text-3xl font-black text-red-400 uppercase tracking-tight tracking-widest">Prueba Balística</h1>
+                            </div>
+                            <div className="bg-slate-800/50 p-4 rounded-xl border border-slate-700 mt-4">
+                                <p className="text-slate-300 text-sm leading-relaxed">
+                                    <strong>Enunciado:</strong> Una bala de 17 g se incrusta en un blanco de 1500 g y se mueven juntos a 0,64 m/s. Calcula la velocidad inicial de la bala.
+                                </p>
+                            </div>
+                        </header>
+
+                        <main className="max-w-5xl mx-auto grid md:grid-cols-2 gap-8">
+                            {/* Panel Visual */}
+                            <div className="bg-slate-800 rounded-3xl border border-slate-700 h-[450px] relative overflow-hidden shadow-2xl flex flex-col justify-end pb-8">
+                                
+                                {/* HUD de Estados */}
+                                <div className="absolute top-4 w-full px-6 flex justify-between z-30 pointer-events-none">
+                                    <div className="bg-slate-900/90 p-3 rounded-lg border border-slate-700 backdrop-blur-md">
+                                        <p className="text-[10px] text-slate-500 uppercase font-black">Fase</p>
+                                        <p className={`text-sm font-black uppercase ${time > tImpact ? 'text-indigo-400' : 'text-red-400'}`}>
+                                            {phase}
+                                        </p>
+                                    </div>
+                                    <div className="bg-slate-900/90 p-3 rounded-lg border border-slate-700 backdrop-blur-md text-right">
+                                        <p className="text-[10px] text-slate-500 uppercase font-black">Momento del Sistema (P)</p>
+                                        <p className="text-xl font-mono font-black text-emerald-400">{pFinal.toFixed(3)} kg·m/s</p>
+                                    </div>
+                                </div>
+
+                                {/* Escenario */}
+                                <div className="relative w-full h-64 flex items-center justify-center">
+                                    
+                                    {/* Rail inferior */}
+                                    <div className="absolute bottom-0 w-full h-4 target-pattern border-t-2 border-slate-600"></div>
+
+                                    {/* El Blanco de Madera */}
+                                    <div 
+                                        className="absolute w-24 h-24 bg-amber-700 border-4 border-amber-900 rounded-md shadow-lg flex items-center justify-center z-10 transition-transform"
+                                        style={{ left: `calc(50% + ${posBlanco}px)`, transform: 'translate(-50%, -50%)', top: '50%' }}
+                                    >
+                                        <span className="font-black text-amber-200 opacity-60 flex flex-col items-center">
+                                            <TargetIcon size={32} />
+                                            {mBlancoKg} kg
+                                        </span>
+
+                                        {/* Vector Velocidad Conjunta (Visible tras impacto) */}
+                                        {time > tImpact && (
+                                            <div className="absolute top-0 right-[-40px] flex flex-col items-center">
+                                                <span className="text-[10px] font-black text-indigo-300">v_f = {vFinal} m/s</span>
+                                                <div className="w-12 h-1 bg-indigo-400 relative mt-1">
+                                                    <div className="absolute right-0 -top-1">{ArrowRightIcon && <ArrowRightIcon size={12} className="text-indigo-400" />}</div>
+                                                </div>
+                                            </div>
+                                        )}
+                                    </div>
+
+                                    {/* La Bala */}
+                                    <div 
+                                        className="absolute w-6 h-3 bg-slate-300 rounded-l-full rounded-r-sm shadow-[0_0_8px_rgba(255,255,255,0.5)] z-20 flex items-center"
+                                        style={{ 
+                                            left: `calc(50% + ${posBala - (time > tImpact ? 10 : 0)}px)`, // Offset al incrustarse
+                                            transform: 'translate(-50%, -50%)', 
+                                            top: '50%',
+                                            opacity: time === 0 ? 0 : 1 // Oculta hasta darle a play para efecto sorpresa
+                                        }}
+                                    >
+                                        {/* Efecto de velocidad de la bala */}
+                                        {time > 0 && time <= tImpact && (
+                                            <div className="absolute right-full w-32 h-0.5 bg-gradient-to-r from-transparent to-red-400 mr-1 opacity-50"></div>
+                                        )}
+                                    </div>
+
+                                </div>
+                            </div>
+
+                            {/* Controles y Resolución */}
+                            <div className="space-y-6">
+                                <div className="bg-slate-800 p-6 rounded-3xl border border-slate-700 shadow-xl">
+                                    <h3 className="text-xl font-bold mb-4 flex items-center gap-2 text-red-400">
+                                        {CalculatorIcon && <CalculatorIcon size={20} />} Variables del Choque
+                                    </h3>
+                                    
+                                    <div className="space-y-5 mb-6">
+                                        <div>
+                                            <div className="flex justify-between text-xs mb-1">
+                                                <span className="text-slate-300 font-bold uppercase">Masa Bala (m₁)</span>
+                                                <span className="font-mono bg-slate-900 px-2 py-0.5 rounded text-white">{mBalaGramos} g</span>
+                                            </div>
+                                            <input type="range" min="5" max="50" step="1" value={mBalaGramos} onChange={e => {setMBalaGramos(Number(e.target.value)); reset();}} className="w-full h-2 bg-slate-700 rounded-lg appearance-none cursor-pointer accent-slate-400" />
+                                        </div>
+                                        
+                                        <div>
+                                            <div className="flex justify-between text-xs mb-1">
+                                                <span className="text-amber-400 font-bold uppercase">Masa Blanco (m₂)</span>
+                                                <span className="font-mono bg-slate-900 px-2 py-0.5 rounded text-amber-200">{mBlancoKg.toFixed(1)} kg</span>
+                                            </div>
+                                            <input type="range" min="0.5" max="5.0" step="0.1" value={mBlancoKg} onChange={e => {setMBlancoKg(Number(e.target.value)); reset();}} className="w-full h-2 bg-slate-700 rounded-lg appearance-none cursor-pointer accent-amber-500" />
+                                        </div>
+
+                                        <div className="pt-3 border-t border-slate-700">
+                                            <div className="flex justify-between text-xs mb-1">
+                                                <span className="text-indigo-400 font-bold uppercase">Velocidad Conjunta (v_f)</span>
+                                                <span className="font-mono bg-slate-900 px-2 py-0.5 rounded text-indigo-200">{vFinal.toFixed(2)} m/s</span>
+                                            </div>
+                                            <input type="range" min="0.1" max="3.0" step="0.05" value={vFinal} onChange={e => {setVFinal(Number(e.target.value)); reset();}} className="w-full h-2 bg-slate-700 rounded-lg appearance-none cursor-pointer accent-indigo-500" />
+                                        </div>
+                                    </div>
+
+                                    <div className="flex gap-2">
+                                        <button 
+                                            onClick={handlePlay} 
+                                            disabled={isMoving || time > 0}
+                                            className="flex-1 bg-red-600 hover:bg-red-500 text-white font-black py-4 rounded-xl shadow-lg flex justify-center items-center gap-2 disabled:opacity-50 transition-all active:scale-95"
+                                        >
+                                            {PlayIcon && <PlayIcon size={18} />} DISPARAR BALA
+                                        </button>
+                                        <button onClick={reset} className="bg-slate-700 hover:bg-slate-600 text-white font-bold px-5 rounded-xl transition-all shadow-md">
+                                            {RotateCcwIcon && <RotateCcwIcon size={18} />}
+                                        </button>
+                                    </div>
+                                </div>
+
+                                <div className="bg-red-950/20 p-6 rounded-3xl border border-red-500/20">
+                                    <div className="flex justify-between items-center mb-4 border-b border-red-500/30 pb-2">
+                                        <h4 className="font-bold text-red-300 flex items-center gap-2">
+                                            {InfoIcon && <InfoIcon size={18} />} Resolución Paso a Paso
+                                        </h4>
+                                        <button onClick={generarDiagrama} className="text-[10px] uppercase font-bold bg-slate-800 hover:bg-slate-700 text-slate-300 px-3 py-1.5 rounded flex items-center gap-1 border border-slate-600">
+                                            {imgLoading ? <span className="animate-pulse">Cargando...</span> : <>{ImagePlusIcon && <ImagePlusIcon size={14}/>} Generar DCL</>}
+                                        </button>
+                                    </div>
+
+                                    {imgUrl && (
+                                        <div className="mb-4 bg-slate-900 p-2 rounded-xl border border-slate-700 text-center">
+                                            <img src={imgUrl} alt="Diagrama Técnico Choque" className="mx-auto max-h-40 rounded-lg" />
+                                        </div>
+                                    )}
+
+                                    <div className="text-xs text-slate-300 space-y-3 leading-relaxed">
+                                        <p><strong>1. Unidades al S.I. (La trampa):</strong><br/>
+                                        ¡Cuidado! La masa de la bala viene en gramos. Debes pasarla a kilogramos.</p>
+                                        <div className="bg-slate-900/80 p-2 rounded-lg border-l-4 border-slate-500 font-mono">
+                                            m₁ = {mBalaGramos} g = <strong>{mBala.toFixed(3)} kg</strong>
+                                        </div>
+                                        
+                                        <p className="mt-3"><strong>2. Principio de Conservación del Momento:</strong><br/>
+                                        Como el blanco estaba quieto (v₂ = 0), el momento inicial lo lleva todo la bala. Tras incrustarse, las dos masas se suman y se mueven juntas a v<sub>f</sub>.</p>
+                                        <div className="bg-slate-900/80 p-3 rounded-lg border-l-4 border-red-500 font-mono text-red-200">
+                                            p<sub>antes</sub> = p<sub>después</sub><br/>
+                                            m₁ · v₁ + m₂ · 0 = (m₁ + m₂) · v<sub>f</sub>
+                                        </div>
+
+                                        <p className="mt-3"><strong>3. Sustitución y Cálculo:</strong></p>
+                                        <div className="bg-slate-900/80 p-3 rounded-lg border-l-4 border-emerald-500 font-mono text-emerald-200 shadow-inner">
+                                            {mBala.toFixed(3)} · v₁ = ({mBala.toFixed(3)} + {mBlancoKg.toFixed(1)}) · {vFinal}<br/>
+                                            {mBala.toFixed(3)} · v₁ = {(masaTotal).toFixed(3)} · {vFinal}<br/>
+                                            {mBala.toFixed(3)} · v₁ = {pFinal.toFixed(4)}<br/>
+                                            v₁ = {pFinal.toFixed(4)} / {mBala.toFixed(3)}<br/>
+                                            <strong>v₁ = {vBala.toFixed(2)} m/s</strong>
+                                        </div>
+                                        <p className="text-[10px] text-slate-400 mt-2 italic text-center">
+                                            ({(vBala * 3.6).toFixed(0)} km/h de velocidad de impacto)
+                                        </p>
+                                    </div>
+                                </div>
+                            </div>
+                        </main>
+
+                        <footer className="max-w-5xl mx-auto mt-12 pt-6 border-t border-slate-800 text-center text-slate-500 text-[10px] font-bold uppercase tracking-widest">
+                            Profe Física | Dinámica: Choques Perfectamente Inelásticos
+                        </footer>
+                    </div>
+                );
+            };
+
+            const container = document.getElementById('root');
+            const root = ReactDOM.createRoot(container);
+            root.render(<App />);
+        })();
+    </script>
+</body>
+</html>

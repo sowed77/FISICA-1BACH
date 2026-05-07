@@ -1,0 +1,424 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Laboratorio: El Cohete y el Hilo</title>
+    <!-- Bibliotecas externas -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <script src="https://unpkg.com/lucide-react@latest"></script>
+
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&family=Fira+Code&display=swap');
+        body { font-family: 'Inter', sans-serif; background-color: #0f172a; }
+        .font-mono { font-family: 'Fira Code', monospace; }
+        input[type=range]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            height: 24px;
+            width: 24px;
+            border-radius: 50%;
+            background: #8b5cf6; /* Violet 500 */
+            cursor: pointer;
+            border: 3px solid #ffffff;
+            box-shadow: 0 0 10px rgba(139, 92, 246, 0.5);
+        }
+        .sky-pattern {
+            background-image: linear-gradient(to top, #38bdf8, #1e3a8a 50%, #020617 100%);
+        }
+        .stars {
+            background-image: radial-gradient(white, rgba(255,255,255,.2) 1px, transparent 2px);
+            background-size: 50px 50px;
+            opacity: 0.5;
+        }
+        /* Fuego del cohete */
+        .flame {
+            background: linear-gradient(to bottom, #fde047 0%, #ea580c 50%, transparent 100%);
+            border-radius: 50% 50% 20% 20% / 100% 100% 0% 0%;
+            transform-origin: top center;
+            animation: flicker 0.1s infinite alternate;
+        }
+        @keyframes flicker {
+            0% { transform: scaleY(1) scaleX(1); opacity: 0.9; }
+            100% { transform: scaleY(1.2) scaleX(0.9); opacity: 1; }
+        }
+    </style>
+</head>
+<body>
+    <div id="root"></div>
+
+    <script type="text/babel">
+        (() => {
+            var { useState, useEffect } = React;
+            var icons = window.LucideReact || {};
+            
+            // Asignación segura de iconos
+            var PlayIcon = icons.Play || (({className}) => <span className={className}></span>);
+            var RotateCcwIcon = icons.RotateCcw || (({className}) => <span className={className}></span>);
+            var InfoIcon = icons.Info || (({className}) => <span className={className}></span>);
+            var CalculatorIcon = icons.Calculator || (({className}) => <span className={className}></span>);
+            var RocketIcon = icons.Rocket || (({className}) => <span className={className}></span>);
+            var ShieldAlertIcon = icons.ShieldAlert || (({className}) => <span className={className}></span>);
+            var ArrowUpIcon = icons.ArrowUp || (({className}) => <span className={className}></span>);
+            var ArrowDownIcon = icons.ArrowDown || (({className}) => <span className={className}></span>);
+            var SettingsIcon = icons.Settings || (({className}) => <span className={className}></span>);
+            var ImagePlusIcon = icons.ImagePlus || (({className}) => <span className={className}></span>);
+            var BoxIcon = icons.Box || (({className}) => <span className={className}></span>);
+
+            var App = () => {
+                const g = 9.8; // m/s^2
+
+                // Estados interactivos (Inicializados con el enunciado)
+                const [masaGramos, setMasaGramos] = useState(200); // g
+                const [tMax, setTMax] = useState(6.4); // N
+                const [aceleracion, setAceleracion] = useState(0); // m/s^2
+
+                // Estados de animación
+                const [altitude, setAltitude] = useState(0);
+                const [isLaunching, setIsLaunching] = useState(false);
+                const [isBroken, setIsBroken] = useState(false);
+                const [payloadY, setPayloadY] = useState(0); // Caída relativa de la carga si se rompe
+
+                // Cálculos Físicos
+                const masaKg = masaGramos / 1000;
+                const peso = masaKg * g; // P = m * g (1.96 N para 200g)
+                
+                // 2ª Ley de Newton: T - P = m * a  =>  T = P + m * a  =>  T = m(g + a)
+                const tensionActual = masaKg * (g + aceleracion);
+                
+                // ¿Se romperá el hilo?
+                const willBreak = tensionActual > tMax;
+                
+                // Aceleración máxima permitida: a_max = (T_max - m*g) / m
+                const aMax = (tMax - peso) / masaKg;
+
+                useEffect(() => {
+                    let interval;
+                    if (isLaunching) {
+                        interval = setInterval(() => {
+                            if (willBreak) {
+                                setIsBroken(true);
+                            }
+                            
+                            setAltitude(prev => {
+                                const newAlt = prev + (aceleracion * 0.5) + 2; // Simulación de subida
+                                if (newAlt > 400) {
+                                    setIsLaunching(false);
+                                    return 400;
+                                }
+                                return newAlt;
+                            });
+
+                            if (isBroken || willBreak) {
+                                setPayloadY(prev => prev + 5); // La carga cae dentro de la bodega
+                            }
+
+                        }, 50);
+                    }
+                    return () => clearInterval(interval);
+                }, [isLaunching, aceleracion, willBreak, isBroken]);
+
+                const handleLaunch = () => {
+                    if (altitude < 400) {
+                        setIsLaunching(true);
+                    }
+                };
+
+                const reset = () => {
+                    setAltitude(0);
+                    setIsLaunching(false);
+                    setIsBroken(false);
+                    setPayloadY(0);
+                };
+
+                // Si cambiamos variables estáticas, reseteamos la simulación
+                useEffect(() => {
+                    reset();
+                }, [masaGramos, tMax, aceleracion]);
+
+                // Generador de Diagrama de Cuerpo Libre por IA
+                const [imgUrl, setImgUrl] = useState(null);
+                const [imgLoading, setImgLoading] = useState(false);
+
+                const generarDiagrama = async () => {
+                    setImgLoading(true);
+                    const apiKey = "AIzaSyDMyUo-WgmdNkCRW6-YK7h-bnRF_FLAjf0"; 
+                    try {
+                        const response = await fetch(
+                            `https://generativelanguage.googleapis.com/v1beta/models/imagen-4.0-generate-001:predict?key=${apiKey}`,
+                            {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({
+                                    instances: [{ prompt: "Diagrama técnico de física de un dispositivo colgado por un hilo dentro de un cohete que sube. Vector Tensión T apuntando hacia arriba, Vector Peso P hacia abajo. T es mucho más largo que P. Vector Aceleración 'a' hacia arriba fuera de la caja. Estilo minimalista, fondo blanco, educativo" }],
+                                    parameters: { sampleCount: 1 }
+                                })
+                            }
+                        );
+                        if (!response.ok) throw new Error("Error en la red");
+                        const data = await response.json();
+                        setImgUrl(`data:image/png;base64,${data.predictions[0].bytesBase64Encoded}`);
+                    } catch (error) {
+                        console.error(error);
+                    } finally {
+                        setImgLoading(false);
+                    }
+                };
+
+                return (
+                    <div className="min-h-screen bg-slate-900 text-slate-100 p-4 md:p-8">
+                        <header className="max-w-5xl mx-auto mb-8 border-b border-slate-700 pb-6">
+                            <div className="flex items-center gap-3 mb-2">
+                                <span className="bg-violet-600 text-white px-3 py-1 rounded-full text-xs font-black uppercase tracking-widest">Sistemas Acelerados Verticales</span>
+                                <h1 className="text-3xl font-black text-violet-400 uppercase tracking-tight tracking-widest">El Cohete Meteorológico</h1>
+                            </div>
+                            <div className="bg-slate-800/50 p-4 rounded-xl border border-slate-700 mt-4">
+                                <p className="text-slate-300 text-sm leading-relaxed">
+                                    <strong>Enunciado:</strong> Un cohete meteorológico lleva un dispositivo de 200 g colgado de un hilo con resistencia 6,4 N. Calcula la máxima aceleración de despegue sin romper el hilo.
+                                </p>
+                            </div>
+                        </header>
+
+                        <main className="max-w-5xl mx-auto grid md:grid-cols-2 gap-8">
+                            {/* Panel Visual (Cohete) */}
+                            <div className="bg-slate-800 rounded-3xl border border-slate-700 h-[550px] relative overflow-hidden shadow-2xl flex flex-col justify-end pt-12 sky-pattern">
+                                <div className="absolute inset-0 stars"></div>
+                                
+                                {/* HUD Superior */}
+                                <div className="absolute top-4 w-full px-6 flex justify-between z-30 pointer-events-none">
+                                    <div className={`bg-slate-900/90 p-3 rounded-lg border backdrop-blur-md ${isBroken ? 'border-red-500' : 'border-slate-700'}`}>
+                                        <p className="text-[10px] text-slate-500 uppercase font-black">Tensión Soportada (T)</p>
+                                        <p className={`text-xl font-mono font-black ${isBroken ? 'text-red-500' : 'text-violet-400'}`}>
+                                            {tensionActual.toFixed(2)} N
+                                        </p>
+                                    </div>
+                                    <div className="bg-slate-900/90 p-3 rounded-lg border border-slate-700 backdrop-blur-md text-right border-b-4 border-b-emerald-500">
+                                        <p className="text-[10px] text-slate-500 uppercase font-black">Límite Rotura (T_max)</p>
+                                        <p className="text-2xl font-mono font-black text-white">{tMax.toFixed(1)} N</p>
+                                    </div>
+                                </div>
+
+                                {/* Mensaje de Fallo Crítico */}
+                                {isBroken && (
+                                    <div className="absolute top-24 left-1/2 -translate-x-1/2 z-40 bg-red-600/90 text-white px-6 py-4 rounded-xl border border-red-400 shadow-[0_0_30px_rgba(220,38,38,0.8)] text-center animate-pulse flex flex-col items-center">
+                                        <ShieldAlertIcon size={32} className="mb-2" />
+                                        <span className="font-black uppercase tracking-widest text-sm">Carga Perdida</span>
+                                        <span className="text-[10px] mt-1">El exceso de fuerzas G rompió la sujeción.</span>
+                                    </div>
+                                )}
+
+                                {/* Escena del Cohete */}
+                                <div className="relative w-full h-[400px] flex justify-center items-end pb-8">
+                                    
+                                    {/* Suelo Base (Desaparece al despegar) */}
+                                    <div className="absolute bottom-0 w-full h-12 bg-slate-800 border-t-4 border-slate-600 z-10 transition-transform duration-500" style={{ transform: `translateY(${altitude > 0 ? 100 : 0}px)` }}>
+                                        <div className="w-32 h-2 bg-slate-500 mx-auto mt-2 rounded"></div>
+                                    </div>
+
+                                    {/* El Cohete */}
+                                    <div 
+                                        className="relative z-20 flex flex-col items-center transition-transform"
+                                        style={{ transform: `translateY(${-altitude}px)` }}
+                                    >
+                                        {/* Cofia del Cohete */}
+                                        <div className="w-16 h-20 bg-slate-200 rounded-t-full border-4 border-slate-400 border-b-0 relative z-10"></div>
+                                        
+                                        {/* Fuselaje Central (Bodega de carga) */}
+                                        <div className="w-24 h-48 bg-slate-300 border-4 border-slate-400 relative z-10 shadow-lg flex flex-col items-center justify-start pt-2">
+                                            
+                                            <span className="text-[8px] font-black text-slate-500 uppercase tracking-widest absolute -left-6 top-1/2 -translate-y-1/2 rotate-[-90deg]">Payload</span>
+
+                                            {/* Cámara de Carga (Zoomed in context) */}
+                                            <div className="w-16 h-32 bg-slate-800 rounded-md border-2 border-slate-600 relative overflow-hidden flex flex-col items-center">
+                                                
+                                                {/* Hilo Tensor */}
+                                                {!isBroken && (
+                                                    <div className="w-0.5 bg-slate-400 h-10 origin-top shadow-[0_0_5px_rgba(255,255,255,0.5)]" style={{ height: `40px` }}></div>
+                                                )}
+                                                {/* Hilo Roto */}
+                                                {isBroken && (
+                                                    <div className="w-0.5 bg-red-400 h-4 origin-top rotate-12"></div>
+                                                )}
+
+                                                {/* El Dispositivo (Carga) */}
+                                                <div 
+                                                    className={`w-8 h-8 bg-blue-500 border-2 border-blue-300 rounded flex items-center justify-center shadow-lg absolute transition-all ${isBroken ? 'duration-500 ease-in' : ''}`}
+                                                    style={{ top: `${isBroken ? Math.min(100, 40 + payloadY) : 40}px` }}
+                                                >
+                                                    {BoxIcon && <BoxIcon size={16} className="text-white opacity-80" />}
+
+                                                    {/* Vectores DCL en la Carga (Solo mientras está sujeto) */}
+                                                    {!isBroken && (
+                                                        <>
+                                                            {/* Vector Tensión (Arriba) */}
+                                                            <div className="absolute bottom-full flex flex-col items-center pb-1 pointer-events-none" style={{ height: Math.min(60, tensionActual * 6) }}>
+                                                                <span className="mb-1 text-[8px] font-black text-indigo-300 bg-slate-900/80 px-1 rounded shadow whitespace-nowrap">T={tensionActual.toFixed(1)}</span>
+                                                                <div className="w-1 bg-indigo-400 h-full relative">
+                                                                    <div className="absolute top-0 -translate-x-1.5">{ArrowUpIcon && <ArrowUpIcon size={16} className="text-indigo-400" />}</div>
+                                                                </div>
+                                                            </div>
+                                                            
+                                                            {/* Vector Peso (Abajo) */}
+                                                            <div className="absolute top-full flex flex-col items-center pt-1 pointer-events-none" style={{ height: peso * 6 }}>
+                                                                <div className="w-1 bg-orange-400 h-full relative">
+                                                                    <div className="absolute bottom-0 -translate-x-1.5">{ArrowDownIcon && <ArrowDownIcon size={16} className="text-orange-400" />}</div>
+                                                                </div>
+                                                                <span className="mt-1 text-[8px] font-black text-orange-300 bg-slate-900/80 px-1 rounded shadow">P={peso.toFixed(1)}</span>
+                                                            </div>
+                                                        </>
+                                                    )}
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        {/* Aletas y Motor */}
+                                        <div className="relative w-32 h-10 flex justify-between z-0 -mt-2">
+                                            <div className="w-10 h-12 bg-red-600 rounded-tl-full rounded-br-md"></div>
+                                            <div className="w-12 h-6 bg-slate-600 rounded-b-xl self-start mt-2 z-10 border-b-4 border-slate-800 flex justify-center">
+                                                {/* Fuego del motor */}
+                                                {(isLaunching || altitude > 0) && (
+                                                    <div className="w-8 h-20 flame absolute top-full"></div>
+                                                )}
+                                            </div>
+                                            <div className="w-10 h-12 bg-red-600 rounded-tr-full rounded-bl-md"></div>
+                                        </div>
+
+                                        {/* Etiqueta de Aceleración (Exterior) */}
+                                        {(isLaunching || altitude > 0) && (
+                                            <div className="absolute left-[calc(100%+20px)] top-1/2 -translate-y-1/2 flex items-center bg-slate-900/80 px-2 py-1 rounded border border-slate-700">
+                                                {ArrowUpIcon && <ArrowUpIcon size={16} className="text-emerald-400" />}
+                                                <span className="text-xs font-mono font-bold text-emerald-300 ml-1">a = {aceleracion.toFixed(1)}</span>
+                                            </div>
+                                        )}
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* Controles y Resolución */}
+                            <div className="space-y-6">
+                                <div className="bg-slate-800 p-6 rounded-3xl border border-slate-700 shadow-xl">
+                                    <h3 className="text-xl font-bold mb-4 flex items-center gap-2 text-violet-400">
+                                        {SettingsIcon && <SettingsIcon size={20} />} Parámetros de Misión
+                                    </h3>
+                                    
+                                    <div className="space-y-5 mb-6">
+                                        <div>
+                                            <div className="flex justify-between text-xs mb-1">
+                                                <span className="text-slate-300 font-bold uppercase">Masa del Dispositivo (m)</span>
+                                                <span className="font-mono bg-slate-900 px-2 py-0.5 rounded text-white">{masaGramos} g</span>
+                                            </div>
+                                            <input 
+                                                type="range" min="50" max="500" step="10" value={masaGramos} 
+                                                onChange={e => {setMasaGramos(Number(e.target.value)); reset();}} 
+                                                className="w-full h-2 bg-slate-700 rounded-lg appearance-none cursor-pointer accent-slate-400" 
+                                            />
+                                        </div>
+
+                                        <div>
+                                            <div className="flex justify-between text-xs mb-1">
+                                                <span className="text-red-400 font-bold uppercase">Resistencia Hilo (T_max)</span>
+                                                <span className="font-mono bg-slate-900 px-2 py-0.5 rounded text-red-300">{tMax.toFixed(1)} N</span>
+                                            </div>
+                                            <input 
+                                                type="range" min="2" max="15" step="0.2" value={tMax} 
+                                                onChange={e => {setTMax(Number(e.target.value)); reset();}} 
+                                                className="w-full h-2 bg-slate-700 rounded-lg appearance-none cursor-pointer accent-red-500" 
+                                            />
+                                        </div>
+
+                                        <div className="pt-3 border-t border-slate-700">
+                                            <div className="flex justify-between text-xs mb-1">
+                                                <span className="text-emerald-400 font-bold uppercase">Aceleración Despegue (a)</span>
+                                                <span className="font-mono bg-slate-900 px-2 py-0.5 rounded text-emerald-300">{aceleracion.toFixed(1)} m/s²</span>
+                                            </div>
+                                            <input 
+                                                type="range" min="0" max="40" step="0.2" value={aceleracion} 
+                                                onChange={e => {setAceleracion(Number(e.target.value)); reset();}} 
+                                                className="w-full h-3 bg-slate-700 rounded-lg appearance-none cursor-pointer accent-emerald-500" 
+                                            />
+                                            <div className="flex justify-between text-[10px] text-slate-500 mt-2 font-bold uppercase">
+                                                <span>Acelera Suave (0 m/s²)</span>
+                                                <span className="text-violet-500">Límite Real: {aMax.toFixed(1)} m/s²</span>
+                                                <span>Acelera Brutal (40 m/s²)</span>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div className="flex gap-2">
+                                        <button 
+                                            onClick={handleLaunch} 
+                                            disabled={isLaunching || altitude >= 400 || isBroken}
+                                            className={`flex-1 font-black py-3 rounded-xl shadow-lg flex justify-center items-center gap-2 disabled:opacity-50 transition-all active:scale-95 ${willBreak ? 'bg-red-600 hover:bg-red-500 text-white' : 'bg-violet-600 hover:bg-violet-500 text-white'}`}
+                                        >
+                                            {RocketIcon && <RocketIcon size={18} />} {willBreak ? 'ALERTA: EXCESO FUERZA G' : 'SECUENCIA DE LANZAMIENTO'}
+                                        </button>
+                                        <button onClick={reset} className="bg-slate-700 hover:bg-slate-600 text-white font-bold px-4 rounded-xl transition-all shadow-md">
+                                            {RotateCcwIcon && <RotateCcwIcon size={18} />}
+                                        </button>
+                                    </div>
+                                </div>
+
+                                <div className="bg-violet-950/20 p-6 rounded-3xl border border-violet-500/20">
+                                    <div className="flex justify-between items-center mb-4 border-b border-violet-500/30 pb-2">
+                                        <h4 className="font-bold text-violet-300 flex items-center gap-2">
+                                            {CalculatorIcon && <CalculatorIcon size={18} />} Resolución Matemática
+                                        </h4>
+                                        <button onClick={generarDiagrama} className="text-[10px] uppercase font-bold bg-slate-800 hover:bg-slate-700 text-slate-300 px-3 py-1.5 rounded flex items-center gap-1 border border-slate-600">
+                                            {imgLoading ? <span className="animate-pulse">Cargando...</span> : <>{ImagePlusIcon && <ImagePlusIcon size={14}/>} Generar DCL</>}
+                                        </button>
+                                    </div>
+
+                                    {imgUrl && (
+                                        <div className="mb-4 bg-slate-900 p-2 rounded-xl border border-slate-700 text-center">
+                                            <img src={imgUrl} alt="Diagrama de Cuerpo Libre" className="mx-auto max-h-40 rounded-lg" />
+                                        </div>
+                                    )}
+
+                                    <div className="text-xs text-slate-300 space-y-3 leading-relaxed">
+                                        <p><strong>1. Pasar unidades al S.I.:</strong><br/>
+                                        La masa del dispositivo debe estar en kg.</p>
+                                        <div className="bg-slate-900/80 p-2 rounded-lg border-l-4 border-slate-500 font-mono text-slate-300">
+                                            m = {masaGramos} g = <strong>{masaKg.toFixed(3)} kg</strong>
+                                        </div>
+                                        
+                                        <p className="mt-3"><strong>2. Aplicar 2ª Ley de Newton:</strong><br/>
+                                        El cohete acelera hacia arriba (+), por lo que la Tensión tira hacia arriba y el Peso hacia abajo.</p>
+                                        <div className="bg-slate-900/80 p-2 rounded-lg border-l-4 border-violet-500 font-mono text-violet-200 overflow-x-auto">
+                                            Σ F_y = m · a<br/>
+                                            T - P = m · a<br/>
+                                            T - m·g = m · a<br/>
+                                            {tMax.toFixed(1)} - ({masaKg.toFixed(3)} · 9.8) = {masaKg.toFixed(3)} · a
+                                        </div>
+
+                                        <p className="mt-3"><strong>3. Despejar Aceleración Máxima (a_max):</strong><br/>
+                                        Usamos la tensión máxima permitida para hallar el límite.</p>
+                                        <div className="bg-slate-900/80 p-3 rounded-lg border-l-4 border-emerald-500 font-mono text-emerald-200 shadow-inner">
+                                            {tMax.toFixed(1)} - {peso.toFixed(2)} = {masaKg.toFixed(3)} · a<br/>
+                                            {(tMax - peso).toFixed(2)} = {masaKg.toFixed(3)} · a<br/>
+                                            a = {(tMax - peso).toFixed(2)} / {masaKg.toFixed(3)} = <strong>{aMax.toFixed(1)} m/s²</strong>
+                                        </div>
+                                        <p className="text-[10px] text-slate-400 mt-2 italic text-center">
+                                            (Cualquier aceleración superior a {aMax.toFixed(1)} m/s² romperá el hilo).
+                                        </p>
+                                    </div>
+                                </div>
+                            </div>
+                        </main>
+
+                        <footer className="max-w-5xl mx-auto mt-12 pt-6 border-t border-slate-800 text-center text-slate-500 text-[10px] font-bold uppercase tracking-widest">
+                            Profe Física | Dinámica: Sistemas Acelerados y Fuerzas de Inercia
+                        </footer>
+                    </div>
+                );
+            };
+
+            const container = document.getElementById('root');
+            const root = ReactDOM.createRoot(container);
+            root.render(<App />);
+        })();
+    </script>
+</body>
+</html>

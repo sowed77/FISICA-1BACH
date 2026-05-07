@@ -1,0 +1,299 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Laboratorio: Las Lunas de Marte</title>
+    <!-- Bibliotecas externas -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <script src="https://unpkg.com/lucide-react@latest"></script>
+
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&family=Fira+Code&display=swap');
+        body { font-family: 'Inter', sans-serif; background-color: #020617; } /* Slate 950 */
+        .font-mono { font-family: 'Fira Code', monospace; }
+        input[type=range]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            height: 20px;
+            width: 20px;
+            border-radius: 50%;
+            background: #ef4444; /* Red 500 */
+            cursor: pointer;
+            border: 2px solid #ffffff;
+            box-shadow: 0 0 10px rgba(239, 68, 68, 0.5);
+        }
+        
+        .space-bg {
+            background-image: 
+                radial-gradient(#ffffff 1px, transparent 1px),
+                radial-gradient(rgba(255,255,255,0.4) 1px, transparent 1px);
+            background-size: 50px 50px, 30px 30px;
+            background-position: 0 0, 15px 15px;
+            opacity: 0.3;
+        }
+
+        /* Animación orbital */
+        @keyframes orbit {
+            from { transform: rotate(0deg) translateX(var(--orbit-radius)) rotate(0deg); }
+            to { transform: rotate(360deg) translateX(var(--orbit-radius)) rotate(-360deg); }
+        }
+        .animate-satellite {
+            animation: orbit linear infinite;
+        }
+    </style>
+</head>
+<body>
+    <div id="root"></div>
+
+    <script type="text/babel">
+        (() => {
+            var { useState, useEffect } = React;
+            var icons = window.LucideReact || {};
+            
+            // Asignación segura de iconos
+            var getIcon = (name) => icons[name] || (({className}) => <span className={className || ''}></span>);
+            var CalculatorIcon = getIcon('Calculator');
+            var SettingsIcon = getIcon('Settings');
+            var InfoIcon = getIcon('Info');
+            var OrbitIcon = getIcon('Orbit');
+            var ImagePlusIcon = getIcon('ImagePlus');
+            var RocketIcon = getIcon('Rocket');
+
+            var App = () => {
+                // Constantes Físicas
+                const G = 6.674e-11; // N·m²/kg²
+                const PI = Math.PI;
+
+                // Estados Interactivos (Datos iniciales del enunciado)
+                const [rDeimosKm, setRDeimosKm] = useState(23000); // 2.30 * 10^4 km
+                const [tDeimosH, setTDeimosH] = useState(29.5); // h
+                const [tFobosH, setTFobosH] = useState(7.5); // h
+
+                // Cálculos Físicos: DEIMOS -> MASA DE MARTE
+                const rDeimosM = rDeimosKm * 1000;
+                const tDeimosS = tDeimosH * 3600;
+                
+                // M = (4 * pi^2 * R^3) / (G * T^2)
+                const masaMarte = (4 * Math.pow(PI, 2) * Math.pow(rDeimosM, 3)) / (G * Math.pow(tDeimosS, 2));
+
+                // Cálculos Físicos: FOBOS -> RADIO DE FOBOS (Usando la 3ª Ley de Kepler por proporciones)
+                // (R_D^3 / T_D^2) = (R_F^3 / T_F^2) => R_F = R_D * (T_F / T_D)^(2/3)
+                const rFobosKm = rDeimosKm * Math.pow(tFobosH / tDeimosH, 2/3);
+
+                // Formateo visual
+                const masaExp = Math.floor(Math.log10(masaMarte));
+                const masaBase = (masaMarte / Math.pow(10, masaExp)).toFixed(2);
+
+                // Escala Visual Dinámica
+                const maxVisualRadius = 150; // px (Órbita de Deimos)
+                const fobosVisualRadius = maxVisualRadius * (rFobosKm / rDeimosKm);
+                const marteVisualRadius = 30; // Ficticio, Marte tiene unos 3400 km de radio.
+                
+                // Velocidad de animación (Inversa al periodo para que se vea la diferencia)
+                const baseAnimSpeed = 30; // Segundos para dar una vuelta visual
+                const deimosAnim = baseAnimSpeed;
+                const fobosAnim = baseAnimSpeed * (tFobosH / tDeimosH);
+
+                // Generador de diagrama DCL con IA
+                const [imgUrl, setImgUrl] = useState(null);
+                const [imgLoading, setImgLoading] = useState(false);
+
+                const generarDiagrama = async () => {
+                    setImgLoading(true);
+                    const apiKey = "AIzaSyDMyUo-WgmdNkCRW6-YK7h-bnRF_FLAjf0"; // API Key insertada por entorno
+                    try {
+                        const response = await fetch(
+                            `https://generativelanguage.googleapis.com/v1beta/models/imagen-4.0-generate-001:predict?key=${apiKey}`,
+                            {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({
+                                    instances: [{ prompt: "Diagrama técnico de astrofísica. El planeta Marte en el centro. Dos lunas orbitando en órbitas circulares concéntricas, Fobos (más cerca) y Deimos (más lejos). Ecuación r^3/T^2 = Constante de Kepler escrita al lado. Estilo educativo minimalista, fondo blanco" }],
+                                    parameters: { sampleCount: 1 }
+                                })
+                            }
+                        );
+                        if (!response.ok) throw new Error("Error en red");
+                        const data = await response.json();
+                        setImgUrl(`data:image/png;base64,${data.predictions[0].bytesBase64Encoded}`);
+                    } catch (error) {
+                        console.error(error);
+                    } finally {
+                        setImgLoading(false);
+                    }
+                };
+
+                return (
+                    <div className="min-h-screen bg-slate-950 text-slate-100 p-4 md:p-8">
+                        <header className="max-w-5xl mx-auto mb-8 border-b border-slate-800 pb-6">
+                            <div className="flex items-center gap-3 mb-2">
+                                <span className="bg-red-600 text-white px-3 py-1 rounded-full text-xs font-black uppercase tracking-widest">Astrofísica</span>
+                                <h1 className="text-3xl font-black text-red-400 uppercase tracking-tight tracking-widest">Las Lunas de Marte</h1>
+                            </div>
+                            <div className="bg-slate-900/80 p-4 rounded-xl border border-slate-800 mt-4">
+                                <p className="text-slate-300 text-sm leading-relaxed">
+                                    <strong>Enunciado:</strong> El satélite Deimos tarda 29,5 h en orbitar Marte a un radio de 2,30 × 10⁴ km. Calcula la masa de Marte y el radio orbital de su otro satélite, Fobos (periodo 7,5 h).
+                                </p>
+                            </div>
+                        </header>
+
+                        <main className="max-w-5xl mx-auto grid md:grid-cols-2 gap-8">
+                            {/* Panel Visual Espacial */}
+                            <div className="bg-slate-900 rounded-3xl border border-slate-800 h-[500px] relative overflow-hidden shadow-2xl flex flex-col items-center justify-center">
+                                
+                                <div className="absolute inset-0 space-bg pointer-events-none"></div>
+
+                                {/* HUD Flotante */}
+                                <div className="absolute top-4 w-full px-6 flex justify-between z-30 pointer-events-none">
+                                    <div className="bg-slate-950/90 p-3 rounded-lg border border-slate-800 backdrop-blur-md">
+                                        <p className="text-[10px] text-slate-500 uppercase font-black">Masa de Marte (M)</p>
+                                        <p className="text-xl font-mono font-black text-red-400">{masaBase} × 10<sup className="text-[10px]">{masaExp}</sup> kg</p>
+                                    </div>
+                                    <div className="bg-slate-950/90 p-3 rounded-lg border border-slate-800 backdrop-blur-md text-right border-b-4 border-b-slate-400">
+                                        <p className="text-[10px] text-slate-400 uppercase font-black">Radio de Fobos</p>
+                                        <p className="text-xl font-mono font-black text-white">{rFobosKm.toFixed(0)} <span className="text-xs">km</span></p>
+                                    </div>
+                                </div>
+
+                                {/* Sistema Marciano */}
+                                <div className="relative w-full h-full flex items-center justify-center">
+                                    
+                                    {/* Planeta Marte */}
+                                    <div className="absolute z-20 w-16 h-16 bg-red-600 rounded-full shadow-[inset_-10px_-10px_20px_rgba(0,0,0,0.5),0_0_40px_rgba(239,68,68,0.4)] flex flex-col items-center justify-center">
+                                        <div className="w-8 h-4 bg-red-800/40 rounded-full blur-sm absolute top-3 left-2"></div>
+                                        <div className="w-6 h-6 bg-red-800/40 rounded-full blur-sm absolute bottom-2 right-2"></div>
+                                        <span className="text-[8px] font-black text-red-200 mt-1 opacity-50 relative z-30">MARTE</span>
+                                    </div>
+
+                                    {/* Órbita de Fobos */}
+                                    <div 
+                                        className="absolute z-10 rounded-full border border-slate-500/30 border-dashed"
+                                        style={{ width: `${fobosVisualRadius * 2}px`, height: `${fobosVisualRadius * 2}px` }}
+                                    ></div>
+
+                                    {/* Órbita de Deimos */}
+                                    <div 
+                                        className="absolute z-10 rounded-full border border-slate-600/30 border-dashed"
+                                        style={{ width: `${maxVisualRadius * 2}px`, height: `${maxVisualRadius * 2}px` }}
+                                    ></div>
+
+                                    {/* Satélite FOBOS (Más rápido y cercano) */}
+                                    <div className="absolute z-30 flex items-center justify-center w-0 h-0"
+                                         style={{ '--orbit-radius': `${fobosVisualRadius}px` }}
+                                    >
+                                        <div className="animate-satellite" style={{ animationDuration: `${fobosAnim}s` }}>
+                                            <div className="relative w-4 h-4 bg-slate-400 rounded-full shadow-[0_0_10px_rgba(255,255,255,0.3)]">
+                                                <span className="absolute top-5 left-1/2 -translate-x-1/2 text-[8px] font-bold text-slate-300">Fobos</span>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    {/* Satélite DEIMOS (Más lento y lejano) */}
+                                    <div className="absolute z-30 flex items-center justify-center w-0 h-0"
+                                         style={{ '--orbit-radius': `${maxVisualRadius}px` }}
+                                    >
+                                        <div className="animate-satellite" style={{ animationDuration: `${deimosAnim}s` }}>
+                                            <div className="relative w-3 h-3 bg-stone-500 rounded-full shadow-[0_0_10px_rgba(255,255,255,0.1)]">
+                                                <span className="absolute top-4 left-1/2 -translate-x-1/2 text-[8px] font-bold text-stone-400">Deimos</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* Controles y Resolución */}
+                            <div className="space-y-6">
+                                <div className="bg-slate-900 p-6 rounded-3xl border border-slate-800 shadow-xl">
+                                    <h3 className="text-xl font-bold mb-4 flex items-center gap-2 text-red-400">
+                                        {SettingsIcon && <SettingsIcon size={20} />} Datos Observacionales
+                                    </h3>
+                                    
+                                    <div className="space-y-6">
+                                        <div>
+                                            <div className="flex justify-between text-xs mb-2">
+                                                <span className="text-stone-400 font-bold uppercase">Deimos: Radio Orbital</span>
+                                                <span className="font-mono bg-slate-950 px-2 py-0.5 rounded text-stone-300">{rDeimosKm.toLocaleString()} km</span>
+                                            </div>
+                                            <input type="range" min="15000" max="30000" step="500" value={rDeimosKm} onChange={e => setRDeimosKm(Number(e.target.value))} className="w-full h-2 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-stone-500" />
+                                        </div>
+
+                                        <div>
+                                            <div className="flex justify-between text-xs mb-2">
+                                                <span className="text-stone-400 font-bold uppercase">Deimos: Periodo (T)</span>
+                                                <span className="font-mono bg-slate-950 px-2 py-0.5 rounded text-stone-300">{tDeimosH.toFixed(1)} h</span>
+                                            </div>
+                                            <input type="range" min="10" max="50" step="0.5" value={tDeimosH} onChange={e => setTDeimosH(Number(e.target.value))} className="w-full h-2 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-stone-500" />
+                                        </div>
+
+                                        <div className="pt-4 border-t border-slate-800">
+                                            <div className="flex justify-between text-xs mb-2">
+                                                <span className="text-slate-400 font-bold uppercase">Fobos: Periodo (T)</span>
+                                                <span className="font-mono bg-slate-950 px-2 py-0.5 rounded text-white">{tFobosH.toFixed(1)} h</span>
+                                            </div>
+                                            <input type="range" min="2" max="15" step="0.5" value={tFobosH} onChange={e => setTFobosH(Number(e.target.value))} className="w-full h-2 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-slate-400" />
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div className="bg-red-950/20 p-6 rounded-3xl border border-red-500/20">
+                                    <div className="flex justify-between items-center mb-4 border-b border-red-500/30 pb-2">
+                                        <h4 className="font-bold text-red-300 flex items-center gap-2">
+                                            {CalculatorIcon && <CalculatorIcon size={18} />} Resolución Paso a Paso
+                                        </h4>
+                                        <button onClick={generarDiagrama} className="text-[10px] uppercase font-bold bg-slate-900 hover:bg-slate-800 text-slate-300 px-3 py-1.5 rounded flex items-center gap-1 border border-slate-700">
+                                            {imgLoading ? <span className="animate-pulse">Cargando...</span> : <>{ImagePlusIcon && <ImagePlusIcon size={14}/>} Generar DCL</>}
+                                        </button>
+                                    </div>
+
+                                    {imgUrl && (
+                                        <div className="mb-4 bg-slate-950 p-2 rounded-xl border border-slate-800 text-center">
+                                            <img src={imgUrl} alt="Diagrama Orbital de Marte" className="mx-auto max-h-40 rounded-lg" />
+                                        </div>
+                                    )}
+
+                                    <div className="text-xs text-slate-300 space-y-4 leading-relaxed">
+                                        <p><strong>1. "Pesar" a Marte con Deimos:</strong><br/>
+                                        Igualamos Gravedad y Fuerza Centrípeta (y usamos ω = 2π/T).<br/>
+                                        <span className="text-slate-500 block mb-1">¡Ojo con las unidades! Pasamos R a metros y T a segundos.</span></p>
+                                        
+                                        <div className="bg-slate-950/80 p-2 rounded-lg border-l-4 border-red-500 font-mono text-red-200 overflow-x-auto shadow-inner">
+                                            R_D = {rDeimosKm} · 10³ = {rDeimosM.toExponential(2)} m<br/>
+                                            T_D = {tDeimosH} · 3600 = {tDeimosS} s<br/><br/>
+                                            M = (4 · π² · R³) / (G · T²)<br/>
+                                            M = (4π² · ({rDeimosM.toExponential(2)})³) / (6.67e-11 · {tDeimosS}²)<br/>
+                                            <strong>M = {masaBase} × 10<sup className="text-[10px]">{masaExp}</sup> kg</strong>
+                                        </div>
+
+                                        <p><strong>2. Calcular el Radio de Fobos (3ª Ley de Kepler):</strong><br/>
+                                        Kepler descubrió que la proporción R³/T² es la misma para todos los satélites de un mismo planeta. Podemos usar una regla de 3 directa sin pasar al S.I.</p>
+                                        
+                                        <div className="bg-slate-950/80 p-2 rounded-lg border-l-4 border-slate-500 font-mono text-slate-200">
+                                            R_F³ / T_F² = R_D³ / T_D²<br/>
+                                            R_F³ = R_D³ · (T_F / T_D)²<br/>
+                                            R_F = R_D · (T_F / T_D)^(2/3)<br/>
+                                            R_F = {rDeimosKm} · ({tFobosH} / {tDeimosH})^(2/3)<br/>
+                                            <strong>R_F = {rFobosKm.toFixed(0)} km</strong>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </main>
+
+                        <footer className="max-w-5xl mx-auto mt-12 pt-6 border-t border-slate-800 text-center text-slate-500 text-[10px] font-bold uppercase tracking-widest">
+                            Profe Física | Dinámica y Leyes de Kepler
+                        </footer>
+                    </div>
+                );
+            };
+
+            const container = document.getElementById('root');
+            const root = ReactDOM.createRoot(container);
+            root.render(<App />);
+        })();
+    </script>
+</body>
+</html>

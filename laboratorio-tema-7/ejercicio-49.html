@@ -1,0 +1,432 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Laboratorio: Plano Inclinado y Polea</title>
+    <!-- Bibliotecas externas -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <script src="https://unpkg.com/lucide-react@latest"></script>
+
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&family=Fira+Code&display=swap');
+        body { font-family: 'Inter', sans-serif; background-color: #0f172a; }
+        .font-mono { font-family: 'Fira Code', monospace; }
+        input[type=range]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            height: 20px;
+            width: 20px;
+            border-radius: 50%;
+            background: #06b6d4; /* Cyan 500 */
+            cursor: pointer;
+            border: 2px solid #ffffff;
+            box-shadow: 0 0 10px rgba(6, 182, 212, 0.5);
+        }
+    </style>
+</head>
+<body>
+    <div id="root"></div>
+
+    <script type="text/babel">
+        (() => {
+            var { useState, useEffect } = React;
+            var icons = window.LucideReact || {};
+            
+            var getIcon = (name) => icons[name] || (({className}) => <span className={className || ''}></span>);
+            var PlayIcon = getIcon('Play');
+            var RotateCcwIcon = getIcon('RotateCcw');
+            var InfoIcon = getIcon('Info');
+            var CalculatorIcon = getIcon('Calculator');
+            var ArrowRightIcon = getIcon('ArrowRight');
+            var ArrowLeftIcon = getIcon('ArrowLeft');
+            var ArrowUpIcon = getIcon('ArrowUp');
+            var ArrowDownIcon = getIcon('ArrowDown');
+            var SettingsIcon = getIcon('Settings');
+            var ImagePlusIcon = getIcon('ImagePlus');
+            var ScaleIcon = getIcon('Scale');
+
+            var App = () => {
+                // Parámetros físicos constantes
+                const g = 9.8; // m/s^2
+
+                // Estados interactivos
+                const [m1, setM1] = useState(2.0); // kg (Rampa)
+                const [m2Gramos, setM2Gramos] = useState(700); // g (Cuelga)
+                const [angulo, setAngulo] = useState(30); // grados
+
+                // Cálculos Físicos
+                const m2 = m2Gramos / 1000; // a kg
+                const anguloRad = angulo * (Math.PI / 180);
+                
+                // Fuerzas contendientes
+                const p1x = m1 * g * Math.sin(anguloRad); // m1 tira rampa abajo
+                const p2 = m2 * g; // m2 tira hacia abajo
+                
+                // Determinamos el sentido del movimiento
+                // a > 0 si m1 gana (m1 baja rampa, m2 sube)
+                // a < 0 si m2 gana (m1 sube rampa, m2 baja)
+                const fNeta = p1x - p2; 
+                const mTotal = m1 + m2;
+                const aceleracion = fNeta / mTotal;
+                
+                // Tensión (Aislamos m2: T - P2 = m2 * a_y)
+                // Ojo: si a>0 (m1 gana), m2 sube (acelera hacia arriba), entonces T - P2 = m2 * a -> T = P2 + m2*a
+                const tension = p2 + m2 * aceleracion;
+
+                const direccionTexto = 
+                    aceleracion > 0.01 ? "m₁ BAJA, m₂ SUBE" : 
+                    aceleracion < -0.01 ? "m₁ SUBE, m₂ BAJA" : 
+                    "EQUILIBRIO (No se mueve)";
+
+                // Animación Visual
+                const [d, setD] = useState(150); // Distancia visual de m1 a la polea a lo largo de la rampa
+                const [vel, setVel] = useState(0);
+                const [isMoving, setIsMoving] = useState(false);
+
+                const L_rope = 320; // Longitud total de la cuerda en px
+                const dMin = 40;
+                const dMax = 260;
+
+                useEffect(() => {
+                    let interval;
+                    if (isMoving) {
+                        interval = setInterval(() => {
+                            setVel(v => v + aceleracion * 0.05); // Aumentar velocidad
+                            setD(prevD => {
+                                const nextD = prevD + vel;
+                                // Comprobar topes
+                                if (nextD >= dMax) {
+                                    setIsMoving(false);
+                                    return dMax;
+                                }
+                                if (nextD <= dMin) {
+                                    setIsMoving(false);
+                                    return dMin;
+                                }
+                                return nextD;
+                            });
+                        }, 20); // 50 fps
+                    }
+                    return () => clearInterval(interval);
+                }, [isMoving, vel, aceleracion]);
+
+                const handlePlay = () => {
+                    if (Math.abs(aceleracion) > 0.01 && d > dMin && d < dMax) {
+                        setIsMoving(true);
+                    }
+                };
+
+                const reset = () => {
+                    setD(150);
+                    setVel(0);
+                    setIsMoving(false);
+                };
+
+                // Si se cambian las masas, resetear la animación
+                useEffect(() => {
+                    reset();
+                }, [m1, m2Gramos, angulo]);
+
+                // Geometría SVG
+                const pX = 350; // Posición X de la polea
+                const pY = 80;  // Posición Y de la polea
+                
+                // Coordenadas de la línea de la rampa
+                const rampBaseX = pX - 400 * Math.cos(anguloRad);
+                const rampBaseY = pY + 400 * Math.sin(anguloRad);
+
+                // Posición de M1 (sobre la rampa)
+                // Centro en la línea de la rampa
+                const m1LineX = pX - d * Math.cos(anguloRad);
+                const m1LineY = pY + d * Math.sin(anguloRad);
+                // Desplazamiento perpendicular para que la caja se asiente sobre la línea
+                const m1X = m1LineX + 20 * Math.sin(anguloRad);
+                const m1Y = m1LineY - 20 * Math.cos(anguloRad);
+
+                // Posición de M2 (colgando)
+                const m2X = pX + 15; // 15 es el radio de la polea
+                const m2Y = pY + (L_rope - d);
+
+                // Generador de Diagrama de Cuerpo Libre
+                const [imgUrl, setImgUrl] = useState(null);
+                const [imgLoading, setImgLoading] = useState(false);
+
+                const generarDiagrama = async () => {
+                    setImgLoading(true);
+                    const apiKey = "AIzaSyDMyUo-WgmdNkCRW6-YK7h-bnRF_FLAjf0"; 
+                    try {
+                        const response = await fetch(
+                            `https://generativelanguage.googleapis.com/v1beta/models/imagen-4.0-generate-001:predict?key=${apiKey}`,
+                            {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({
+                                    instances: [{ prompt: "Diagrama técnico de física. Un plano inclinado con una masa m1 conectada por una cuerda a través de una polea en la cima a una masa m2 colgando. Vectores: P1x bajando por el plano, P2 hacia abajo en m2, Tensiones T opuestas en la cuerda. Estilo educativo, minimalista, fondo blanco" }],
+                                    parameters: { sampleCount: 1 }
+                                })
+                            }
+                        );
+                        if (!response.ok) throw new Error("Error en la red");
+                        const data = await response.json();
+                        setImgUrl(`data:image/png;base64,${data.predictions[0].bytesBase64Encoded}`);
+                    } catch (error) {
+                        console.error(error);
+                    } finally {
+                        setImgLoading(false);
+                    }
+                };
+
+                return (
+                    <div className="min-h-screen bg-slate-900 text-slate-100 p-4 md:p-8">
+                        <header className="max-w-5xl mx-auto mb-8 border-b border-slate-700 pb-6">
+                            <div className="flex items-center gap-3 mb-2">
+                                <span className="bg-cyan-600 text-slate-900 px-3 py-1 rounded-full text-xs font-black uppercase tracking-widest">Sistemas Conectados</span>
+                                <h1 className="text-3xl font-black text-cyan-400 uppercase tracking-tight tracking-widest">Tira y Afloja en Rampa</h1>
+                            </div>
+                            <div className="bg-slate-800/50 p-4 rounded-xl border border-slate-700 mt-4">
+                                <p className="text-slate-300 text-sm leading-relaxed">
+                                    <strong>Enunciado:</strong> Un cuerpo m₁ = 2,0 kg reposa sobre un plano inclinado de 30°. Está unido por un hilo sin peso mediante una polea a otro cuerpo m₂ = 700 g que cuelga libremente. Si no hay rozamiento, determina: a) El sentido y la aceleración del sistema, b) La tensión de la cuerda.
+                                </p>
+                            </div>
+                        </header>
+
+                        <main className="max-w-5xl mx-auto grid md:grid-cols-2 gap-8">
+                            {/* Panel Visual Gráfico */}
+                            <div className="bg-slate-800 rounded-3xl border border-slate-700 h-[500px] relative overflow-hidden shadow-2xl flex flex-col justify-end pb-4">
+                                
+                                {/* Marcadores Flotantes */}
+                                <div className="absolute top-4 w-full px-6 flex justify-between z-30 pointer-events-none">
+                                    <div className="bg-slate-900/90 p-3 rounded-lg border border-slate-700 backdrop-blur-md">
+                                        <p className="text-[10px] text-slate-500 uppercase font-black">Aceleración (a)</p>
+                                        <p className="text-xl font-mono font-black text-cyan-400">{Math.abs(aceleracion).toFixed(2)} m/s²</p>
+                                    </div>
+                                    <div className="bg-slate-900/90 p-3 rounded-lg border border-slate-700 backdrop-blur-md text-right">
+                                        <p className="text-[10px] text-slate-500 uppercase font-black">Tensión (T)</p>
+                                        <p className="text-xl font-mono font-black text-indigo-400">{tension.toFixed(2)} N</p>
+                                    </div>
+                                </div>
+
+                                <div className="absolute top-24 left-1/2 -translate-x-1/2 z-30">
+                                    <div className={`px-6 py-2 rounded-full font-black uppercase text-xs tracking-widest shadow-lg border-2 ${Math.abs(aceleracion) < 0.01 ? 'bg-slate-700 text-slate-300 border-slate-500' : fNeta > 0 ? 'bg-emerald-900/80 text-emerald-400 border-emerald-500' : 'bg-orange-900/80 text-orange-400 border-orange-500'}`}>
+                                        {direccionTexto}
+                                    </div>
+                                </div>
+
+                                {/* Escenario SVG */}
+                                <div className="relative w-full h-80">
+                                    <svg width="100%" height="100%" className="absolute inset-0">
+                                        {/* La Rampa */}
+                                        <polygon 
+                                            points={`${rampBaseX},${rampBaseY} ${pX},${pY} ${pX},${rampBaseY}`}
+                                            fill="#334155" stroke="#475569" strokeWidth="2"
+                                        />
+                                        
+                                        {/* Cuerda M1 a Polea */}
+                                        <line 
+                                            x1={m1LineX} y1={m1LineY} 
+                                            x2={pX - 15*Math.sin(anguloRad)} y2={pY + 15*Math.cos(anguloRad)} 
+                                            stroke="#cbd5e1" strokeWidth="3" strokeDasharray={isMoving ? "4 4" : "none"}
+                                        />
+                                        
+                                        {/* Cuerda Polea a M2 */}
+                                        <line 
+                                            x1={pX + 15} y1={pY} 
+                                            x2={m2X} y2={m2Y} 
+                                            stroke="#cbd5e1" strokeWidth="3" strokeDasharray={isMoving ? "4 4" : "none"}
+                                        />
+
+                                        {/* Polea */}
+                                        <circle cx={pX} cy={pY} r="15" fill="#64748b" stroke="#94a3b8" strokeWidth="2" />
+                                        <circle cx={pX} cy={pY} r="4" fill="#0f172a" />
+                                    </svg>
+
+                                    {/* M1 (En Rampa) */}
+                                    <div 
+                                        className="absolute w-12 h-12 bg-emerald-500 border-4 border-emerald-300 rounded flex items-center justify-center shadow-lg z-20"
+                                        style={{ 
+                                            left: `${m1X}px`, top: `${m1Y}px`, 
+                                            transform: `translate(-50%, -50%) rotate(${-angulo}deg)` 
+                                        }}
+                                    >
+                                        <span className="font-black text-emerald-950 text-xs">m₁</span>
+                                        
+                                        {/* Vector P1x (Hacia abajo de la rampa = Derecha local) */}
+                                        <div className="absolute top-1/2 left-full flex items-center pl-1 pointer-events-none" style={{ width: p1x * 4 }}>
+                                            <div className="h-1 bg-green-400 w-full relative">
+                                                <div className="absolute right-0 -top-1.5">{ArrowRightIcon && <ArrowRightIcon size={16} className="text-green-400" />}</div>
+                                            </div>
+                                            <span className="ml-1 text-[10px] font-black text-green-300">P₁x={p1x.toFixed(1)}</span>
+                                        </div>
+
+                                        {/* Vector Tensión (Hacia arriba de la rampa = Izquierda local) */}
+                                        <div className="absolute top-1/2 right-full flex items-center pr-1 pointer-events-none" style={{ width: tension * 4 }}>
+                                            <span className="mr-1 text-[10px] font-black text-indigo-300">T</span>
+                                            <div className="h-1 bg-indigo-400 w-full relative">
+                                                <div className="absolute left-0 -top-1.5">{ArrowLeftIcon && <ArrowLeftIcon size={16} className="text-indigo-400" />}</div>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    {/* M2 (Colgando) */}
+                                    <div 
+                                        className="absolute w-10 h-10 bg-orange-500 border-4 border-orange-300 rounded flex flex-col items-center justify-center shadow-lg z-20"
+                                        style={{ 
+                                            left: `${m2X}px`, top: `${m2Y}px`, 
+                                            transform: `translate(-50%, -50%)` 
+                                        }}
+                                    >
+                                        <span className="font-black text-orange-950 text-xs">m₂</span>
+
+                                        {/* Vector Tensión (Arriba) */}
+                                        <div className="absolute bottom-full left-1/2 -translate-x-1/2 flex flex-col items-center pb-1 pointer-events-none" style={{ height: tension * 4 }}>
+                                            <span className="mb-1 text-[10px] font-black text-indigo-300">T</span>
+                                            <div className="w-1 bg-indigo-400 h-full relative">
+                                                <div className="absolute top-0 -translate-x-[6px]">{ArrowUpIcon && <ArrowUpIcon size={16} className="text-indigo-400" />}</div>
+                                            </div>
+                                        </div>
+
+                                        {/* Vector Peso 2 (Abajo) */}
+                                        <div className="absolute top-full left-1/2 -translate-x-1/2 flex flex-col items-center pt-1 pointer-events-none" style={{ height: p2 * 4 }}>
+                                            <div className="w-1 bg-red-400 h-full relative">
+                                                <div className="absolute bottom-0 -translate-x-[6px]">{ArrowDownIcon && <ArrowDownIcon size={16} className="text-red-400" />}</div>
+                                            </div>
+                                            <span className="mt-1 text-[10px] font-black text-red-300">P₂={p2.toFixed(1)}</span>
+                                        </div>
+                                    </div>
+
+                                    {/* Suelo Base */}
+                                    <div className="absolute bottom-0 w-full h-8 bg-slate-700 border-t-2 border-slate-500 opacity-50"></div>
+                                </div>
+                            </div>
+
+                            {/* Controles y Resolución */}
+                            <div className="space-y-6">
+                                <div className="bg-slate-800 p-6 rounded-3xl border border-slate-700 shadow-xl">
+                                    <h3 className="text-xl font-bold mb-4 flex items-center gap-2 text-cyan-400">
+                                        {ScaleIcon && <ScaleIcon size={20} />} Balance de Masas
+                                    </h3>
+                                    
+                                    <div className="space-y-6 mb-6">
+                                        <div>
+                                            <div className="flex justify-between text-xs mb-2">
+                                                <span className="text-emerald-400 font-bold uppercase">Masa en Rampa (m₁)</span>
+                                                <span className="font-mono bg-slate-900 px-2 py-0.5 rounded text-emerald-200">{m1.toFixed(1)} kg</span>
+                                            </div>
+                                            <input 
+                                                type="range" min="0.5" max="5.0" step="0.5" value={m1} 
+                                                onChange={e => {setM1(Number(e.target.value)); reset();}} 
+                                                className="w-full h-2 bg-slate-700 rounded-lg appearance-none cursor-pointer accent-emerald-500" 
+                                            />
+                                        </div>
+                                        
+                                        <div>
+                                            <div className="flex justify-between text-xs mb-2">
+                                                <span className="text-orange-400 font-bold uppercase">Masa Colgante (m₂)</span>
+                                                <span className="font-mono bg-slate-900 px-2 py-0.5 rounded text-orange-200">{m2.toFixed(2)} kg ({m2Gramos} g)</span>
+                                            </div>
+                                            <input 
+                                                type="range" min="100" max="2500" step="100" value={m2Gramos} 
+                                                onChange={e => {setM2Gramos(Number(e.target.value)); reset();}} 
+                                                className="w-full h-2 bg-slate-700 rounded-lg appearance-none cursor-pointer accent-orange-500" 
+                                            />
+                                        </div>
+
+                                        <div className="pt-2 border-t border-slate-700">
+                                            <div className="flex justify-between text-xs mb-2">
+                                                <span className="text-blue-400 font-bold uppercase">Inclinación (α)</span>
+                                                <span className="font-mono bg-slate-900 px-2 py-0.5 rounded text-blue-200">{angulo}º</span>
+                                            </div>
+                                            <input 
+                                                type="range" min="10" max="80" step="5" value={angulo} 
+                                                onChange={e => {setAngulo(Number(e.target.value)); reset();}} 
+                                                className="w-full h-2 bg-slate-700 rounded-lg appearance-none cursor-pointer accent-blue-500" 
+                                            />
+                                        </div>
+                                    </div>
+
+                                    <div className="flex gap-2">
+                                        <button 
+                                            onClick={handlePlay} 
+                                            disabled={isMoving || d <= dMin || d >= dMax || Math.abs(aceleracion) < 0.01}
+                                            className={`flex-1 font-black py-3 rounded-xl shadow-lg flex justify-center items-center gap-2 disabled:opacity-50 transition-all active:scale-95 ${Math.abs(aceleracion) < 0.01 ? 'bg-slate-600 text-slate-400' : 'bg-cyan-600 hover:bg-cyan-500 text-white'}`}
+                                        >
+                                            {PlayIcon && <PlayIcon size={18} />} {Math.abs(aceleracion) < 0.01 ? 'EN EQUILIBRIO' : 'LIBERAR SISTEMA'}
+                                        </button>
+                                        <button onClick={reset} className="bg-slate-700 hover:bg-slate-600 text-white font-bold px-4 rounded-xl transition-all shadow-md">
+                                            {RotateCcwIcon && <RotateCcwIcon size={18} />}
+                                        </button>
+                                    </div>
+                                </div>
+
+                                <div className="bg-cyan-950/20 p-6 rounded-3xl border border-cyan-500/20">
+                                    <div className="flex justify-between items-center mb-4 border-b border-cyan-500/30 pb-2">
+                                        <h4 className="font-bold text-cyan-300 flex items-center gap-2">
+                                            {CalculatorIcon && <CalculatorIcon size={18} />} Resolución Paso a Paso
+                                        </h4>
+                                        <button onClick={generarDiagrama} className="text-[10px] uppercase font-bold bg-slate-800 hover:bg-slate-700 text-slate-300 px-3 py-1.5 rounded flex items-center gap-1 border border-slate-600">
+                                            {imgLoading ? <span className="animate-pulse">Cargando...</span> : <>{ImagePlusIcon && <ImagePlusIcon size={14}/>} Generar DCL</>}
+                                        </button>
+                                    </div>
+
+                                    {imgUrl && (
+                                        <div className="mb-4 bg-slate-900 p-2 rounded-xl border border-slate-700 text-center">
+                                            <img src={imgUrl} alt="Diagrama Técnico" className="mx-auto max-h-40 rounded-lg" />
+                                        </div>
+                                    )}
+
+                                    <div className="text-[11px] text-slate-300 space-y-3 leading-relaxed">
+                                        <p><strong>1. Las fuerzas contendientes:</strong><br/>
+                                        Calculamos quién tira más fuerte: el componente P<sub>1x</sub> de la masa 1 o el Peso P₂ de la masa 2. Convertimos m₂ a kg ({m2} kg).</p>
+                                        
+                                        <div className="grid grid-cols-2 gap-2 text-center">
+                                            <div className="bg-slate-900/80 p-2 rounded-lg border-l-4 border-green-500 font-mono text-green-200">
+                                                P₁x = m₁ · g · sin(α)<br/>
+                                                P₁x = {m1} · 9.8 · {Math.sin(anguloRad).toFixed(2)}<br/>
+                                                <strong>P₁x = {p1x.toFixed(2)} N</strong>
+                                            </div>
+                                            <div className="bg-slate-900/80 p-2 rounded-lg border-l-4 border-red-500 font-mono text-red-200">
+                                                P₂ = m₂ · g<br/>
+                                                P₂ = {m2} · 9.8<br/>
+                                                <strong>P₂ = {p2.toFixed(2)} N</strong>
+                                            </div>
+                                        </div>
+                                        
+                                        <p>Como <strong>{Math.max(p1x, p2).toFixed(2)} N &gt; {Math.min(p1x, p2).toFixed(2)} N</strong>, deducimos que el sistema se mueve haciendo que <strong>{direccionTexto}</strong>.</p>
+
+                                        <p className="mt-3"><strong>2. Aceleración (Bloque como un todo):</strong><br/>
+                                        Restamos la fuerza ganadora menos la perdedora para hallar la Fuerza Neta y dividimos entre la masa total ({mTotal} kg).</p>
+                                        <div className="bg-slate-900/80 p-2 rounded-lg border-l-4 border-cyan-500 font-mono text-cyan-200">
+                                            a = ({Math.max(p1x, p2).toFixed(2)} - {Math.min(p1x, p2).toFixed(2)}) / {mTotal}<br/>
+                                            <strong>a = {Math.abs(aceleracion).toFixed(3)} m/s²</strong>
+                                        </div>
+
+                                        <p className="mt-3"><strong>3. Tensión de la cuerda:</strong><br/>
+                                        Aislamos m₂. Si m₂ sube (P₁x gana), T debe ser mayor que su peso. Si m₂ baja (P₂ gana), T es menor que su peso.</p>
+                                        <div className="bg-slate-900/80 p-2 rounded-lg border-l-4 border-indigo-500 font-mono text-indigo-200">
+                                            {p1x > p2 ? `T - P₂ = m₂ · a  ⇒  T = P₂ + m₂·a` : `P₂ - T = m₂ · a  ⇒  T = P₂ - m₂·a`}<br/>
+                                            T = {p2.toFixed(2)} {p1x > p2 ? '+' : '-'} ({m2} · {Math.abs(aceleracion).toFixed(3)})<br/>
+                                            <strong>T = {tension.toFixed(2)} N</strong>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </main>
+
+                        <footer className="max-w-5xl mx-auto mt-12 pt-6 border-t border-slate-800 text-center text-slate-500 text-[10px] font-bold uppercase tracking-widest">
+                            Profe Física | Dinámica de Sistemas Combinados sin Rozamiento
+                        </footer>
+                    </div>
+                );
+            };
+
+            const container = document.getElementById('root');
+            const root = ReactDOM.createRoot(container);
+            root.render(<App />);
+        })();
+    </script>
+</body>
+</html>

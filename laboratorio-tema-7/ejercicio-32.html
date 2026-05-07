@@ -1,0 +1,367 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Laboratorio: Acción y Reacción en el Hielo</title>
+    <!-- Bibliotecas externas -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <script src="https://unpkg.com/lucide-react@latest"></script>
+
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&family=Fira+Code&display=swap');
+        body { font-family: 'Inter', sans-serif; background-color: #0f172a; }
+        .font-mono { font-family: 'Fira Code', monospace; }
+        input[type=range]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            height: 24px;
+            width: 24px;
+            border-radius: 50%;
+            background: #0ea5e9; /* Blue 500 */
+            cursor: pointer;
+            border: 3px solid #ffffff;
+            box-shadow: 0 0 10px rgba(14, 165, 233, 0.5);
+        }
+        .ice-pattern {
+            background-color: #e0f2fe; /* Sky 100 */
+            background-image: 
+                linear-gradient(90deg, rgba(255,255,255,0.5) 1px, transparent 1px),
+                linear-gradient(rgba(255,255,255,0.5) 1px, transparent 1px);
+            background-size: 40px 40px;
+        }
+        .skate-marks {
+            position: absolute;
+            bottom: 0;
+            height: 4px;
+            background: linear-gradient(90deg, transparent, rgba(148, 163, 184, 0.3) 10%, rgba(148, 163, 184, 0.3) 90%, transparent);
+        }
+    </style>
+</head>
+<body>
+    <div id="root"></div>
+
+    <script type="text/babel">
+        (() => {
+            var { useState, useEffect } = React;
+            var icons = window.LucideReact || {};
+            
+            var getIcon = (name) => icons[name] || (({className}) => <span className={className || ''}></span>);
+            var PlayIcon = getIcon('Play');
+            var RotateCcwIcon = getIcon('RotateCcw');
+            var InfoIcon = getIcon('Info');
+            var CalculatorIcon = getIcon('Calculator');
+            var ArrowRightIcon = getIcon('ArrowRight');
+            var ArrowLeftIcon = getIcon('ArrowLeft');
+            var SnowflakeIcon = getIcon('Snowflake');
+            var ImagePlusIcon = getIcon('ImagePlus');
+            var TimerIcon = getIcon('Timer');
+
+            var App = () => {
+                // Estados interactivos inicializados con los datos del enunciado
+                const [mM, setMM] = useState(60); // kg (Madre)
+                const [mH, setMH] = useState(45); // kg (Hija)
+                const [fuerza, setFuerza] = useState(40); // N
+                const [dt, setDt] = useState(0.50); // s (Tiempo de empuje)
+
+                // Cálculos Físicos
+                // Tercera ley: La fuerza sobre la madre y la hija es la misma en módulo
+                const aM = fuerza / mM; // m/s^2
+                const aH = fuerza / mH; // m/s^2
+
+                const vM_final = aM * dt; // m/s
+                const vH_final = aH * dt; // m/s
+
+                // Animación
+                const [time, setTime] = useState(-0.5); 
+                const [isMoving, setIsMoving] = useState(false);
+
+                // Cinemática instantánea para la animación
+                let posX_M = 0;
+                let posX_H = 0;
+                let vel_M = 0;
+                let vel_H = 0;
+                let phase = "Reposo";
+
+                if (time < 0) {
+                    phase = "Preparadas";
+                } else if (time >= 0 && time <= dt) {
+                    phase = "Empujando (Acción-Reacción)";
+                    posX_M = -0.5 * aM * Math.pow(time, 2);
+                    posX_H = 0.5 * aH * Math.pow(time, 2);
+                    vel_M = aM * time;
+                    vel_H = aH * time;
+                } else {
+                    phase = "Deslizamiento Libre (Inercia)";
+                    const dM_empuje = -0.5 * aM * Math.pow(dt, 2);
+                    const dH_empuje = 0.5 * aH * Math.pow(dt, 2);
+                    posX_M = dM_empuje - vM_final * (time - dt);
+                    posX_H = dH_empuje + vH_final * (time - dt);
+                    vel_M = vM_final;
+                    vel_H = vH_final;
+                }
+
+                // Escala visual
+                const pxPerMeter = 100; // 1 metro = 100px
+
+                useEffect(() => {
+                    let interval;
+                    if (isMoving && time < 3.0) { // Animamos 3 segundos después del empuje
+                        interval = setInterval(() => {
+                            setTime(prev => prev + 0.02); // Avanzamos el tiempo (ralentizado visualmente)
+                        }, 20); 
+                    } else if (time >= 3.0) {
+                        setIsMoving(false);
+                    }
+                    return () => clearInterval(interval);
+                }, [isMoving, time]);
+
+                const handlePlay = () => {
+                    setTime(-0.5);
+                    setIsMoving(true);
+                };
+
+                const reset = () => {
+                    setTime(-0.5);
+                    setIsMoving(false);
+                };
+
+                // IA DCL
+                const [imgUrl, setImgUrl] = useState(null);
+                const [imgLoading, setImgLoading] = useState(false);
+
+                const generarDiagrama = async () => {
+                    setImgLoading(true);
+                    const apiKey = ""; 
+                    try {
+                        const response = await fetch(
+                            `https://generativelanguage.googleapis.com/v1beta/models/imagen-4.0-generate-001:predict?key=${apiKey}`,
+                            {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({
+                                    instances: [{ prompt: "Diagrama técnico de física de la Tercera Ley de Newton. Dos bloques en una pista de hielo separados. El bloque izquierdo tiene una fuerza F_m hacia la izquierda. El bloque derecho tiene una fuerza F_h hacia la derecha. Ambas flechas de fuerza miden lo mismo (Acción y Reacción). Fondo blanco, minimalista, educativo" }],
+                                    parameters: { sampleCount: 1 }
+                                })
+                            }
+                        );
+                        if (!response.ok) throw new Error("Error en red");
+                        const data = await response.json();
+                        setImgUrl(`data:image/png;base64,${data.predictions[0].bytesBase64Encoded}`);
+                    } catch (error) {
+                        console.error(error);
+                    } finally {
+                        setImgLoading(false);
+                    }
+                };
+
+                return (
+                    <div className="min-h-screen bg-slate-900 text-slate-100 p-4 md:p-8">
+                        <header className="max-w-5xl mx-auto mb-8 border-b border-slate-700 pb-6">
+                            <div className="flex items-center gap-3 mb-2">
+                                <span className="bg-sky-600 text-white px-3 py-1 rounded-full text-xs font-black uppercase tracking-widest">Tercera Ley de Newton</span>
+                                <h1 className="text-3xl font-black text-sky-400 uppercase tracking-tight tracking-widest">Acción y Reacción en el Hielo</h1>
+                            </div>
+                            <div className="bg-slate-800/50 p-4 rounded-xl border border-slate-700 mt-4">
+                                <p className="text-slate-300 text-sm leading-relaxed">
+                                    <strong>Enunciado:</strong> Una madre (60 kg) y su hija (45 kg) están paradas en una pista de hielo. La hija empuja a la madre con una fuerza de 40 N durante 0,50 s. Calcula la aceleración de cada una y sus velocidades finales.
+                                </p>
+                            </div>
+                        </header>
+
+                        <main className="max-w-5xl mx-auto grid md:grid-cols-2 gap-8">
+                            {/* Panel Visual (Pista de Hielo) */}
+                            <div className="bg-slate-800 rounded-3xl border border-slate-700 h-[450px] relative overflow-hidden shadow-2xl flex flex-col justify-end pt-12">
+                                
+                                {/* Marcadores superiores en vivo */}
+                                <div className="absolute top-4 w-full px-6 flex justify-between z-30 pointer-events-none">
+                                    <div className="bg-slate-900/90 p-3 rounded-lg border border-slate-700 backdrop-blur-md">
+                                        <p className="text-[10px] text-slate-500 uppercase font-black">Madre</p>
+                                        <p className="text-sm font-mono font-bold text-sky-300">v = {vel_M.toFixed(3)} m/s</p>
+                                        <p className="text-sm font-mono font-bold text-sky-500">x = {Math.abs(posX_M).toFixed(2)} m</p>
+                                    </div>
+                                    <div className="bg-slate-900/90 p-3 rounded-lg border border-slate-700 backdrop-blur-md text-right">
+                                        <p className="text-[10px] text-slate-500 uppercase font-black">Hija</p>
+                                        <p className="text-sm font-mono font-bold text-emerald-300">v = {vel_H.toFixed(3)} m/s</p>
+                                        <p className="text-sm font-mono font-bold text-emerald-500">x = {Math.abs(posX_H).toFixed(2)} m</p>
+                                    </div>
+                                </div>
+
+                                {/* Cronómetro central */}
+                                <div className="absolute top-4 left-1/2 -translate-x-1/2 z-30">
+                                    <div className="bg-slate-900/90 p-2 px-4 rounded-full border border-slate-700 backdrop-blur-md flex items-center gap-2">
+                                        <TimerIcon size={16} className={time >= 0 && time <= dt ? "text-orange-400 animate-pulse" : "text-slate-400"} />
+                                        <span className="font-mono font-black text-lg text-white">t = {Math.max(0, time).toFixed(2)} s</span>
+                                    </div>
+                                    <div className={`mt-2 text-center text-[10px] font-black uppercase px-2 py-1 rounded-full ${time >= 0 && time <= dt ? 'bg-orange-500 text-slate-900' : 'bg-slate-800 text-slate-400'}`}>
+                                        {phase}
+                                    </div>
+                                </div>
+
+                                {/* Escenario - Pista de hielo */}
+                                <div className="relative w-full h-64 flex justify-center items-end pb-8 ice-pattern border-t-8 border-sky-200">
+                                    
+                                    {/* Centro de la pista (punto de inicio) */}
+                                    <div className="absolute bottom-8 w-1 h-32 bg-sky-200/50 border-l border-dashed border-sky-400/50"></div>
+
+                                    {/* MADRE */}
+                                    <div 
+                                        className="absolute bottom-8 flex flex-col items-center z-20"
+                                        style={{ transform: `translateX(${posX_M * pxPerMeter - 30}px)` }}
+                                    >
+                                        {/* Vector Fuerza (Solo durante empuje) */}
+                                        {time >= 0 && time <= dt && (
+                                            <div className="absolute top-1/2 right-full flex items-center pr-2" style={{ width: 100 }}>
+                                                <span className="mr-1 text-[10px] font-black text-orange-400 whitespace-nowrap bg-slate-900/80 px-1 rounded">F_M = {fuerza}N</span>
+                                                <div className="h-1.5 bg-orange-500 w-full relative">
+                                                    <div className="absolute left-0 -top-1.5">{ArrowLeftIcon && <ArrowLeftIcon size={18} className="text-orange-500" />}</div>
+                                                </div>
+                                            </div>
+                                        )}
+                                        {/* Avatar Madre */}
+                                        <div className="w-16 h-24 bg-sky-600 rounded-t-3xl border-4 border-sky-400 shadow-xl flex items-center justify-center relative">
+                                            <span className="font-black text-white text-xs">{mM} kg</span>
+                                        </div>
+                                    </div>
+
+                                    {/* HIJA */}
+                                    <div 
+                                        className="absolute bottom-8 flex flex-col items-center z-20"
+                                        style={{ transform: `translateX(${posX_H * pxPerMeter + 30}px)` }}
+                                    >
+                                        {/* Vector Fuerza (Solo durante empuje) */}
+                                        {time >= 0 && time <= dt && (
+                                            <div className="absolute top-1/2 left-full flex items-center pl-2" style={{ width: 100 }}>
+                                                <div className="h-1.5 bg-orange-500 w-full relative">
+                                                    <div className="absolute right-0 -top-1.5">{ArrowRightIcon && <ArrowRightIcon size={18} className="text-orange-500" />}</div>
+                                                </div>
+                                                <span className="ml-1 text-[10px] font-black text-orange-400 whitespace-nowrap bg-slate-900/80 px-1 rounded">F_H = {fuerza}N</span>
+                                            </div>
+                                        )}
+                                        {/* Avatar Hija */}
+                                        <div className="w-12 h-20 bg-emerald-500 rounded-t-3xl border-4 border-emerald-300 shadow-xl flex items-center justify-center relative">
+                                            <span className="font-black text-white text-xs">{mH} kg</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* Controles y Resolución */}
+                            <div className="space-y-6">
+                                <div className="bg-slate-800 p-6 rounded-3xl border border-slate-700 shadow-xl">
+                                    <h3 className="text-xl font-bold mb-4 flex items-center gap-2 text-sky-400">
+                                        {SnowflakeIcon && <SnowflakeIcon size={20} />} Variables
+                                    </h3>
+                                    
+                                    <div className="space-y-4 mb-6">
+                                        <div className="grid grid-cols-2 gap-4">
+                                            <div className="bg-sky-900/30 p-3 rounded-xl border border-sky-500/20">
+                                                <div className="flex justify-between text-[10px] mb-1"><span className="text-sky-300 font-bold uppercase">Masa Madre</span></div>
+                                                <input type="range" min="40" max="100" step="5" value={mM} onChange={e => {setMM(Number(e.target.value)); reset();}} className="w-full h-2 bg-slate-700 rounded-lg appearance-none cursor-pointer accent-sky-500 mb-1" />
+                                                <span className="font-mono text-white text-xs">{mM} kg</span>
+                                            </div>
+                                            
+                                            <div className="bg-emerald-900/30 p-3 rounded-xl border border-emerald-500/20">
+                                                <div className="flex justify-between text-[10px] mb-1"><span className="text-emerald-300 font-bold uppercase">Masa Hija</span></div>
+                                                <input type="range" min="20" max="80" step="5" value={mH} onChange={e => {setMH(Number(e.target.value)); reset();}} className="w-full h-2 bg-slate-700 rounded-lg appearance-none cursor-pointer accent-emerald-500 mb-1" />
+                                                <span className="font-mono text-white text-xs">{mH} kg</span>
+                                            </div>
+                                        </div>
+
+                                        <div>
+                                            <div className="flex justify-between text-xs mb-1">
+                                                <span className="text-orange-400 font-bold uppercase">Fuerza de Empuje (F)</span>
+                                                <span className="font-mono bg-slate-900 px-2 py-0.5 rounded text-orange-200">{fuerza} N</span>
+                                            </div>
+                                            <input type="range" min="10" max="100" step="5" value={fuerza} onChange={e => {setFuerza(Number(e.target.value)); reset();}} className="w-full h-2 bg-slate-700 rounded-lg appearance-none cursor-pointer accent-orange-500" />
+                                        </div>
+
+                                        <div>
+                                            <div className="flex justify-between text-xs mb-1">
+                                                <span className="text-purple-400 font-bold uppercase">Tiempo Contacto (Δt)</span>
+                                                <span className="font-mono bg-slate-900 px-2 py-0.5 rounded text-purple-200">{dt.toFixed(2)} s</span>
+                                            </div>
+                                            <input type="range" min="0.1" max="2.0" step="0.1" value={dt} onChange={e => {setDt(Number(e.target.value)); reset();}} className="w-full h-2 bg-slate-700 rounded-lg appearance-none cursor-pointer accent-purple-500" />
+                                        </div>
+                                    </div>
+
+                                    <div className="flex gap-2">
+                                        <button 
+                                            onClick={handlePlay} 
+                                            disabled={isMoving}
+                                            className="flex-1 bg-sky-600 hover:bg-sky-500 text-white font-black py-4 rounded-xl shadow-lg flex justify-center items-center gap-2 disabled:opacity-50 transition-all active:scale-95"
+                                        >
+                                            {PlayIcon && <PlayIcon size={18} />} SIMULAR EMPUJE
+                                        </button>
+                                        <button onClick={reset} className="bg-slate-700 hover:bg-slate-600 text-white font-bold px-5 rounded-xl transition-all shadow-md">
+                                            {RotateCcwIcon && <RotateCcwIcon size={18} />}
+                                        </button>
+                                    </div>
+                                </div>
+
+                                <div className="bg-sky-950/20 p-6 rounded-3xl border border-sky-500/20">
+                                    <div className="flex justify-between items-center mb-4 border-b border-sky-500/30 pb-2">
+                                        <h4 className="font-bold text-sky-300 flex items-center gap-2">
+                                            {CalculatorIcon && <CalculatorIcon size={18} />} Resolución Paso a Paso
+                                        </h4>
+                                        <button onClick={generarDiagrama} className="text-[10px] uppercase font-bold bg-slate-800 hover:bg-slate-700 text-slate-300 px-3 py-1.5 rounded flex items-center gap-1 border border-slate-600">
+                                            {imgLoading ? <span className="animate-pulse">Cargando...</span> : <>{ImagePlusIcon && <ImagePlusIcon size={14}/>} DCL I.A.</>}
+                                        </button>
+                                    </div>
+
+                                    {imgUrl && (
+                                        <div className="mb-4 bg-slate-900 p-2 rounded-xl border border-slate-700 text-center">
+                                            <img src={imgUrl} alt="Diagrama Técnico Tercera Ley" className="mx-auto max-h-40 rounded-lg" />
+                                        </div>
+                                    )}
+
+                                    <div className="text-xs text-slate-300 space-y-4 leading-relaxed">
+                                        <p><strong>1. La Tercera Ley (Acción y Reacción):</strong><br/>
+                                        Si la hija hace una fuerza de {fuerza} N sobre la madre, automáticamente recibe una fuerza de reacción idéntica ({fuerza} N) en sentido contrario.</p>
+                                        
+                                        <p><strong>2. Aceleraciones (2ª Ley de Newton):</strong><br/>
+                                        La fuerza es la misma para ambas, pero como tienen masas distintas, se acelerarán de forma diferente ($a = F / m$).</p>
+                                        <div className="grid grid-cols-2 gap-2">
+                                            <div className="bg-slate-900/80 p-2 rounded-lg border-l-4 border-sky-500 font-mono text-sky-200">
+                                                a_M = {fuerza} / {mM} = <strong>{aM.toFixed(3)} m/s²</strong>
+                                            </div>
+                                            <div className="bg-slate-900/80 p-2 rounded-lg border-l-4 border-emerald-500 font-mono text-emerald-200">
+                                                a_H = {fuerza} / {mH} = <strong>{aH.toFixed(3)} m/s²</strong>
+                                            </div>
+                                        </div>
+
+                                        <p><strong>3. Velocidades Finales (Cinemática):</strong><br/>
+                                        Ambas parten del reposo ($v_0 = 0$). Calculamos la velocidad al acabar el empuje ($v = a \cdot t$).</p>
+                                        <div className="grid grid-cols-2 gap-2">
+                                            <div className="bg-slate-900/80 p-2 rounded-lg border-l-4 border-sky-500 font-mono text-sky-200">
+                                                v_M = {aM.toFixed(3)} · {dt} = <strong>{vM_final.toFixed(3)} m/s</strong>
+                                            </div>
+                                            <div className="bg-slate-900/80 p-2 rounded-lg border-l-4 border-emerald-500 font-mono text-emerald-200">
+                                                v_H = {aH.toFixed(3)} · {dt} = <strong>{vH_final.toFixed(3)} m/s</strong>
+                                            </div>
+                                        </div>
+                                        <p className="text-[10px] text-slate-400 mt-2 italic text-center">
+                                            Comprobación del momento lineal: p_M ({mM} · {vM_final.toFixed(3)}) = p_H ({mH} · {vH_final.toFixed(3)}) = 20 kg·m/s. ¡Perfecto!
+                                        </p>
+                                    </div>
+                                </div>
+                            </div>
+                        </main>
+
+                        <footer className="max-w-5xl mx-auto mt-12 pt-6 border-t border-slate-800 text-center text-slate-500 text-[10px] font-bold uppercase tracking-widest">
+                            Profe Física | Dinámica y Cinemática en el Hielo
+                        </footer>
+                    </div>
+                );
+            };
+
+            const container = document.getElementById('root');
+            const root = ReactDOM.createRoot(container);
+            root.render(<App />);
+        })();
+    </script>
+</body>
+</html>

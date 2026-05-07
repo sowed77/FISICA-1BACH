@@ -1,0 +1,385 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Laboratorio: Remolcando la Barca</title>
+    <!-- Bibliotecas externas -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <script src="https://unpkg.com/lucide-react@latest"></script>
+
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&family=Fira+Code&display=swap');
+        body { font-family: 'Inter', sans-serif; background-color: #0f172a; }
+        .font-mono { font-family: 'Fira Code', monospace; }
+        input[type=range]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            height: 20px;
+            width: 20px;
+            border-radius: 50%;
+            background: #10b981; /* Emerald 500 */
+            cursor: pointer;
+            border: 2px solid #ffffff;
+            box-shadow: 0 0 10px rgba(16, 185, 129, 0.5);
+        }
+        .water-pattern {
+            background-color: #0284c7;
+            background-image: 
+                radial-gradient(circle at 100% 150%, #0369a1 24%, transparent 25%, transparent 28%, #0369a1 29%, transparent 30%),
+                radial-gradient(circle at 0% 150%, #0369a1 24%, transparent 25%, transparent 28%, #0369a1 29%, transparent 30%);
+            background-size: 40px 20px;
+        }
+        .grass-pattern {
+            background-color: #166534;
+            background-image: repeating-linear-gradient(45deg, #14532d 0, #14532d 10px, transparent 10px, transparent 20px);
+        }
+    </style>
+</head>
+<body>
+    <div id="root"></div>
+
+    <script type="text/babel">
+        (() => {
+            var { useState, useEffect } = React;
+            var icons = window.LucideReact || {};
+            
+            // Asignación segura de iconos
+            var getIcon = (name) => icons[name] || (({className}) => <span className={className || ''}></span>);
+            var PlayIcon = getIcon('Play');
+            var RotateCcwIcon = getIcon('RotateCcw');
+            var CalculatorIcon = getIcon('Calculator');
+            var SettingsIcon = getIcon('Settings');
+            var InfoIcon = getIcon('Info');
+            var ArrowRightIcon = getIcon('ArrowRight');
+            var ImagePlusIcon = getIcon('ImagePlus');
+            var AlertTriangleIcon = getIcon('AlertTriangle');
+            var AnchorIcon = getIcon('Anchor');
+
+            var App = () => {
+                // Estados interactivos
+                const [f1, setF1] = useState(250); // N (Cuerda 1)
+                const [f2, setF2] = useState(320); // N (Cuerda 2)
+                const [ang1, setAng1] = useState(60); // Grados
+
+                // Animación
+                const [pos, setPos] = useState(0);
+                const [isMoving, setIsMoving] = useState(false);
+
+                // CÁLCULOS FÍSICOS
+                const ang1Rad = ang1 * (Math.PI / 180);
+                
+                // Componentes de F1
+                const f1y = f1 * Math.sin(ang1Rad); // Lo que tira hacia arriba (orilla 1)
+                const f1x = f1 * Math.cos(ang1Rad); // Lo que tira hacia adelante
+                
+                // Para que la barca vaya recta: F1y DEBE SER IGUAL a F2y
+                // f1y = f2 * sin(ang2)  =>  sin(ang2) = f1y / f2
+                const isPossible = f1y <= f2; 
+                
+                const ang2Rad = isPossible ? Math.asin(f1y / f2) : 0;
+                const ang2 = isPossible ? ang2Rad * (180 / Math.PI) : 0;
+                
+                // Componentes de F2
+                const f2y = isPossible ? f2 * Math.sin(ang2Rad) : 0;
+                const f2x = isPossible ? f2 * Math.cos(ang2Rad) : 0;
+                
+                // Fuerza Total resultante (Solo en el eje X porque las Y se anulan)
+                const fTotal = isPossible ? (f1x + f2x) : 0;
+
+                useEffect(() => {
+                    let interval;
+                    if (isMoving && isPossible && pos < 250) {
+                        interval = setInterval(() => {
+                            setPos(p => {
+                                const newP = p + (fTotal * 0.005);
+                                if (newP > 250) {
+                                    setIsMoving(false);
+                                    return -100; // Vuelve a empezar por la izquierda para bucle
+                                }
+                                return newP;
+                            });
+                        }, 30);
+                    }
+                    return () => clearInterval(interval);
+                }, [isMoving, isPossible, fTotal, pos]);
+
+                const handlePlay = () => {
+                    if (isPossible) setIsMoving(true);
+                };
+
+                const reset = () => {
+                    setPos(0);
+                    setIsMoving(false);
+                };
+
+                // Generador DCL
+                const [imgUrl, setImgUrl] = useState(null);
+                const [imgLoading, setImgLoading] = useState(false);
+
+                const generarDiagrama = async () => {
+                    setImgLoading(true);
+                    const apiKey = "AIzaSyDMyUo-WgmdNkCRW6-YK7h-bnRF_FLAjf0"; 
+                    try {
+                        const response = await fetch(
+                            `https://generativelanguage.googleapis.com/v1beta/models/imagen-4.0-generate-001:predict?key=${apiKey}`,
+                            {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({
+                                    instances: [{ prompt: "Diagrama técnico de física. Vista superior de un bote. Vector rojo F1 apuntando arriba-derecha. Vector azul F2 apuntando abajo-derecha. Vector Resultante R verde, mucho más grande, apuntando exactamente hacia la derecha. Líneas discontinuas mostrando que las componentes verticales Y se anulan. Estilo minimalista, fondo blanco, educativo" }],
+                                    parameters: { sampleCount: 1 }
+                                })
+                            }
+                        );
+                        if (!response.ok) throw new Error("Error en red");
+                        const data = await response.json();
+                        setImgUrl(`data:image/png;base64,${data.predictions[0].bytesBase64Encoded}`);
+                    } catch (error) {
+                        console.error(error);
+                    } finally {
+                        setImgLoading(false);
+                    }
+                };
+
+                // Escala visual para vectores (1 N = 0.3 px)
+                const vScale = 0.35;
+
+                return (
+                    <div className="min-h-screen bg-slate-900 text-slate-100 p-4 md:p-8">
+                        <header className="max-w-5xl mx-auto mb-8 border-b border-slate-700 pb-6">
+                            <div className="flex items-center gap-3 mb-2">
+                                <span className="bg-emerald-600 text-white px-3 py-1 rounded-full text-xs font-black uppercase tracking-widest">Suma de Vectores</span>
+                                <h1 className="text-3xl font-black text-emerald-400 uppercase tracking-tight tracking-widest">Remolcando la Barca</h1>
+                            </div>
+                            <div className="bg-slate-800/50 p-4 rounded-xl border border-slate-700 mt-4">
+                                <p className="text-slate-300 text-sm leading-relaxed">
+                                    <strong>Enunciado:</strong> Una barca es arrastrada por dos cuerdas de 250 N y 320 N. La primera forma 60° con el eje del canal. ¿Qué ángulo debe formar la segunda para que la barca se mueva paralela al canal? ¿Qué fuerza total la arrastra?
+                                </p>
+                            </div>
+                        </header>
+
+                        <main className="max-w-5xl mx-auto grid md:grid-cols-2 gap-8">
+                            {/* Panel Visual (Vista Cenital del Río) */}
+                            <div className="bg-slate-800 rounded-3xl border border-slate-700 h-[500px] relative overflow-hidden shadow-2xl flex flex-col justify-center">
+                                
+                                {/* Marcadores Flotantes */}
+                                <div className="absolute top-4 w-full px-6 flex justify-between z-30 pointer-events-none">
+                                    <div className="bg-slate-900/90 p-3 rounded-lg border border-slate-700 backdrop-blur-md">
+                                        <p className="text-[10px] text-slate-500 uppercase font-black text-center">Fuerza Lateral Anulada (Y)</p>
+                                        <div className="flex justify-between gap-4 mt-1">
+                                            <span className="text-sm font-mono font-black text-red-400">↑ {f1y.toFixed(1)} N</span>
+                                            <span className="text-sm font-mono font-black text-blue-400">↓ {isPossible ? f2y.toFixed(1) : 0} N</span>
+                                        </div>
+                                    </div>
+                                    <div className="bg-slate-900/90 p-3 rounded-lg border border-slate-700 backdrop-blur-md text-right border-b-4 border-b-emerald-500">
+                                        <p className="text-[10px] text-slate-500 uppercase font-black">Fuerza Total de Avance (X)</p>
+                                        <p className="text-2xl font-mono font-black text-emerald-400">{fTotal.toFixed(1)} N</p>
+                                    </div>
+                                </div>
+
+                                {/* Escenario */}
+                                <div className="relative w-full h-full flex flex-col">
+                                    {/* Orilla Superior */}
+                                    <div className="h-16 w-full grass-pattern border-b-4 border-yellow-800/50"></div>
+                                    
+                                    {/* El Canal */}
+                                    <div className="flex-1 w-full water-pattern relative flex items-center shadow-[inset_0_10px_20px_rgba(0,0,0,0.3),inset_0_-10px_20px_rgba(0,0,0,0.3)]">
+                                        
+                                        {/* Eje del canal (Línea central) */}
+                                        <div className="absolute w-full h-[1px] border-b border-dashed border-white/30"></div>
+
+                                        {/* Alerta de imposibilidad */}
+                                        {!isPossible && (
+                                            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-40 animate-pulse text-center">
+                                                <div className="bg-red-600 text-white px-4 py-2 rounded-xl font-black uppercase shadow-lg border border-red-400 flex items-center gap-2 text-xs">
+                                                    <AlertTriangleIcon size={16} /> ¡Cuerda 2 demasiado débil! Se estrellará en la orilla 1.
+                                                </div>
+                                            </div>
+                                        )}
+
+                                        {/* La Barca */}
+                                        <div 
+                                            className="absolute w-16 h-8 bg-amber-600 border-2 border-amber-800 rounded-full rounded-r-3xl z-20 shadow-lg flex items-center justify-center transition-transform"
+                                            style={{ left: `${80 + pos}px` }}
+                                        >
+                                            <AnchorIcon size={12} className="text-amber-900 opacity-50 absolute right-2 rotate-90" />
+                                            
+                                            {/* Vectores de Fuerza */}
+                                            <div className="absolute left-[80%] top-1/2 -translate-y-1/2 w-0 h-0">
+                                                
+                                                {/* Vector F1 (Rojo, Arriba) */}
+                                                <div 
+                                                    className="absolute origin-left flex items-center pl-1 pointer-events-none" 
+                                                    style={{ width: f1 * vScale, transform: `rotate(${-ang1}deg)` }}
+                                                >
+                                                    <div className="h-1 bg-red-400 w-full relative shadow-[0_0_5px_rgba(248,113,113,0.8)]">
+                                                        <div className="absolute right-0 -top-1.5">{ArrowRightIcon && <ArrowRightIcon size={16} className="text-red-400" />}</div>
+                                                    </div>
+                                                    <span className="ml-1 text-[10px] font-black text-red-300 bg-slate-900/80 px-1 rounded shadow" style={{transform: `rotate(${ang1}deg)`}}>F₁</span>
+                                                </div>
+
+                                                {/* Componente F1y (Punteada) */}
+                                                <div className="absolute border-l border-dashed border-red-400/50" style={{ left: f1x*vScale, bottom: 0, height: f1y*vScale }}></div>
+
+                                                {/* Vector F2 (Azul, Abajo) */}
+                                                {isPossible && (
+                                                    <div 
+                                                        className="absolute origin-left flex items-center pl-1 pointer-events-none" 
+                                                        style={{ width: f2 * vScale, transform: `rotate(${ang2}deg)` }}
+                                                    >
+                                                        <div className="h-1 bg-blue-400 w-full relative shadow-[0_0_5px_rgba(96,165,250,0.8)]">
+                                                            <div className="absolute right-0 -top-1.5">{ArrowRightIcon && <ArrowRightIcon size={16} className="text-blue-400" />}</div>
+                                                        </div>
+                                                        <span className="ml-1 text-[10px] font-black text-blue-300 bg-slate-900/80 px-1 rounded shadow" style={{transform: `rotate(${-ang2}deg)`}}>F₂</span>
+                                                    </div>
+                                                )}
+
+                                                {/* Componente F2y (Punteada) */}
+                                                {isPossible && (
+                                                    <div className="absolute border-l border-dashed border-blue-400/50" style={{ left: f2x*vScale, top: 0, height: f2y*vScale }}></div>
+                                                )}
+
+                                                {/* Vector Resultante (Verde, Eje X) */}
+                                                {isPossible && fTotal > 0 && (
+                                                    <div className="absolute left-0 origin-left flex items-center pointer-events-none opacity-80" style={{ width: fTotal * vScale }}>
+                                                        <div className="h-2 bg-emerald-500 w-full relative shadow-[0_0_10px_rgba(16,185,129,0.8)]">
+                                                            <div className="absolute right-0 -top-2">{ArrowRightIcon && <ArrowRightIcon size={24} className="text-emerald-500" />}</div>
+                                                        </div>
+                                                    </div>
+                                                )}
+
+                                            </div>
+
+                                            {/* Arcos de ángulos */}
+                                            <div className="absolute left-[80%] top-1/2 -translate-y-1/2 w-8 h-8 pointer-events-none">
+                                                <div className="absolute w-8 h-8 border-r border-t border-red-500/40 rounded-tr-full" style={{ bottom: '0' }}></div>
+                                                {isPossible && (
+                                                    <div className="absolute w-8 h-8 border-r border-b border-blue-500/40 rounded-br-full" style={{ top: '0' }}></div>
+                                                )}
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    {/* Orilla Inferior */}
+                                    <div className="h-16 w-full grass-pattern border-t-4 border-yellow-800/50"></div>
+                                </div>
+                            </div>
+
+                            {/* Controles y Resolución */}
+                            <div className="space-y-6">
+                                <div className="bg-slate-800 p-6 rounded-3xl border border-slate-700 shadow-xl">
+                                    <h3 className="text-xl font-bold mb-4 flex items-center gap-2 text-emerald-400">
+                                        {SettingsIcon && <SettingsIcon size={20} />} Datos del Remolque
+                                    </h3>
+                                    
+                                    <div className="space-y-5 mb-6">
+                                        <div>
+                                            <div className="flex justify-between text-xs mb-1">
+                                                <span className="text-red-400 font-bold uppercase">Cuerda 1 (F₁)</span>
+                                                <span className="font-mono bg-slate-900 px-2 py-0.5 rounded text-red-300">{f1} N</span>
+                                            </div>
+                                            <input type="range" min="50" max="500" step="10" value={f1} onChange={e => {setF1(Number(e.target.value)); reset();}} className="w-full h-2 bg-slate-700 rounded-lg appearance-none cursor-pointer accent-red-500" />
+                                        </div>
+                                        
+                                        <div>
+                                            <div className="flex justify-between text-xs mb-1">
+                                                <span className="text-red-400 font-bold uppercase">Ángulo Cuerda 1 (α₁)</span>
+                                                <span className="font-mono bg-slate-900 px-2 py-0.5 rounded text-red-300">{ang1}º</span>
+                                            </div>
+                                            <input type="range" min="10" max="80" step="1" value={ang1} onChange={e => {setAng1(Number(e.target.value)); reset();}} className="w-full h-2 bg-slate-700 rounded-lg appearance-none cursor-pointer accent-red-500" />
+                                        </div>
+
+                                        <div className="pt-3 border-t border-slate-700">
+                                            <div className="flex justify-between text-xs mb-1">
+                                                <span className="text-blue-400 font-bold uppercase">Cuerda 2 (F₂)</span>
+                                                <span className="font-mono bg-slate-900 px-2 py-0.5 rounded text-blue-300">{f2} N</span>
+                                            </div>
+                                            <input type="range" min="50" max="600" step="10" value={f2} onChange={e => {setF2(Number(e.target.value)); reset();}} className="w-full h-2 bg-slate-700 rounded-lg appearance-none cursor-pointer accent-blue-500" />
+                                        </div>
+                                    </div>
+
+                                    <div className="flex gap-2">
+                                        <button 
+                                            onClick={handlePlay} 
+                                            disabled={isMoving || !isPossible}
+                                            className={`flex-1 font-black py-3 rounded-xl shadow-lg flex justify-center items-center gap-2 disabled:opacity-50 transition-all active:scale-95 ${!isPossible ? 'bg-slate-600 text-slate-400' : 'bg-emerald-600 hover:bg-emerald-500 text-white'}`}
+                                        >
+                                            {PlayIcon && <PlayIcon size={18} />} {!isPossible ? 'IMPOSIBLE (Cuerda 2 débil)' : 'EMPEZAR A REMOLCAR'}
+                                        </button>
+                                        <button onClick={reset} className="bg-slate-700 hover:bg-slate-600 text-white font-bold px-4 rounded-xl transition-all shadow-md">
+                                            {RotateCcwIcon && <RotateCcwIcon size={18} />}
+                                        </button>
+                                    </div>
+                                </div>
+
+                                <div className="bg-emerald-950/20 p-6 rounded-3xl border border-emerald-500/20">
+                                    <div className="flex justify-between items-center mb-4 border-b border-emerald-500/30 pb-2">
+                                        <h4 className="font-bold text-emerald-300 flex items-center gap-2">
+                                            {CalculatorIcon && <CalculatorIcon size={18} />} Resolución Paso a Paso
+                                        </h4>
+                                        <button onClick={generarDiagrama} className="text-[10px] uppercase font-bold bg-slate-800 hover:bg-slate-700 text-slate-300 px-3 py-1.5 rounded flex items-center gap-1 border border-slate-600">
+                                            {imgLoading ? <span className="animate-pulse">Cargando...</span> : <>{ImagePlusIcon && <ImagePlusIcon size={14}/>} Generar DCL</>}
+                                        </button>
+                                    </div>
+
+                                    {imgUrl && (
+                                        <div className="mb-4 bg-slate-900 p-2 rounded-xl border border-slate-700 text-center">
+                                            <img src={imgUrl} alt="Diagrama de Vectores" className="mx-auto max-h-40 rounded-lg" />
+                                        </div>
+                                    )}
+
+                                    <div className="text-xs text-slate-300 space-y-3 leading-relaxed">
+                                        <p><strong>1. Condición de paralelismo (Eje Y):</strong><br/>
+                                        Para que la barca no choque contra las orillas, las fuerzas laterales (con el seno) deben ser exactamente iguales.</p>
+                                        
+                                        <div className="bg-slate-900/80 p-2 rounded-lg border-l-4 border-indigo-500 font-mono text-indigo-200">
+                                            F<sub>1y</sub> = F<sub>2y</sub><br/>
+                                            F₁ · sin(α₁) = F₂ · sin(α₂)<br/>
+                                            {f1} · sin({ang1}º) = {f2} · sin(α₂)<br/>
+                                            {f1y.toFixed(2)} = {f2} · sin(α₂)
+                                        </div>
+
+                                        <p><strong>2. Calcular el Ángulo (α₂):</strong></p>
+                                        <div className="bg-slate-900/80 p-2 rounded-lg border-l-4 border-blue-500 font-mono text-blue-200">
+                                            sin(α₂) = {f1y.toFixed(2)} / {f2} = {(f1y/f2).toFixed(4)}<br/>
+                                            α₂ = arcsin({(f1y/f2).toFixed(4)}) = <strong>{ang2.toFixed(2)}º</strong>
+                                        </div>
+                                        
+                                        {!isPossible && (
+                                            <p className="text-red-400 font-bold bg-red-900/30 p-2 rounded border border-red-500/50 mt-1 text-center">
+                                                Alerta: El seno no puede ser mayor que 1. La Cuerda 2 necesita más fuerza.
+                                            </p>
+                                        )}
+
+                                        <p className="mt-3"><strong>3. Fuerza Total de Avance (Eje X):</strong><br/>
+                                        Al sumarse las fuerzas hacia adelante (con el coseno), empujan la barca por el canal.</p>
+                                        
+                                        <div className="bg-slate-900/80 p-3 rounded-lg border-l-4 border-emerald-500 font-mono text-emerald-200 shadow-inner">
+                                            F<sub>total</sub> = F<sub>1x</sub> + F<sub>2x</sub><br/>
+                                            F<sub>total</sub> = F₁·cos(α₁) + F₂·cos(α₂)<br/>
+                                            F<sub>total</sub> = {f1}·cos({ang1}º) + {f2}·cos({ang2.toFixed(2)}º)<br/>
+                                            F<sub>total</sub> = {f1x.toFixed(1)} + {f2x.toFixed(1)} = <strong>{fTotal.toFixed(1)} N</strong>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </main>
+
+                        <footer className="max-w-5xl mx-auto mt-12 pt-6 border-t border-slate-800 text-center text-slate-500 text-[10px] font-bold uppercase tracking-widest">
+                            Profe Física | Dinámica: Descomposición y Suma Vectorial
+                        </footer>
+                    </div>
+                );
+            };
+
+            const container = document.getElementById('root');
+            const root = ReactDOM.createRoot(container);
+            root.render(<App />);
+        })();
+    </script>
+</body>
+</html>

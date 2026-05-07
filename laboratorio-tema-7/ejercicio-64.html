@@ -1,0 +1,385 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Laboratorio: Impacto y Transferencia de Fuerza</title>
+    <!-- Bibliotecas externas -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <script src="https://unpkg.com/lucide-react@latest"></script>
+
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&family=Fira+Code&display=swap');
+        body { font-family: 'Inter', sans-serif; background-color: #0f172a; }
+        .font-mono { font-family: 'Fira Code', monospace; }
+        input[type=range]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            height: 24px;
+            width: 24px;
+            border-radius: 50%;
+            background: #ef4444; /* Red 500 */
+            cursor: pointer;
+            border: 3px solid #ffffff;
+            box-shadow: 0 0 10px rgba(239, 68, 68, 0.5);
+        }
+        .floor-pattern {
+            background-color: #1e293b;
+            background-image: repeating-linear-gradient(90deg, #334155 0, #334155 20px, transparent 20px, transparent 40px);
+            background-position: bottom;
+            background-size: 40px 8px;
+            background-repeat: repeat-x;
+        }
+    </style>
+</head>
+<body>
+    <div id="root"></div>
+
+    <script type="text/babel">
+        (() => {
+            var { useState, useEffect } = React;
+            var icons = window.LucideReact || {};
+            
+            // Asignación segura de iconos
+            var getIcon = (name) => icons[name] || (({className}) => <span className={className || ''}></span>);
+            var PlayIcon = getIcon('Play');
+            var RotateCcwIcon = getIcon('RotateCcw');
+            var InfoIcon = getIcon('Info');
+            var CalculatorIcon = getIcon('Calculator');
+            var ArrowRightIcon = getIcon('ArrowRight');
+            var ArrowLeftIcon = getIcon('ArrowLeft');
+            var ImagePlusIcon = getIcon('ImagePlus');
+            var TimerIcon = getIcon('Timer');
+            var ZapIcon = getIcon('Zap');
+            var SettingsIcon = getIcon('Settings'); // <-- Añadido SettingsIcon
+
+            var App = () => {
+                // Parámetros interactivos del problema
+                const [m1, setM1] = useState(3.0); // kg
+                const [v1i, setV1i] = useState(10.0); // m/s
+                const [m2, setM2] = useState(4.0); // kg
+                const [dt, setDt] = useState(0.20); // s
+
+                // Cálculos Físicos
+                // 1. Cinemática de M1: frena hasta v1f = 0 en un tiempo dt
+                const a1 = (0 - v1i) / dt; // m/s^2 (será negativa)
+                
+                // 2. Dinámica M1 (Fuerza que recibe M1 para frenarse)
+                const f1 = m1 * a1; // N (negativa)
+
+                // 3. 3ª Ley de Newton (Acción-Reacción) -> Fuerza sobre M2
+                const f2 = -f1; // N (positiva)
+
+                // 4. Cinemática de M2 (Aceleración y velocidad final)
+                const a2 = f2 / m2; // m/s^2
+                const v2f = a2 * dt; // m/s
+
+                // Animación
+                const [time, setTime] = useState(-0.5); // Empezamos medio segundo antes del choque
+                const [isMoving, setIsMoving] = useState(false);
+
+                // Posiciones visuales
+                let pos1 = 0;
+                let pos2 = 0;
+                let phase = 'Preparado';
+
+                // Separación inicial de los bloques (Visual)
+                const offset1 = -50; 
+                const offset2 = 50;
+
+                if (time < 0) {
+                    // Acercándose (M1 se mueve a velocidad constante, M2 quieto)
+                    pos1 = offset1 + (v1i * time);
+                    pos2 = offset2;
+                    phase = 'Acercamiento';
+                } else if (time >= 0 && time <= dt) {
+                    // Impacto (M1 frena, M2 acelera)
+                    pos1 = offset1 + (v1i * time) + (0.5 * a1 * Math.pow(time, 2));
+                    pos2 = offset2 + (0.5 * a2 * Math.pow(time, 2));
+                    phase = 'Impacto (Transferencia)';
+                } else {
+                    // Deslizamiento libre tras soltarse
+                    const postImpactTime = time - dt;
+                    // Posición en t = dt
+                    const p1_dt = offset1 + (v1i * dt) + (0.5 * a1 * Math.pow(dt, 2));
+                    const p2_dt = offset2 + (0.5 * a2 * Math.pow(dt, 2));
+                    
+                    pos1 = p1_dt; // M1 se queda quieto (v=0)
+                    pos2 = p2_dt + (v2f * postImpactTime); // M2 sigue a V constante
+                    phase = 'Separación Libre';
+                }
+
+                // Escala para ajustar a la pantalla
+                const scaleX = 20;
+
+                useEffect(() => {
+                    let interval;
+                    if (isMoving && time < 1.5) { // Simulación hasta 1.5 segundos
+                        interval = setInterval(() => {
+                            // Para apreciar el choque, ralentizamos el tiempo durante el impacto
+                            setTime(prev => {
+                                const delta = (prev >= 0 && prev <= dt) ? 0.01 : 0.03; 
+                                return prev + delta;
+                            });
+                        }, 20); // ~50 fps
+                    } else if (time >= 1.5) {
+                        setIsMoving(false);
+                    }
+                    return () => clearInterval(interval);
+                }, [isMoving, time, dt]);
+
+                const handlePlay = () => {
+                    setTime(-0.4);
+                    setIsMoving(true);
+                };
+
+                const reset = () => {
+                    setTime(-0.4);
+                    setIsMoving(false);
+                };
+
+                // DCL IA
+                const [imgUrl, setImgUrl] = useState(null);
+                const [imgLoading, setImgLoading] = useState(false);
+
+                const generarDiagrama = async () => {
+                    setImgLoading(true);
+                    const apiKey = "AIzaSyDMyUo-WgmdNkCRW6-YK7h-bnRF_FLAjf0"; 
+                    try {
+                        const response = await fetch(
+                            `https://generativelanguage.googleapis.com/v1beta/models/imagen-4.0-generate-001:predict?key=${apiKey}`,
+                            {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({
+                                    instances: [{ prompt: "Diagrama técnico de física, Tercera ley de Newton. Dos bloques chocando en horizontal. El bloque de la izquierda tiene un vector fuerza apuntando a la izquierda. El bloque de la derecha tiene un vector fuerza del mismo tamaño apuntando a la derecha. Estilo educativo minimalista, fondo blanco" }],
+                                    parameters: { sampleCount: 1 }
+                                })
+                            }
+                        );
+                        if (!response.ok) throw new Error("Error en red");
+                        const data = await response.json();
+                        setImgUrl(`data:image/png;base64,${data.predictions[0].bytesBase64Encoded}`);
+                    } catch (error) {
+                        console.error(error);
+                    } finally {
+                        setImgLoading(false);
+                    }
+                };
+
+                return (
+                    <div className="min-h-screen bg-slate-900 text-slate-100 p-4 md:p-8">
+                        <header className="max-w-5xl mx-auto mb-8 border-b border-slate-700 pb-6">
+                            <div className="flex items-center gap-3 mb-2">
+                                <span className="bg-red-600 text-white px-3 py-1 rounded-full text-xs font-black uppercase tracking-widest">Tercera Ley de Newton</span>
+                                <h1 className="text-3xl font-black text-red-400 uppercase tracking-tight tracking-widest">Impacto y Reacción</h1>
+                            </div>
+                            <div className="bg-slate-800/50 p-4 rounded-xl border border-slate-700 mt-4">
+                                <p className="text-slate-300 text-sm leading-relaxed">
+                                    <strong>Enunciado:</strong> Un objeto de 3 kg a 10 m/s golpea a otro de 4 kg. Tras el impacto, el primero queda completamente detenido en 0,2 s. Calcula la fuerza ejercida sobre el de 4 kg y su aceleración durante el choque.
+                                </p>
+                            </div>
+                        </header>
+
+                        <main className="max-w-5xl mx-auto grid md:grid-cols-2 gap-8">
+                            {/* Panel Visual */}
+                            <div className="bg-slate-800 rounded-3xl border border-slate-700 h-[450px] relative overflow-hidden shadow-2xl flex flex-col justify-end pb-12">
+                                
+                                {/* HUD Superior */}
+                                <div className="absolute top-4 w-full px-6 flex justify-between z-30 pointer-events-none">
+                                    <div className="bg-slate-900/90 p-3 rounded-lg border border-slate-700 backdrop-blur-md">
+                                        <p className="text-[10px] text-slate-500 uppercase font-black mb-1">Acel. M2 (a₂)</p>
+                                        <p className="text-xl font-mono font-black text-blue-400">{a2.toFixed(1)} m/s²</p>
+                                    </div>
+                                    <div className={`bg-slate-900/90 p-3 rounded-lg border backdrop-blur-md text-right border-b-4 ${time >= 0 && time <= dt ? 'border-b-orange-500 shadow-[0_0_15px_rgba(249,115,22,0.3)]' : 'border-b-red-500'}`}>
+                                        <p className="text-[10px] text-slate-500 uppercase font-black flex items-center justify-end gap-1">
+                                            {time >= 0 && time <= dt && <ZapIcon size={12} className="text-orange-500" />} Fuerza sobre M2 (F₂)
+                                        </p>
+                                        <p className="text-2xl font-mono font-black text-orange-400">{time >= 0 && time <= dt ? f2.toFixed(0) : "0"} N</p>
+                                    </div>
+                                </div>
+
+                                {/* Cronómetro central */}
+                                <div className="absolute top-4 left-1/2 -translate-x-1/2 z-30">
+                                    <div className="bg-slate-900/90 p-2 px-4 rounded-full border border-slate-700 backdrop-blur-md flex items-center gap-2">
+                                        <TimerIcon size={16} className={time >= 0 && time <= dt ? "text-orange-500" : "text-slate-400"} />
+                                        <span className="font-mono font-black text-lg text-white">{Math.max(0, time).toFixed(2)} s</span>
+                                    </div>
+                                    <p className="text-[10px] text-center text-slate-400 font-bold uppercase mt-1 tracking-widest">{phase}</p>
+                                </div>
+
+                                {/* Escenario - Suelo */}
+                                <div className="relative w-full h-48 flex items-end justify-center floor-pattern border-t-4 border-slate-600">
+                                    
+                                    {/* M1 (Izquierda, el que frena) */}
+                                    <div 
+                                        className="absolute bottom-0 w-20 h-20 bg-red-600 border-4 border-red-400 rounded-lg flex items-center justify-center shadow-lg transition-transform z-20"
+                                        style={{ transform: `translateX(${pos1 * scaleX}px)`, left: 'calc(50% - 40px)' }}
+                                    >
+                                        <span className="font-black text-red-200">M₁</span>
+                                        <span className="absolute -bottom-6 text-[10px] text-red-400 font-mono font-bold bg-slate-900/80 px-1 rounded">{m1}kg</span>
+
+                                        {/* Vector Velocidad Inicial M1 */}
+                                        {time < 0 && (
+                                            <div className="absolute top-0 right-[-30px] flex flex-col items-center">
+                                                <span className="text-[10px] font-black text-emerald-300">v={v1i}</span>
+                                                <ArrowRightIcon className="text-emerald-400" size={24} />
+                                            </div>
+                                        )}
+
+                                        {/* Vector Fuerza de frenado (Reacción sobre M1) */}
+                                        {time >= 0 && time <= dt && (
+                                            <div className="absolute top-1/2 right-full flex items-center pr-1 pointer-events-none" style={{ width: Math.min(120, Math.abs(f1)) }}>
+                                                <span className="mr-1 text-[10px] font-black text-rose-300 bg-slate-900/80 px-1 rounded whitespace-nowrap">F₁ = {f1.toFixed(0)}N</span>
+                                                <div className="h-2 bg-rose-500 w-full relative">
+                                                    <div className="absolute left-0 -top-1.5">{ArrowLeftIcon && <ArrowLeftIcon className="text-rose-500" size={20} />}</div>
+                                                </div>
+                                            </div>
+                                        )}
+                                    </div>
+
+                                    {/* M2 (Derecha, el que sale disparado) */}
+                                    <div 
+                                        className="absolute bottom-0 w-24 h-24 bg-blue-600 border-4 border-blue-400 rounded-lg flex items-center justify-center shadow-lg transition-transform z-10"
+                                        style={{ transform: `translateX(${pos2 * scaleX}px)`, left: 'calc(50% - 48px)' }}
+                                    >
+                                        <span className="font-black text-blue-200">M₂</span>
+                                        <span className="absolute -bottom-6 text-[10px] text-blue-400 font-mono font-bold bg-slate-900/80 px-1 rounded">{m2}kg</span>
+
+                                        {/* Vector Fuerza Recibida (Acción sobre M2) */}
+                                        {time >= 0 && time <= dt && (
+                                            <div className="absolute top-1/2 left-full flex items-center pl-1 pointer-events-none" style={{ width: Math.min(120, Math.abs(f2)) }}>
+                                                <div className="h-2 bg-orange-500 w-full relative shadow-[0_0_10px_rgba(249,115,22,0.8)]">
+                                                    <div className="absolute right-0 -top-1.5">{ArrowRightIcon && <ArrowRightIcon className="text-orange-500" size={20} />}</div>
+                                                </div>
+                                                <span className="ml-1 text-[10px] font-black text-orange-300 bg-slate-900/80 px-1 rounded whitespace-nowrap">F₂ = {f2.toFixed(0)}N</span>
+                                            </div>
+                                        )}
+
+                                        {/* Vector Velocidad Final M2 */}
+                                        {time > dt && (
+                                            <div className="absolute top-0 right-[-40px] flex flex-col items-center">
+                                                <span className="text-[10px] font-black text-emerald-300 bg-slate-900/80 px-1 rounded mb-1">v={v2f.toFixed(1)}</span>
+                                                <ArrowRightIcon className="text-emerald-400" size={24} />
+                                            </div>
+                                        )}
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* Controles y Resolución */}
+                            <div className="space-y-6">
+                                <div className="bg-slate-800 p-6 rounded-3xl border border-slate-700 shadow-xl">
+                                    <h3 className="text-xl font-bold mb-4 flex items-center gap-2 text-red-400">
+                                        <SettingsIcon size={20} /> Propiedades de los Bloques
+                                    </h3>
+                                    
+                                    <div className="space-y-6 mb-6">
+                                        <div className="grid grid-cols-2 gap-4">
+                                            <div className="bg-red-900/20 p-3 rounded-xl border border-red-500/20">
+                                                <div className="flex justify-between text-xs mb-1"><span className="text-red-400 font-bold uppercase">Masa 1</span></div>
+                                                <input type="range" min="1" max="10" step="0.5" value={m1} onChange={e => {setM1(Number(e.target.value)); reset();}} className="w-full h-2 bg-slate-700 rounded-lg appearance-none cursor-pointer accent-red-500 mb-1" />
+                                                <span className="font-mono text-white text-xs">{m1} kg</span>
+                                            </div>
+                                            
+                                            <div className="bg-blue-900/20 p-3 rounded-xl border border-blue-500/20">
+                                                <div className="flex justify-between text-xs mb-1"><span className="text-blue-400 font-bold uppercase">Masa 2</span></div>
+                                                <input type="range" min="1" max="10" step="0.5" value={m2} onChange={e => {setM2(Number(e.target.value)); reset();}} className="w-full h-2 bg-slate-700 rounded-lg appearance-none cursor-pointer accent-blue-500 mb-1" />
+                                                <span className="font-mono text-white text-xs">{m2} kg</span>
+                                            </div>
+                                        </div>
+
+                                        <div className="grid grid-cols-2 gap-4 pt-3 border-t border-slate-700">
+                                            <div>
+                                                <div className="flex justify-between text-xs mb-1">
+                                                    <span className="text-emerald-400 font-bold uppercase">V. Inicial M1</span>
+                                                    <span className="font-mono text-emerald-200">{v1i} m/s</span>
+                                                </div>
+                                                <input type="range" min="5" max="25" step="1" value={v1i} onChange={e => {setV1i(Number(e.target.value)); reset();}} className="w-full h-2 bg-slate-700 rounded-lg appearance-none cursor-pointer accent-emerald-500" />
+                                            </div>
+                                            <div>
+                                                <div className="flex justify-between text-xs mb-1">
+                                                    <span className="text-orange-400 font-bold uppercase">Tiempo (Δt)</span>
+                                                    <span className="font-mono text-orange-200">{dt.toFixed(2)} s</span>
+                                                </div>
+                                                <input type="range" min="0.05" max="1.0" step="0.05" value={dt} onChange={e => {setDt(Number(e.target.value)); reset();}} className="w-full h-2 bg-slate-700 rounded-lg appearance-none cursor-pointer accent-orange-500" />
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div className="flex gap-2">
+                                        <button 
+                                            onClick={handlePlay} 
+                                            disabled={isMoving}
+                                            className="flex-1 bg-red-600 hover:bg-red-500 text-white font-black py-4 rounded-xl shadow-lg flex justify-center items-center gap-2 disabled:opacity-50 transition-all active:scale-95"
+                                        >
+                                            {PlayIcon && <PlayIcon size={18} />} SIMULAR IMPACTO
+                                        </button>
+                                        <button onClick={reset} className="bg-slate-700 hover:bg-slate-600 text-white font-bold px-5 rounded-xl transition-all shadow-md">
+                                            {RotateCcwIcon && <RotateCcwIcon size={18} />}
+                                        </button>
+                                    </div>
+                                </div>
+
+                                <div className="bg-red-950/20 p-6 rounded-3xl border border-red-500/20">
+                                    <div className="flex justify-between items-center mb-4 border-b border-red-500/30 pb-2">
+                                        <h4 className="font-bold text-red-300 flex items-center gap-2">
+                                            {CalculatorIcon && <CalculatorIcon size={18} />} Resolución Paso a Paso
+                                        </h4>
+                                        <button onClick={generarDiagrama} className="text-[10px] uppercase font-bold bg-slate-800 hover:bg-slate-700 text-slate-300 px-3 py-1.5 rounded flex items-center gap-1 border border-slate-600">
+                                            {imgLoading ? <span className="animate-pulse">Cargando...</span> : <>{ImagePlusIcon && <ImagePlusIcon size={14}/>} Generar DCL</>}
+                                        </button>
+                                    </div>
+
+                                    {imgUrl && (
+                                        <div className="mb-4 bg-slate-900 p-2 rounded-xl border border-slate-700 text-center">
+                                            <img src={imgUrl} alt="Diagrama de Cuerpo Libre" className="mx-auto max-h-40 rounded-lg" />
+                                        </div>
+                                    )}
+
+                                    <div className="text-xs text-slate-300 space-y-4 leading-relaxed">
+                                        <p><strong>1. Análisis del Objeto 1 (El que frena):</strong><br/>
+                                        Si pasa de {v1i} m/s a 0 m/s en {dt.toFixed(2)} s, calculamos su aceleración (negativa) y la fuerza que lo detiene.</p>
+                                        
+                                        <div className="bg-slate-900/80 p-2 rounded-lg border-l-4 border-red-500 font-mono text-red-200">
+                                            a₁ = (v_f - v_0) / t = (0 - {v1i}) / {dt.toFixed(2)} = <strong>{a1.toFixed(1)} m/s²</strong><br/>
+                                            F₁ = m₁ · a₁ = {m1} · ({a1.toFixed(1)}) = <strong>{f1.toFixed(1)} N</strong>
+                                        </div>
+
+                                        <p><strong>2. Tercera Ley de Newton (Acción/Reacción):</strong><br/>
+                                        Si el objeto 2 empujó al objeto 1 con {f1.toFixed(1)} N para frenarlo, el objeto 1 empujó al objeto 2 con exactamente la misma fuerza pero en sentido contrario.</p>
+                                        
+                                        <div className="bg-slate-900/80 p-2 rounded-lg border-l-4 border-orange-500 font-mono text-orange-200 shadow-[inset_0_0_10px_rgba(249,115,22,0.1)]">
+                                            F₂ = -F₁ = <strong>{f2.toFixed(1)} N</strong>
+                                        </div>
+
+                                        <p><strong>3. Aceleración del Objeto 2:</strong><br/>
+                                        Aplicamos de nuevo la Segunda Ley, pero ahora sobre la masa 2.</p>
+                                        
+                                        <div className="bg-slate-900/80 p-3 rounded-lg border-l-4 border-blue-500 font-mono text-blue-200 shadow-inner">
+                                            a₂ = F₂ / m₂<br/>
+                                            a₂ = {f2.toFixed(1)} / {m2}<br/>
+                                            <strong>a₂ = {a2.toFixed(2)} m/s²</strong>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </main>
+
+                        <footer className="max-w-5xl mx-auto mt-12 pt-6 border-t border-slate-800 text-center text-slate-500 text-[10px] font-bold uppercase tracking-widest">
+                            Profe Física | Dinámica de Impactos y Tercera Ley de Newton
+                        </footer>
+                    </div>
+                );
+            };
+
+            const container = document.getElementById('root');
+            const root = ReactDOM.createRoot(container);
+            root.render(<App />);
+        })();
+    </script>
+</body>
+</html>

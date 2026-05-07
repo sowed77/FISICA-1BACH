@@ -1,0 +1,325 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Laboratorio: Interacción Gravitatoria Mutua</title>
+    <!-- Bibliotecas externas -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <script src="https://unpkg.com/lucide-react@latest"></script>
+
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&family=Fira+Code&display=swap');
+        body { font-family: 'Inter', sans-serif; background-color: #020617; } /* Slate 950 */
+        .font-mono { font-family: 'Fira Code', monospace; }
+        input[type=range]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            height: 20px;
+            width: 20px;
+            border-radius: 50%;
+            background: #14b8a6; /* Teal 500 */
+            cursor: pointer;
+            border: 2px solid #ffffff;
+            box-shadow: 0 0 10px rgba(20, 184, 166, 0.5);
+        }
+        .starfield {
+            background-image: radial-gradient(white, rgba(255,255,255,.2) 2px, transparent 4px),
+                              radial-gradient(white, rgba(255,255,255,.15) 1px, transparent 3px);
+            background-size: 550px 550px, 350px 350px;
+            background-position: 0 0, 40px 60px;
+            opacity: 0.3;
+        }
+    </style>
+</head>
+<body>
+    <div id="root"></div>
+
+    <script type="text/babel">
+        (() => {
+            var { useState, useEffect } = React;
+            var icons = window.LucideReact || {};
+            
+            // Asignación segura de iconos
+            var getIcon = (name) => icons[name] || (({className}) => <span className={className || ''}></span>);
+            var CalculatorIcon = getIcon('Calculator');
+            var SettingsIcon = getIcon('Settings');
+            var InfoIcon = getIcon('Info');
+            var Globe2Icon = getIcon('Globe2');
+            var UserIcon = getIcon('User');
+            var ArrowUpIcon = getIcon('ArrowUp');
+            var ArrowDownIcon = getIcon('ArrowDown');
+            var PlayIcon = getIcon('Play');
+            var RotateCcwIcon = getIcon('RotateCcw');
+            var ImagePlusIcon = getIcon('ImagePlus');
+
+            var App = () => {
+                // Constantes Físicas
+                const G = 6.674e-11; // N·m²/kg²
+                const Mt = 5.972e24; // Masa de la Tierra (kg)
+                const Rt = 6371000; // Radio de la Tierra (m)
+                const g = 9.81; // Aceleración gravedad superficial (m/s²)
+
+                // Estados Interactivos
+                const [mPersona, setMPersona] = useState(60); // kg
+                
+                // Estados de Animación
+                const [isJumping, setIsJumping] = useState(false);
+                const [jumpY, setJumpY] = useState(0);
+
+                // Cálculos Físicos
+                // Fuerza mutua de atracción (es la misma para ambos)
+                const fuerzaMutua = mPersona * g; // o G * (Mt * mPersona) / R²
+                
+                // Aceleraciones (a = F / m)
+                const aPersona = fuerzaMutua / mPersona;
+                const aTierra = fuerzaMutua / Mt;
+
+                // Animación de salto simple
+                useEffect(() => {
+                    let animationFrame;
+                    let startTime;
+
+                    const animate = (timestamp) => {
+                        if (!startTime) startTime = timestamp;
+                        const elapsed = timestamp - startTime;
+
+                        if (isJumping) {
+                            // Parábola simple para el salto visual: y = v0*t - 0.5*g*t^2
+                            // Escala visual exagerada
+                            const t = elapsed / 1000; // segundos
+                            const v0 = 5; // m/s salto inicial visual
+                            const y = v0 * t - 0.5 * 9.8 * t * t;
+                            
+                            if (y >= 0) {
+                                setJumpY(y * 20); // 20px por metro visual
+                                animationFrame = requestAnimationFrame(animate);
+                            } else {
+                                setJumpY(0);
+                                setIsJumping(false);
+                            }
+                        }
+                    };
+
+                    if (isJumping) {
+                        animationFrame = requestAnimationFrame(animate);
+                    }
+
+                    return () => cancelAnimationFrame(animationFrame);
+                }, [isJumping]);
+
+                const handleJump = () => {
+                    if (!isJumping) setIsJumping(true);
+                };
+
+                // DCL con IA
+                const [imgUrl, setImgUrl] = useState(null);
+                const [imgLoading, setImgLoading] = useState(false);
+
+                const generarDiagrama = async () => {
+                    setImgLoading(true);
+                    const apiKey = "AIzaSyDMyUo-WgmdNkCRW6-YK7h-bnRF_FLAjf0"; 
+                    try {
+                        const response = await fetch(
+                            `https://generativelanguage.googleapis.com/v1beta/models/imagen-4.0-generate-001:predict?key=${apiKey}`,
+                            {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({
+                                    instances: [{ prompt: "Diagrama técnico de física, Tercera Ley de Newton. Una persona sobre la Tierra. Un vector F_gT apuntando hacia abajo desde la persona. Un vector idéntico F_gP apuntando hacia arriba desde el centro de la Tierra hacia la persona. Ambos vectores de fuerza son exactamente del mismo tamaño. Fondo blanco, minimalista, estilo educativo" }],
+                                    parameters: { sampleCount: 1 }
+                                })
+                            }
+                        );
+                        if (!response.ok) throw new Error("Error en red");
+                        const data = await response.json();
+                        setImgUrl(`data:image/png;base64,${data.predictions[0].bytesBase64Encoded}`);
+                    } catch (error) {
+                        console.error(error);
+                    } finally {
+                        setImgLoading(false);
+                    }
+                };
+
+                return (
+                    <div className="min-h-screen bg-slate-950 text-slate-100 p-4 md:p-8">
+                        <header className="max-w-5xl mx-auto mb-8 border-b border-slate-800 pb-6">
+                            <div className="flex items-center gap-3 mb-2">
+                                <span className="bg-teal-600 text-white px-3 py-1 rounded-full text-xs font-black uppercase tracking-widest">Tercera Ley de Newton</span>
+                                <h1 className="text-3xl font-black text-teal-400 uppercase tracking-tight tracking-widest">Atracción Planetaria</h1>
+                            </div>
+                            <div className="bg-slate-900/80 p-4 rounded-xl border border-slate-800 mt-4">
+                                <p className="text-slate-300 text-sm leading-relaxed">
+                                    <strong>Enunciado:</strong> Una persona de 60 kg está en la superficie de la Tierra. a) ¿Con qué fuerza te atrae la Tierra? ¿Y tú a ella? b) ¿Qué aceleración te comunica a ti? ¿Y a la Tierra?
+                                </p>
+                            </div>
+                        </header>
+
+                        <main className="max-w-5xl mx-auto grid md:grid-cols-2 gap-8">
+                            {/* Panel Visual Espacial */}
+                            <div className="bg-slate-900 rounded-3xl border border-slate-800 h-[550px] relative overflow-hidden shadow-2xl flex flex-col items-center">
+                                
+                                <div className="absolute inset-0 starfield pointer-events-none"></div>
+
+                                {/* HUD Flotante */}
+                                <div className="absolute top-4 w-full px-6 flex justify-between z-30 pointer-events-none">
+                                    <div className="bg-slate-950/90 p-3 rounded-lg border border-slate-800 backdrop-blur-md">
+                                        <p className="text-[10px] text-slate-500 uppercase font-black">Acel. Persona (a_p)</p>
+                                        <p className="text-lg font-mono font-black text-emerald-400">{aPersona.toFixed(2)} m/s²</p>
+                                    </div>
+                                    <div className="bg-slate-950/90 p-3 rounded-lg border border-slate-800 backdrop-blur-md text-right">
+                                        <p className="text-[10px] text-slate-500 uppercase font-black">Acel. Tierra (a_t)</p>
+                                        <p className="text-lg font-mono font-black text-blue-400">{aTierra.toExponential(2)} m/s²</p>
+                                    </div>
+                                </div>
+
+                                {/* Escena de la Tierra y Persona */}
+                                <div className="relative w-full h-full flex flex-col justify-end items-center mt-20">
+                                    
+                                    {/* Persona flotando/saltando */}
+                                    <div 
+                                        className="relative flex flex-col items-center z-20"
+                                        style={{ transform: `translateY(-${jumpY}px)`, marginBottom: '4px' }}
+                                    >
+                                        <div className="w-12 h-12 bg-emerald-500 rounded-full border-4 border-emerald-300 shadow-[0_0_15px_rgba(16,185,129,0.5)] flex items-center justify-center">
+                                            <UserIcon size={20} className="text-emerald-950" />
+                                        </div>
+                                        <span className="text-[9px] font-black text-emerald-200 mt-1 bg-slate-950/80 px-1 rounded">{mPersona} kg</span>
+                                        
+                                        {/* Vector Fuerza Tierra sobre Persona (Abajo) */}
+                                        <div className="absolute top-full left-1/2 -translate-x-1/2 flex flex-col items-center pt-5 pointer-events-none" style={{ height: '80px' }}>
+                                            <div className="w-1.5 bg-orange-500 h-full relative shadow-[0_0_10px_rgba(249,115,22,0.8)]">
+                                                <div className="absolute bottom-0 left-1/2 -translate-x-1/2">{ArrowDownIcon && <ArrowDownIcon size={20} className="text-orange-500" />}</div>
+                                            </div>
+                                            <span className="mt-1 text-[10px] font-black text-orange-400 bg-slate-950/80 px-1 rounded whitespace-nowrap">F_M = {fuerzaMutua.toFixed(0)} N</span>
+                                        </div>
+                                    </div>
+
+                                    {/* La Tierra (Curva enorme) */}
+                                    <div className="relative z-10 w-[800px] h-[300px] bg-blue-900 rounded-t-[400px] border-t-8 border-blue-600 flex flex-col items-center justify-start pt-16 overflow-hidden shadow-[inset_0_20px_50px_rgba(0,0,0,0.5)]">
+                                        <div className="w-32 h-16 bg-green-700/50 rounded-full blur-md absolute top-10 left-32"></div>
+                                        <div className="w-48 h-24 bg-green-700/50 rounded-full blur-md absolute top-20 right-24"></div>
+                                        
+                                        {/* Vector Fuerza Persona sobre Tierra (Arriba) */}
+                                        <div className="absolute top-0 left-1/2 -translate-x-1/2 flex flex-col items-center pb-1 pointer-events-none" style={{ height: '80px', marginTop: '-80px' }}>
+                                            <span className="mb-1 text-[10px] font-black text-orange-400 bg-slate-950/80 px-1 rounded whitespace-nowrap">F_M = {fuerzaMutua.toFixed(0)} N</span>
+                                            <div className="w-1.5 bg-orange-500 h-full relative shadow-[0_0_10px_rgba(249,115,22,0.8)]">
+                                                <div className="absolute top-0 left-1/2 -translate-x-1/2">{ArrowUpIcon && <ArrowUpIcon size={20} className="text-orange-500" />}</div>
+                                            </div>
+                                        </div>
+
+                                        <div className="mt-12 text-center opacity-50">
+                                            <Globe2Icon size={48} className="text-blue-300 mx-auto mb-2" />
+                                            <p className="text-xs font-black text-blue-200 uppercase tracking-widest">Planeta Tierra</p>
+                                            <p className="text-[10px] font-mono text-blue-300 mt-1">M = 5.97 × 10²⁴ kg</p>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                {/* Toast de Aceleración de la Tierra durante el salto */}
+                                {isJumping && (
+                                    <div className="absolute bottom-6 left-1/2 -translate-x-1/2 bg-blue-900/90 text-blue-200 px-6 py-3 rounded-full text-xs font-bold border border-blue-500/50 z-30 animate-pulse text-center shadow-xl">
+                                        ¡La Tierra "sube" hacia ti a {aTierra.toExponential(2)} m/s²!
+                                    </div>
+                                )}
+                            </div>
+
+                            {/* Controles y Resolución */}
+                            <div className="space-y-6">
+                                <div className="bg-slate-900 p-6 rounded-3xl border border-slate-800 shadow-xl">
+                                    <h3 className="text-xl font-bold mb-4 flex items-center gap-2 text-teal-400">
+                                        {SettingsIcon && <SettingsIcon size={20} />} Ajustar Masa Corporal
+                                    </h3>
+                                    
+                                    <div className="space-y-6 mb-6">
+                                        <div>
+                                            <div className="flex justify-between text-xs mb-2">
+                                                <span className="text-slate-300 font-bold uppercase">Masa de la Persona (m_p)</span>
+                                                <span className="font-mono bg-slate-950 px-2 py-0.5 rounded text-teal-300">{mPersona} kg</span>
+                                            </div>
+                                            <input 
+                                                type="range" min="20" max="150" step="5" value={mPersona} 
+                                                onChange={e => setMPersona(Number(e.target.value))} 
+                                                className="w-full h-2 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-teal-500" 
+                                            />
+                                        </div>
+                                    </div>
+
+                                    <button 
+                                        onClick={handleJump} 
+                                        disabled={isJumping}
+                                        className="w-full bg-teal-600 hover:bg-teal-500 text-white font-black py-4 rounded-xl shadow-[0_0_15px_rgba(20,184,166,0.4)] flex justify-center items-center gap-2 disabled:opacity-50 transition-all active:scale-95"
+                                    >
+                                        {PlayIcon && <PlayIcon size={18} />} SIMULAR SALTO Y ATRACCIÓN
+                                    </button>
+                                </div>
+
+                                <div className="bg-teal-950/20 p-6 rounded-3xl border border-teal-500/20">
+                                    <div className="flex justify-between items-center mb-4 border-b border-teal-500/30 pb-2">
+                                        <h4 className="font-bold text-teal-300 flex items-center gap-2">
+                                            {CalculatorIcon && <CalculatorIcon size={18} />} Resolución Paso a Paso
+                                        </h4>
+                                        <button onClick={generarDiagrama} className="text-[10px] uppercase font-bold bg-slate-900 hover:bg-slate-800 text-slate-300 px-3 py-1.5 rounded flex items-center gap-1 border border-slate-700">
+                                            {imgLoading ? <span className="animate-pulse">Cargando...</span> : <>{ImagePlusIcon && <ImagePlusIcon size={14}/>} Generar DCL</>}
+                                        </button>
+                                    </div>
+
+                                    {imgUrl && (
+                                        <div className="mb-4 bg-slate-950 p-2 rounded-xl border border-slate-800 text-center">
+                                            <img src={imgUrl} alt="Diagrama de Acción-Reacción" className="mx-auto max-h-40 rounded-lg" />
+                                        </div>
+                                    )}
+
+                                    <div className="text-xs text-slate-300 space-y-4 leading-relaxed">
+                                        <p><strong>a) Fuerza de Atracción Mutua:</strong><br/>
+                                        Por la 3ª Ley de Newton, la fuerza que ejerce A sobre B es igual y de sentido contrario a la de B sobre A. Ambas se calculan igual (es tu Peso).</p>
+                                        
+                                        <div className="bg-slate-950/80 p-2 rounded-lg border-l-4 border-orange-500 font-mono text-orange-300">
+                                            F = m_p · g = {mPersona} · 9.8 = <strong>{fuerzaMutua.toFixed(1)} N</strong><br/>
+                                            <span className="text-[10px] text-slate-500">
+                                                (La Tierra te tira hacia abajo con {fuerzaMutua.toFixed(1)} N. Tú tiras de la Tierra hacia arriba con {fuerzaMutua.toFixed(1)} N).
+                                            </span>
+                                        </div>
+
+                                        <p><strong>b) Aceleraciones experimentadas (2ª Ley):</strong><br/>
+                                        La fuerza es la misma, pero se aplica a masas colosalmente diferentes ($a = F / m$).</p>
+                                        
+                                        <div className="grid grid-cols-2 gap-2">
+                                            <div className="bg-slate-950/80 p-2 rounded-lg border-l-4 border-emerald-500 font-mono text-emerald-300">
+                                                <strong>Aceleración Tuya:</strong><br/>
+                                                a_p = F / m_p<br/>
+                                                a_p = {fuerzaMutua.toFixed(1)} / {mPersona}<br/>
+                                                <strong>a_p = {aPersona.toFixed(1)} m/s²</strong>
+                                            </div>
+                                            <div className="bg-slate-950/80 p-2 rounded-lg border-l-4 border-blue-500 font-mono text-blue-300">
+                                                <strong>Aceleración Tierra:</strong><br/>
+                                                a_t = F / M_t<br/>
+                                                a_t = {fuerzaMutua.toFixed(1)} / 5.97e24<br/>
+                                                <strong>a_t = {aTierra.toExponential(2)} m/s²</strong>
+                                            </div>
+                                        </div>
+                                        <p className="text-[10px] text-slate-400 mt-2 italic text-center">
+                                            Una aceleración de 10⁻²³ m/s² significa que la Tierra tardaría millones de años en moverse el ancho de un átomo hacia ti. ¡Por eso no lo notamos!
+                                        </p>
+                                    </div>
+                                </div>
+                            </div>
+                        </main>
+
+                        <footer className="max-w-5xl mx-auto mt-12 pt-6 border-t border-slate-800 text-center text-slate-500 text-[10px] font-bold uppercase tracking-widest">
+                            Profe Física | Interacción Mutua: Newton vs Newton
+                        </footer>
+                    </div>
+                );
+            };
+
+            const container = document.getElementById('root');
+            const root = ReactDOM.createRoot(container);
+            root.render(<App />);
+        })();
+    </script>
+</body>
+</html>

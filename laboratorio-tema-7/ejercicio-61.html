@@ -1,0 +1,412 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Laboratorio: Límite de Adherencia en Curva</title>
+    <!-- Bibliotecas externas -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <script src="https://unpkg.com/lucide-react@latest"></script>
+
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&family=Fira+Code&display=swap');
+        body { font-family: 'Inter', sans-serif; background-color: #0f172a; }
+        .font-mono { font-family: 'Fira Code', monospace; }
+        input[type=range]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            height: 20px;
+            width: 20px;
+            border-radius: 50%;
+            background: #ef4444; /* Red 500 */
+            cursor: pointer;
+            border: 2px solid #ffffff;
+            box-shadow: 0 0 10px rgba(239, 68, 68, 0.5);
+        }
+        .road-curve {
+            background-color: #334155;
+            background-image: repeating-radial-gradient(circle at center, transparent 0, transparent 20px, rgba(255,255,255,0.05) 20px, rgba(255,255,255,0.05) 40px);
+        }
+    </style>
+</head>
+<body>
+    <div id="root"></div>
+
+    <script type="text/babel">
+        (() => {
+            var { useState, useEffect, useRef } = React;
+            var icons = window.LucideReact || {};
+            
+            var getIcon = (name) => icons[name] || (({className}) => <span className={className || ''}></span>);
+            
+            var CalculatorIcon = getIcon('Calculator');
+            var SettingsIcon = getIcon('Settings');
+            var InfoIcon = getIcon('Info');
+            var CarIcon = getIcon('Car');
+            var ArrowRightIcon = getIcon('ArrowRight');
+            var ArrowLeftIcon = getIcon('ArrowLeft');
+            var ArrowUpIcon = getIcon('ArrowUp');
+            var AlertTriangleIcon = getIcon('AlertTriangle');
+            var ImagePlusIcon = getIcon('ImagePlus');
+            var PlayIcon = getIcon('Play');
+            var RotateCcwIcon = getIcon('RotateCcw');
+
+            var App = () => {
+                // Constantes
+                const g = 9.8; // m/s^2
+                const m = 1000; // kg (Masa genérica para visualizar fuerza, no afecta a la v_max)
+
+                // Estados interactivos
+                const [mu, setMu] = useState(0.420); // Coeficiente de rozamiento
+                const [radio, setRadio] = useState(100); // m
+                const [vKmh, setVKmh] = useState(70); // km/h (velocidad actual elegida por el usuario)
+
+                // Cálculos Físicos
+                const vMs = vKmh / 3.6; // Velocidad actual en m/s
+                
+                // Velocidad Máxima Segura: Fc_max = Fr_max => m*v^2/R = mu*m*g => v_max = sqrt(mu*g*R)
+                const vMaxMs = Math.sqrt(mu * g * radio);
+                const vMaxKmh = vMaxMs * 3.6;
+
+                // Fuerzas actuales
+                const peso = m * g;
+                const normal = peso;
+                const fr_max = mu * normal; // Límite de agarre
+                const fc_requerida = (m * vMs * vMs) / radio; // Fuerza necesaria para dar la curva
+
+                // Estado del vehículo
+                const isDerrapando = fc_requerida > fr_max;
+
+                // Animación Vista Superior
+                const [angle, setAngle] = useState(0); // Ángulo en la curva
+                const [driftRadius, setDriftRadius] = useState(radio); // Radio visual, aumenta si derrapa
+                const [isMoving, setIsMoving] = useState(false);
+                const requestRef = useRef();
+                const lastTimeRef = useRef();
+
+                useEffect(() => {
+                    if (isMoving) {
+                        const animate = time => {
+                            if (lastTimeRef.current != undefined) {
+                                const deltaTime = time - lastTimeRef.current;
+                                // Omega (velocidad angular visual) depende de la velocidad
+                                const omega = vMs / radio; 
+                                setAngle(prevAngle => (prevAngle + omega * deltaTime * 0.05) % 360); // Ajuste de velocidad visual
+                                
+                                if (isDerrapando) {
+                                    // Si derrapa, el radio visual aumenta simulando la salida de la curva
+                                    setDriftRadius(prevR => prevR + deltaTime * 0.05);
+                                } else {
+                                    // Si no derrapa, se mantiene en el carril
+                                    setDriftRadius(radio);
+                                }
+                            }
+                            lastTimeRef.current = time;
+                            
+                            // Si se ha salido mucho de la pantalla, detenemos
+                            if (driftRadius > radio + 50) {
+                                setIsMoving(false);
+                            } else {
+                                requestRef.current = requestAnimationFrame(animate);
+                            }
+                        }
+                        requestRef.current = requestAnimationFrame(animate);
+                    } else {
+                        // Resetear el tiempo previo si se pausa
+                        lastTimeRef.current = undefined;
+                    }
+                    return () => cancelAnimationFrame(requestRef.current);
+                }, [isMoving, vMs, radio, isDerrapando, driftRadius]);
+
+                const handlePlay = () => {
+                    if (!isMoving) {
+                        setAngle(0);
+                        setDriftRadius(radio);
+                        setIsMoving(true);
+                    }
+                };
+
+                const handleReset = () => {
+                    setIsMoving(false);
+                    setAngle(0);
+                    setDriftRadius(radio);
+                    lastTimeRef.current = undefined;
+                };
+
+                // Generador de DCL IA
+                const [imgUrl, setImgUrl] = useState(null);
+                const [imgLoading, setImgLoading] = useState(false);
+
+                const generarDiagrama = async () => {
+                    setImgLoading(true);
+                    const apiKey = "AIzaSyDMyUo-WgmdNkCRW6-YK7h-bnRF_FLAjf0"; 
+                    try {
+                        const response = await fetch(
+                            `https://generativelanguage.googleapis.com/v1beta/models/imagen-4.0-generate-001:predict?key=${apiKey}`,
+                            {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({
+                                    instances: [{ prompt: "Diagrama técnico de física. Vista cenital (desde arriba) de un coche tomando una curva hacia la izquierda. Vector Velocidad v tangencial a la trayectoria hacia adelante. Vector Fuerza de Fricción Fr apuntando perpendicularmente hacia el centro de la curva (izquierda), actuando como Fuerza Centrípeta. Fondo blanco, minimalista, educativo" }],
+                                    parameters: { sampleCount: 1 }
+                                })
+                            }
+                        );
+                        if (!response.ok) throw new Error("Error en red");
+                        const data = await response.json();
+                        setImgUrl(`data:image/png;base64,${data.predictions[0].bytesBase64Encoded}`);
+                    } catch (error) {
+                        console.error(error);
+                    } finally {
+                        setImgLoading(false);
+                    }
+                };
+
+                // Escala visual
+                const rVisual = 150; // Radio visual fijo del circuito central
+
+                return (
+                    <div className="min-h-screen bg-slate-900 text-slate-100 p-4 md:p-8">
+                        <header className="max-w-5xl mx-auto mb-8 border-b border-slate-700 pb-6">
+                            <div className="flex items-center gap-3 mb-2">
+                                <span className="bg-red-600 text-white px-3 py-1 rounded-full text-xs font-black uppercase tracking-widest">Límites Dinámicos</span>
+                                <h1 className="text-3xl font-black text-red-400 uppercase tracking-tight tracking-widest">El Límite de Adherencia</h1>
+                            </div>
+                            <div className="bg-slate-800/50 p-4 rounded-xl border border-slate-700 mt-4">
+                                <p className="text-slate-300 text-sm leading-relaxed">
+                                    <strong>Enunciado:</strong> Automóvil (μ = 0,420) en curva plana de R=100 m. a) Calcula la velocidad máxima segura. b) ¿Se incrementaría si tuviera peralte?
+                                </p>
+                            </div>
+                        </header>
+
+                        <main className="max-w-5xl mx-auto grid md:grid-cols-2 gap-8">
+                            {/* Panel Visual (Vista Cenital de la Curva) */}
+                            <div className="bg-slate-800 rounded-3xl border border-slate-700 h-[500px] relative overflow-hidden shadow-2xl flex flex-col justify-between road-texture">
+                                
+                                {/* Marcadores Flotantes */}
+                                <div className="absolute top-4 w-full px-6 flex justify-between z-30 pointer-events-none">
+                                    <div className="bg-slate-900/90 p-3 rounded-lg border border-slate-700 backdrop-blur-md">
+                                        <p className="text-[10px] text-slate-500 uppercase font-black">Agarre Máximo Disponible</p>
+                                        <p className="text-xl font-mono font-black text-emerald-400">{fr_max.toFixed(0)} N</p>
+                                    </div>
+                                    <div className={`bg-slate-900/90 p-3 rounded-lg border backdrop-blur-md text-right border-b-4 ${isDerrapando ? 'border-b-red-500' : 'border-b-orange-500'}`}>
+                                        <p className="text-[10px] text-slate-500 uppercase font-black">Fuerza Centrípeta Exigida</p>
+                                        <p className={`text-xl font-mono font-black ${isDerrapando ? 'text-red-400' : 'text-orange-400'}`}>{fc_requerida.toFixed(0)} N</p>
+                                    </div>
+                                </div>
+
+                                {isDerrapando && (
+                                    <div className="absolute top-24 left-1/2 -translate-x-1/2 z-40 bg-red-600/90 text-white px-6 py-4 rounded-xl border border-red-400 shadow-[0_0_30px_rgba(220,38,38,0.8)] text-center animate-pulse flex flex-col items-center">
+                                        <AlertTriangleIcon size={32} className="mb-2" />
+                                        <span className="font-black uppercase tracking-widest text-sm">DERRAPE INMINENTE</span>
+                                        <span className="text-[10px] mt-1">La fuerza exigida supera el agarre del neumático.</span>
+                                    </div>
+                                )}
+
+                                {/* Escenario - Vista Cenital */}
+                                <div className="relative w-full h-full flex items-center justify-center">
+                                    
+                                    {/* Centro de la curva */}
+                                    <div className="absolute w-4 h-4 bg-slate-400 rounded-full flex items-center justify-center">
+                                        <div className="w-1 h-1 bg-slate-900 rounded-full"></div>
+                                    </div>
+
+                                    {/* Carril de la curva (Radio visual fijo) */}
+                                    <div 
+                                        className="absolute rounded-full border-[20px] border-slate-600 border-opacity-50"
+                                        style={{ width: `${rVisual * 2 + 40}px`, height: `${rVisual * 2 + 40}px` }}
+                                    ></div>
+                                    
+                                    {/* Línea discontinua del centro del carril */}
+                                    <div 
+                                        className="absolute rounded-full border-2 border-white/50 border-dashed"
+                                        style={{ width: `${rVisual * 2}px`, height: `${rVisual * 2}px` }}
+                                    ></div>
+
+                                    {/* Línea que marca el Radio real para la cámara */}
+                                    <div className="absolute top-1/2 left-1/2 h-[1px] bg-slate-400/50 origin-left border-b border-dashed border-slate-300" style={{ width: `${rVisual}px`, transform: `rotate(15deg)` }}>
+                                        <span className="absolute left-1/2 -top-4 text-[10px] text-slate-300 font-mono bg-slate-900/80 px-1 rounded">R = {radio} m</span>
+                                    </div>
+
+                                    {/* El Coche rotando en la curva */}
+                                    {/* El radio real (radio) no define el tamaño del SVG en pantalla para evitar que sea muy grande o muy pequeño,
+                                        se dibuja en el rVisual. Sin embargo, si derrapa, driftRadius aumenta artificialmente su distancia al centro */}
+                                    <div 
+                                        className="absolute"
+                                        style={{ 
+                                            transform: `rotate(${angle}deg)`, 
+                                            width: '2px', 
+                                            height: '2px' // Centro
+                                        }}
+                                    >
+                                        <div 
+                                            className={`absolute transition-all ${isDerrapando ? 'duration-100 ease-out' : 'duration-0'}`}
+                                            style={{ 
+                                                // El coche se dibuja desplazado a la derecha sobre el eje X rotado
+                                                transform: `translateX(${rVisual * (driftRadius / radio)}px) rotate(90deg)`,
+                                                marginTop: '-15px', // Centrado vertical manual sobre el carril
+                                                marginLeft: '-10px' // Centrado horizontal manual
+                                            }}
+                                        >
+                                            <div className="w-8 h-12 bg-red-500 rounded-lg flex flex-col items-center justify-center relative shadow-lg border-2 border-red-700">
+                                                <CarIcon size={16} className="text-white opacity-80" />
+                                                
+                                                {/* Vector Velocidad (Tangencial, hacia arriba localmente porque el coche está girado 90deg) */}
+                                                {!isMoving && (
+                                                    <div className="absolute bottom-full left-1/2 -translate-x-1/2 flex flex-col items-center pb-1 pointer-events-none" style={{ height: Math.min(80, vKmh) }}>
+                                                        <div className="w-1 bg-emerald-400 h-full relative">
+                                                            <div className="absolute top-0 -translate-x-1.5">{ArrowUpIcon && <ArrowUpIcon size={16} className="text-emerald-400" />}</div>
+                                                        </div>
+                                                        <span className="absolute -top-4 text-[10px] font-black text-emerald-300 bg-slate-900/80 px-1 rounded whitespace-nowrap">v</span>
+                                                    </div>
+                                                )}
+
+                                                {/* Vector Rozamiento (Hacia el centro de la curva, que es izquierda local) */}
+                                                {/* Si está derrapando, Fr no llega al límite de Fc requerida */}
+                                                {!isMoving && (
+                                                    <div className="absolute right-full top-1/2 -translate-y-1/2 flex items-center pr-1 pointer-events-none" style={{ width: Math.min(100, isDerrapando ? 60 : fc_requerida / 150) }}>
+                                                        <span className="mr-1 text-[10px] font-black text-orange-400 bg-slate-900/80 px-1 rounded whitespace-nowrap">Fr {isDerrapando ? '(max)' : ''}</span>
+                                                        <div className={`h-1.5 ${isDerrapando ? 'bg-red-500' : 'bg-orange-500'} w-full relative`}>
+                                                            <div className="absolute left-0 -top-2">{ArrowLeftIcon && <ArrowLeftIcon size={20} className={isDerrapando ? 'text-red-500' : 'text-orange-500'} />}</div>
+                                                        </div>
+                                                    </div>
+                                                )}
+
+                                                {/* Vector FC Requerida "Fantasma" (Para mostrar lo que falta si derrapa) */}
+                                                {!isMoving && isDerrapando && (
+                                                    <div className="absolute right-full top-1/2 -translate-y-1/2 flex items-center pr-1 pointer-events-none opacity-40 border-t-2 border-dashed border-red-500" style={{ width: Math.min(150, fc_requerida / 150) }}>
+                                                        <span className="absolute left-0 -top-4 text-[8px] font-black text-red-300 bg-slate-900/80 px-1 rounded whitespace-nowrap">Fc requerida</span>
+                                                    </div>
+                                                )}
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* Controles y Resolución */}
+                            <div className="space-y-6">
+                                <div className="bg-slate-800 p-6 rounded-3xl border border-slate-700 shadow-xl">
+                                    <h3 className="text-xl font-bold mb-4 flex items-center gap-2 text-red-400">
+                                        {SettingsIcon && <SettingsIcon size={20} />} Parámetros de Seguridad
+                                    </h3>
+                                    
+                                    <div className="space-y-5 mb-6">
+                                        <div className="bg-slate-900/50 p-4 rounded-xl border border-slate-700 mb-4 flex justify-between items-center shadow-inner">
+                                            <div>
+                                                <p className="text-[10px] text-slate-400 uppercase font-black">Velocidad Máx Calculada</p>
+                                                <p className="text-2xl font-mono font-black text-emerald-400">{vMaxKmh.toFixed(1)} <span className="text-sm">km/h</span></p>
+                                            </div>
+                                            <div className="text-right">
+                                                <p className="text-[10px] text-slate-400 uppercase font-black">Límite</p>
+                                                <p className="text-xs font-mono font-black text-emerald-600">{vMaxMs.toFixed(2)} m/s</p>
+                                            </div>
+                                        </div>
+
+                                        <div>
+                                            <div className="flex justify-between text-xs mb-1">
+                                                <span className="text-emerald-400 font-bold uppercase">Velocidad del Vehículo (v)</span>
+                                                <span className="font-mono bg-slate-900 px-2 py-0.5 rounded text-emerald-300">{vKmh} km/h</span>
+                                            </div>
+                                            <input 
+                                                type="range" min="20" max="150" step="1" value={vKmh} 
+                                                onChange={e => {setVKmh(Number(e.target.value)); handleReset();}} 
+                                                className={`w-full h-3 rounded-lg appearance-none cursor-pointer ${isDerrapando ? 'bg-red-900/50 accent-red-500' : 'bg-slate-700 accent-emerald-500'}`} 
+                                            />
+                                        </div>
+
+                                        <div className="grid grid-cols-2 gap-4 pt-3 border-t border-slate-700">
+                                            <div>
+                                                <div className="flex justify-between text-[10px] mb-1">
+                                                    <span className="text-orange-400 font-bold uppercase">Rozamiento (μ)</span>
+                                                    <span className="font-mono bg-slate-900 px-2 py-0.5 rounded text-orange-200">{mu.toFixed(3)}</span>
+                                                </div>
+                                                <input type="range" min="0.1" max="1.0" step="0.01" value={mu} onChange={e => {setMu(Number(e.target.value)); handleReset();}} className="w-full h-1.5 bg-slate-700 rounded-lg appearance-none cursor-pointer accent-orange-500" />
+                                            </div>
+                                            <div>
+                                                <div className="flex justify-between text-[10px] mb-1">
+                                                    <span className="text-blue-400 font-bold uppercase">Radio Curva (R)</span>
+                                                    <span className="font-mono bg-slate-900 px-2 py-0.5 rounded text-blue-200">{radio} m</span>
+                                                </div>
+                                                <input type="range" min="20" max="200" step="5" value={radio} onChange={e => {setRadio(Number(e.target.value)); handleReset();}} className="w-full h-1.5 bg-slate-700 rounded-lg appearance-none cursor-pointer accent-blue-500" />
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div className="flex gap-2">
+                                        <button 
+                                            onClick={handlePlay} 
+                                            disabled={isMoving}
+                                            className={`flex-1 font-black py-4 rounded-xl shadow-lg flex justify-center items-center gap-2 transition-all active:scale-95 disabled:opacity-50 ${isDerrapando ? 'bg-red-600 hover:bg-red-500 text-white' : 'bg-emerald-600 hover:bg-emerald-500 text-slate-900'}`}
+                                        >
+                                            {PlayIcon && <PlayIcon size={18} />} SIMULAR TRAYECTORIA
+                                        </button>
+                                        <button onClick={handleReset} className="bg-slate-700 hover:bg-slate-600 text-white font-bold px-5 rounded-xl transition-all shadow-md">
+                                            {RotateCcwIcon && <RotateCcwIcon size={18} />}
+                                        </button>
+                                    </div>
+                                </div>
+
+                                <div className="bg-red-950/20 p-6 rounded-3xl border border-red-500/20">
+                                    <div className="flex justify-between items-center mb-4 border-b border-red-500/30 pb-2">
+                                        <h4 className="font-bold text-red-300 flex items-center gap-2">
+                                            {CalculatorIcon && <CalculatorIcon size={18} />} Análisis Físico
+                                        </h4>
+                                        <button onClick={generarDiagrama} className="text-[10px] uppercase font-bold bg-slate-800 hover:bg-slate-700 text-slate-300 px-3 py-1.5 rounded flex items-center gap-1 border border-slate-600">
+                                            {imgLoading ? <span className="animate-pulse">Cargando...</span> : <>{ImagePlusIcon && <ImagePlusIcon size={14}/>} Generar DCL</>}
+                                        </button>
+                                    </div>
+
+                                    {imgUrl && (
+                                        <div className="mb-4 bg-slate-900 p-2 rounded-xl border border-slate-700 text-center">
+                                            <img src={imgUrl} alt="Diagrama Técnico" className="mx-auto max-h-40 rounded-lg" />
+                                        </div>
+                                    )}
+
+                                    <div className="text-xs text-slate-300 space-y-4 leading-relaxed">
+                                        <p><strong>a) Límite del Neumático vs Requerimiento:</strong><br/>
+                                        Para no salirse en una curva, la fricción lateral disponible (el "agarre") debe ser capaz de proporcionar la Fuerza Centrípeta necesaria.</p>
+                                        
+                                        <div className="bg-slate-900/80 p-2 rounded-lg border-l-4 border-slate-500 font-mono text-slate-200">
+                                            F_c ≤ F_r_max<br/>
+                                            m · v² / R ≤ μ · m · g
+                                        </div>
+
+                                        <p><strong>Despejando la Velocidad Máxima (v_max):</strong><br/>
+                                        La masa (m) del vehículo no importa, se cancela a ambos lados.</p>
+                                        
+                                        <div className="bg-slate-900/80 p-3 rounded-lg border-l-4 border-emerald-500 font-mono text-emerald-200 shadow-inner">
+                                            v² / R = μ · g<br/>
+                                            v = √(μ · g · R)<br/>
+                                            v_max = √({mu.toFixed(3)} · 9.8 · {radio}) = <strong>{vMaxMs.toFixed(2)} m/s</strong>
+                                        </div>
+                                        <p className="text-[10px] text-slate-400 italic">En km/h: {vMaxMs.toFixed(2)} · 3.6 = <strong>{vMaxKmh.toFixed(1)} km/h</strong>.</p>
+
+                                        <div className="mt-4 border-t border-slate-700 pt-4">
+                                            <p className="text-blue-300 font-bold mb-2">b) La Teoría del Peralte:</p>
+                                            <p className="bg-blue-900/20 p-3 rounded border border-blue-500/30 text-blue-200">
+                                                <strong>Sí, se incrementaría muchísimo.</strong> Al inclinar la carretera (peralte), una parte de la Fuerza Normal empuja directamente hacia el centro de la curva ($N_x$). El rozamiento ya no tiene que hacer todo el trabajo duro, permitiendo tomar la curva a velocidades mucho mayores sin derrapar.
+                                            </p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </main>
+
+                        <footer className="max-w-5xl mx-auto mt-12 pt-6 border-t border-slate-800 text-center text-slate-500 text-[10px] font-bold uppercase tracking-widest">
+                            Profe Física | Dinámica Circular Plana y Límites de Adherencia
+                        </footer>
+                    </div>
+                );
+            };
+
+            const container = document.getElementById('root');
+            const root = ReactDOM.createRoot(container);
+            root.render(<App />);
+        })();
+    </script>
+</body>
+</html>

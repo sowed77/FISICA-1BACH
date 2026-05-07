@@ -1,0 +1,340 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Laboratorio: Fuerza y Cinemática</title>
+    <!-- Bibliotecas externas -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <script src="https://unpkg.com/lucide-react@latest"></script>
+
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&family=Fira+Code&display=swap');
+        body { font-family: 'Inter', sans-serif; background-color: #0f172a; }
+        .font-mono { font-family: 'Fira Code', monospace; }
+        
+        .track-pattern {
+            background-image: repeating-linear-gradient(90deg, #334155 0px, #334155 20px, transparent 20px, transparent 40px);
+            background-size: 40px 4px;
+            background-position: bottom;
+            background-repeat: repeat-x;
+        }
+    </style>
+</head>
+<body>
+    <div id="root"></div>
+
+    <script type="text/babel">
+        (() => {
+            var { useState, useEffect } = React;
+            var icons = window.LucideReact || {};
+            
+            var getIcon = (name) => icons[name] || (({className}) => <span className={className || ''}></span>);
+            var PlayIcon = getIcon('Play');
+            var RotateCcwIcon = getIcon('RotateCcw');
+            var CalculatorIcon = getIcon('Calculator');
+            var InfoIcon = getIcon('Info');
+            var ArrowRightIcon = getIcon('ArrowRight');
+            var ImagePlusIcon = getIcon('ImagePlus');
+            var BoxIcon = getIcon('Box');
+            var TimerIcon = getIcon('Timer');
+
+            var App = () => {
+                // Parámetros fijos
+                const m = 20.0; // kg
+                
+                // Definición de los tres casos
+                const cases = {
+                    'A': { id: 'A', desc: "Aceleración directa: a = 1.2 m/s²", a: 1.2, tMax: 5.0, vMax: 6.0, dMax: 15.0 },
+                    'B': { id: 'B', desc: "Alcanza 12 m/s en 4.0 s", a: 3.0, tMax: 4.0, vMax: 12.0, dMax: 24.0 },
+                    'C': { id: 'C', desc: "Recorre 450 m en 15 s", a: 4.0, tMax: 15.0, vMax: 60.0, dMax: 450.0 }
+                };
+
+                const [activeCase, setActiveCase] = useState('A');
+                
+                // Estados de animación
+                const [time, setTime] = useState(0);
+                const [isPlaying, setIsPlaying] = useState(false);
+
+                // Datos del caso activo
+                const currentData = cases[activeCase];
+                const fNeta = m * currentData.a;
+
+                // Cálculos cinemáticos instantáneos
+                const currentV = currentData.a * time;
+                const currentD = 0.5 * currentData.a * Math.pow(time, 2);
+
+                // Escala visual (Queremos que el bloque llegue al final del contenedor en el tMax)
+                // Usamos porcentajes para el transform
+                const progress = Math.min(1, time / currentData.tMax);
+                const visualPosPercent = progress * 80; // Llega hasta el 80% del ancho visual
+
+                useEffect(() => {
+                    let interval;
+                    if (isPlaying && time < currentData.tMax) {
+                        interval = setInterval(() => {
+                            setTime(prev => {
+                                // Escala de tiempo: Si el caso C son 15s, lo aceleramos visualmente (3x)
+                                const timeStep = activeCase === 'C' ? 0.15 : 0.05; 
+                                const nextTime = prev + timeStep;
+                                if (nextTime >= currentData.tMax) {
+                                    setIsPlaying(false);
+                                    return currentData.tMax;
+                                }
+                                return nextTime;
+                            });
+                        }, 50); // ~20fps (50ms)
+                    }
+                    return () => clearInterval(interval);
+                }, [isPlaying, time, currentData.tMax, activeCase]);
+
+                const handlePlay = () => {
+                    if (time < currentData.tMax) setIsPlaying(true);
+                };
+
+                const reset = () => {
+                    setTime(0);
+                    setIsPlaying(false);
+                };
+
+                // Si cambiamos de caso, reseteamos
+                useEffect(() => {
+                    reset();
+                }, [activeCase]);
+
+                // Generador DCL
+                const [imgUrl, setImgUrl] = useState(null);
+                const [imgLoading, setImgLoading] = useState(false);
+
+                const generarDiagrama = async () => {
+                    setImgLoading(true);
+                    const apiKey = "AIzaSyDMyUo-WgmdNkCRW6-YK7h-bnRF_FLAjf0"; 
+                    try {
+                        const response = await fetch(
+                            `https://generativelanguage.googleapis.com/v1beta/models/imagen-4.0-generate-001:predict?key=${apiKey}`,
+                            {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({
+                                    instances: [{ prompt: "Diagrama técnico de física. Un bloque cuadrado sobre una superficie horizontal. Vector Fuerza F grande hacia la derecha. Vector Velocidad v hacia la derecha. Fondo blanco, minimalista, educativo" }],
+                                    parameters: { sampleCount: 1 }
+                                })
+                            }
+                        );
+                        if (!response.ok) throw new Error("Error en red");
+                        const data = await response.json();
+                        setImgUrl(`data:image/png;base64,${data.predictions[0].bytesBase64Encoded}`);
+                    } catch (error) {
+                        console.error(error);
+                    } finally {
+                        setImgLoading(false);
+                    }
+                };
+
+                return (
+                    <div className="min-h-screen bg-slate-900 text-slate-100 p-4 md:p-8">
+                        <header className="max-w-5xl mx-auto mb-8 border-b border-slate-700 pb-6">
+                            <div className="flex items-center gap-3 mb-2">
+                                <span className="bg-cyan-600 text-white px-3 py-1 rounded-full text-xs font-black uppercase tracking-widest">Leyes de Newton</span>
+                                <h1 className="text-3xl font-black text-cyan-400 uppercase tracking-tight tracking-widest">Dinámica y Cinemática</h1>
+                            </div>
+                            <div className="bg-slate-800/50 p-4 rounded-xl border border-slate-700 mt-4">
+                                <p className="text-slate-300 text-sm leading-relaxed">
+                                    <strong>Enunciado:</strong> Halla la fuerza constante para un cuerpo de 20 kg si: a) a = 1,2 m/s². b) Alcanza 12 m/s en 4,0 s. c) Recorre 450 m en 15 s.
+                                </p>
+                            </div>
+                        </header>
+
+                        <main className="max-w-5xl mx-auto grid md:grid-cols-2 gap-8">
+                            {/* Panel Visual */}
+                            <div className="bg-slate-800 rounded-3xl border border-slate-700 h-[500px] relative overflow-hidden shadow-2xl flex flex-col justify-end">
+                                
+                                {/* Marcadores Superiores (HUD) */}
+                                <div className="absolute top-4 w-full px-6 flex justify-between z-30 pointer-events-none">
+                                    <div className="bg-slate-900/90 p-3 rounded-lg border border-slate-700 backdrop-blur-md flex items-center gap-3">
+                                        <TimerIcon className={isPlaying ? "text-cyan-400 animate-pulse" : "text-slate-500"} size={24} />
+                                        <div>
+                                            <p className="text-[10px] text-slate-500 uppercase font-black">Cronómetro (t)</p>
+                                            <p className="text-xl font-mono font-black text-white">{time.toFixed(1)} s</p>
+                                        </div>
+                                    </div>
+                                    <div className="bg-slate-900/90 p-3 rounded-lg border border-cyan-500/50 backdrop-blur-md text-right shadow-[0_0_15px_rgba(6,182,212,0.2)]">
+                                        <p className="text-[10px] text-cyan-300 uppercase font-black">Fuerza Resultante (F)</p>
+                                        <p className="text-2xl font-mono font-black text-cyan-400">{fNeta.toFixed(1)} N</p>
+                                    </div>
+                                </div>
+
+                                {/* Marcadores Intermedios (Cinemática) */}
+                                <div className="absolute top-24 w-full px-6 flex justify-between z-30 pointer-events-none">
+                                    <div className="bg-slate-900/80 p-2 rounded-lg border border-slate-700">
+                                        <p className="text-[10px] text-slate-400 uppercase font-bold">Distancia (d)</p>
+                                        <p className="text-sm font-mono font-bold text-emerald-400">{currentD.toFixed(1)} m</p>
+                                    </div>
+                                    <div className="bg-slate-900/80 p-2 rounded-lg border border-slate-700 text-right">
+                                        <p className="text-[10px] text-slate-400 uppercase font-bold">Velocidad (v)</p>
+                                        <p className="text-sm font-mono font-bold text-yellow-400">{currentV.toFixed(1)} m/s</p>
+                                    </div>
+                                </div>
+
+                                {/* Escena del bloque y la pista */}
+                                <div className="relative w-full h-64 flex flex-col justify-end pb-8 px-4">
+                                    
+                                    {/* Contenedor relativo para el movimiento porcentual */}
+                                    <div className="relative w-full h-24">
+                                        
+                                        {/* Marca de Meta */}
+                                        <div className="absolute bottom-0 h-32 border-r-2 border-dashed border-slate-500" style={{ left: '80%' }}>
+                                            <span className="absolute top-0 right-2 text-[10px] font-bold text-slate-400">Meta: {currentData.dMax} m</span>
+                                        </div>
+
+                                        {/* El Bloque */}
+                                        <div 
+                                            className="absolute bottom-0 w-16 h-16 bg-blue-600 border-2 border-blue-400 rounded-lg flex items-center justify-center shadow-lg z-20"
+                                            style={{ left: `${visualPosPercent}%` }}
+                                        >
+                                            <span className="font-black text-white text-xs">{m} kg</span>
+
+                                            {/* Vector Fuerza (Cyan, constante) */}
+                                            <div className="absolute top-1/2 left-full flex items-center pl-1" style={{ width: fNeta * 1.5 }}>
+                                                <div className="h-1 bg-cyan-400 w-full relative shadow-[0_0_8px_rgba(34,211,238,0.8)]">
+                                                    <div className="absolute right-0 -top-1.5">{ArrowRightIcon && <ArrowRightIcon className="text-cyan-400" size={16} />}</div>
+                                                </div>
+                                                <span className="ml-1 text-[10px] font-black text-cyan-300">F</span>
+                                            </div>
+
+                                            {/* Vector Velocidad (Amarillo, crece con el tiempo) */}
+                                            {currentV > 0 && (
+                                                <div className="absolute bottom-full left-1/2 mb-1 flex items-center" style={{ width: (currentV / currentData.vMax) * 100 }}>
+                                                    <div className="h-0.5 bg-yellow-400 w-full relative">
+                                                        <div className="absolute right-0 -top-1.5">{ArrowRightIcon && <ArrowRightIcon className="text-yellow-400" size={12} />}</div>
+                                                    </div>
+                                                    <span className="ml-1 text-[9px] font-bold text-yellow-300">v</span>
+                                                </div>
+                                            )}
+                                        </div>
+                                    </div>
+
+                                    {/* Suelo */}
+                                    <div className="w-full h-6 border-t-2 border-slate-600 track-pattern"></div>
+                                </div>
+                            </div>
+
+                            {/* Controles y Resolución */}
+                            <div className="space-y-6">
+                                <div className="bg-slate-800 p-6 rounded-3xl border border-slate-700 shadow-xl">
+                                    <h3 className="text-xl font-bold mb-4 flex items-center gap-2 text-cyan-400">
+                                        <BoxIcon size={20} /> Seleccionar Escenario
+                                    </h3>
+                                    
+                                    <div className="space-y-3 mb-6">
+                                        {Object.values(cases).map((c) => (
+                                            <button
+                                                key={c.id}
+                                                onClick={() => setActiveCase(c.id)}
+                                                className={`w-full text-left p-4 rounded-xl border-2 transition-all ${activeCase === c.id ? 'bg-cyan-900/40 border-cyan-500 text-white shadow-[0_0_10px_rgba(6,182,212,0.2)]' : 'bg-slate-900/50 border-slate-700 text-slate-400 hover:border-slate-500'}`}
+                                            >
+                                                <span className="font-black mr-2 text-cyan-500">Caso {c.id}:</span> 
+                                                {c.desc}
+                                            </button>
+                                        ))}
+                                    </div>
+
+                                    <div className="flex gap-2">
+                                        <button 
+                                            onClick={handlePlay} 
+                                            disabled={isPlaying || time >= currentData.tMax}
+                                            className={`flex-1 font-black py-3 rounded-xl shadow-lg flex justify-center items-center gap-2 disabled:opacity-50 transition-all active:scale-95 ${time >= currentData.tMax ? 'bg-slate-600 text-slate-400' : 'bg-cyan-600 hover:bg-cyan-500 text-white'}`}
+                                        >
+                                            {PlayIcon && <PlayIcon size={18} />} {time >= currentData.tMax ? 'SIMULACIÓN COMPLETADA' : 'INICIAR MOVIMIENTO'}
+                                        </button>
+                                        <button onClick={reset} className="bg-slate-700 hover:bg-slate-600 text-white font-bold px-4 rounded-xl transition-all shadow-md">
+                                            {RotateCcwIcon && <RotateCcwIcon size={18} />}
+                                        </button>
+                                    </div>
+                                </div>
+
+                                <div className="bg-cyan-950/20 p-6 rounded-3xl border border-cyan-500/20">
+                                    <div className="flex justify-between items-center mb-4 border-b border-cyan-500/30 pb-2">
+                                        <h4 className="font-bold text-cyan-300 flex items-center gap-2">
+                                            {CalculatorIcon && <CalculatorIcon size={18} />} Resolución Paso a Paso
+                                        </h4>
+                                        <button onClick={generarDiagrama} className="text-[10px] uppercase font-bold bg-slate-800 hover:bg-slate-700 text-slate-300 px-3 py-1.5 rounded flex items-center gap-1 border border-slate-600">
+                                            {imgLoading ? <span className="animate-pulse">Cargando...</span> : <>{ImagePlusIcon && <ImagePlusIcon size={14}/>} Generar DCL</>}
+                                        </button>
+                                    </div>
+
+                                    {imgUrl && (
+                                        <div className="mb-4 bg-slate-900 p-2 rounded-xl border border-slate-700 text-center">
+                                            <img src={imgUrl} alt="Diagrama de Cuerpo Libre" className="mx-auto max-h-40 rounded-lg" />
+                                        </div>
+                                    )}
+
+                                    <div className="text-xs text-slate-300 space-y-4 leading-relaxed">
+                                        {activeCase === 'A' && (
+                                            <>
+                                                <p><strong>1. Aceleración Directa:</strong><br/>
+                                                El enunciado ya nos da la aceleración (a = 1.2 m/s²), así que nos saltamos la cinemática.</p>
+                                                <p><strong>2. Aplicamos la Segunda Ley de Newton:</strong></p>
+                                                <div className="bg-slate-900/80 p-3 rounded-lg border-l-4 border-cyan-500 font-mono text-cyan-200">
+                                                    F = m · a<br/>
+                                                    F = 20 · 1.2 = <strong>24.0 N</strong>
+                                                </div>
+                                            </>
+                                        )}
+
+                                        {activeCase === 'B' && (
+                                            <>
+                                                <p><strong>1. Buscar la aceleración (Cinemática):</strong><br/>
+                                                Sabemos que parte del reposo (v₀ = 0 m/s), alcanza v = 12 m/s en t = 4.0 s.</p>
+                                                <div className="bg-slate-900/80 p-2 rounded-lg border-l-4 border-yellow-500 font-mono text-yellow-200">
+                                                    v = v₀ + a · t  ⇒  a = (v - v₀) / t<br/>
+                                                    a = (12 - 0) / 4.0 = <strong>3.0 m/s²</strong>
+                                                </div>
+                                                <p><strong>2. Aplicamos la Segunda Ley de Newton:</strong></p>
+                                                <div className="bg-slate-900/80 p-3 rounded-lg border-l-4 border-cyan-500 font-mono text-cyan-200">
+                                                    F = m · a<br/>
+                                                    F = 20 · 3.0 = <strong>60.0 N</strong>
+                                                </div>
+                                            </>
+                                        )}
+
+                                        {activeCase === 'C' && (
+                                            <>
+                                                <p><strong>1. Buscar la aceleración (Cinemática):</strong><br/>
+                                                Sabemos que parte del reposo (v₀ = 0 m/s), recorre d = 450 m en t = 15 s.</p>
+                                                <div className="bg-slate-900/80 p-2 rounded-lg border-l-4 border-emerald-500 font-mono text-emerald-200">
+                                                    d = v₀ · t + 0.5 · a · t²<br/>
+                                                    450 = 0 + 0.5 · a · 15²<br/>
+                                                    450 = 0.5 · a · 225  ⇒  450 = 112.5 · a<br/>
+                                                    a = 450 / 112.5 = <strong>4.0 m/s²</strong>
+                                                </div>
+                                                <p><strong>2. Aplicamos la Segunda Ley de Newton:</strong></p>
+                                                <div className="bg-slate-900/80 p-3 rounded-lg border-l-4 border-cyan-500 font-mono text-cyan-200">
+                                                    F = m · a<br/>
+                                                    F = 20 · 4.0 = <strong>80.0 N</strong>
+                                                </div>
+                                            </>
+                                        )}
+                                    </div>
+                                </div>
+                            </div>
+                        </main>
+
+                        <footer className="max-w-5xl mx-auto mt-12 pt-6 border-t border-slate-800 text-center text-slate-500 text-[10px] font-bold uppercase tracking-widest">
+                            Profe Física | Dinámica y Ecuaciones del Movimiento (MRUA)
+                        </footer>
+                    </div>
+                );
+            };
+
+            const container = document.getElementById('root');
+            const root = ReactDOM.createRoot(container);
+            root.render(<App />);
+        })();
+    </script>
+</body>
+</html>
