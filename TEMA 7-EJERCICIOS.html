@@ -289,6 +289,13 @@
     function renderExercise() {
         const ex = exercises[current];
         let html = `<div class="eyebrow">${ex.tag}</div><h2>${ex.title}</h2><p>${ex.statement}</p>
+        
+        <div style="margin-top: var(--space-4);">
+            <button onclick="abrirAnimacion(${ex.id})" style="display:inline-flex; align-items:center; gap:0.5rem; background:var(--color-primary); color:#fff; border:none; padding:.75rem 1.5rem; border-radius:var(--radius-lg); font-weight:700; cursor:pointer; box-shadow:var(--shadow-sm); transition:transform 0.1s;">
+                <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M14.75 11.17l-3.2-2.13A1 1 0 0010 9.87v4.26a1 1 0 001.55.83l3.2-2.13a1 1 0 000-1.66z"></path><circle cx="12" cy="12" r="9"></circle></svg>
+                Veure Animació Interactiva
+            </button>
+        </div>
         <div class="meta-grid">
             <div class="meta-item"><small>Fuente</small>${ex.source}</div>
             <div class="meta-item"><small>Objetivo</small>${ex.objective}</div>
@@ -652,6 +659,59 @@ function springFigure(dcl) {
         };
     }
     init();
+</script>
+<style>
+    .modal-open { overflow: hidden !important; }
+    #modal-animacion {
+        position: fixed; inset: 0; z-index: 9999;
+        background: var(--color-surface);
+        display: none; flex-direction: column;
+    }
+    #modal-animacion.show { display: flex; }
+    .modal-header {
+        background: var(--color-surface-2); padding: var(--space-4);
+        display: flex; justify-content: space-between; align-items: center;
+        border-bottom: 1px solid var(--color-border);
+        box-shadow: var(--shadow-sm);
+    }
+    .modal-header .title { font-weight: 800; font-family: var(--font-display); color: var(--color-text); }
+    .btn-close-modal {
+        background: var(--color-danger); color: #fff; border: none; padding: .6rem 1.2rem;
+        border-radius: var(--radius-md); font-weight: 700; cursor: pointer; transition: opacity .2s;
+    }
+    .btn-close-modal:hover { opacity: 0.8; }
+    #iframe-animacion { flex-grow: 1; border: none; width: 100%; background: #fff; }
+</style>
+
+<div id="modal-animacion">
+    <div class="modal-header">
+        <div class="title">Laboratori Virtual</div>
+        <button class="btn-close-modal" onclick="cerrarAnimacion()">TANCAR</button>
+    </div>
+    <iframe id="iframe-animacion" src=""></iframe>
+</div>
+
+<script>
+    const modalAnimacion = document.getElementById('modal-animacion');
+    const iframeAnimacion = document.getElementById('iframe-animacion');
+
+    function abrirAnimacion(idEjercicio) {
+        // Asumiendo que el prefijo del tema está configurado para la carpeta correcta
+        iframeAnimacion.src = `laboratorio-tema-7/ejercicio-${idEjercicio}.html`;
+        modalAnimacion.classList.add('show');
+        document.body.classList.add('modal-open');
+    }
+
+    function cerrarAnimacion() {
+        modalAnimacion.classList.remove('show');
+        iframeAnimacion.src = ""; // Liberar memoria
+        document.body.classList.remove('modal-open');
+    }
+    
+    // Cerrar con Escape
+    document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape' && modalAnimacion.classList.contains('show')) cerrarAnimacion();
+    });
 </script>
 </body>
 </html>
