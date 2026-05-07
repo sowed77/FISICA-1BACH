@@ -32,13 +32,28 @@ const App = () => {
     const [isMoving, setIsMoving] = useState(true);
 
     useEffect(() => {
-        let interval;
+        let animationFrameId;
+        let lastTime;
+
+        const animate = (timestamp) => {
+            if (!lastTime) lastTime = timestamp;
+            const deltaTime = (timestamp - lastTime) / 1000;
+            lastTime = timestamp;
+
+            setTime(prev => prev + deltaTime);
+            
+            if (isMoving && freq > 0) {
+                animationFrameId = requestAnimationFrame(animate);
+            }
+        };
+
         if (isMoving && freq > 0) {
-            interval = setInterval(() => {
-                setTime(prev => prev + 0.02); // 50 fps
-            }, 20);
+            animationFrameId = requestAnimationFrame(animate);
         }
-        return () => clearInterval(interval);
+        
+        return () => {
+            if (animationFrameId) cancelAnimationFrame(animationFrameId);
+        };
     }, [isMoving, freq]);
 
     // Generador DCL con IA
@@ -75,9 +90,16 @@ const App = () => {
     const topY = 60;
     const cableLengthPx = 150; // Longitud visual de la cadena
     
-    // Posición de la silla en 2D (Corte lateral)
-    const chairX = centerX + cableLengthPx * Math.sin(anguloRad);
-    const chairY = topY + cableLengthPx * Math.cos(anguloRad);
+    // Posición de la silla en 3D (Corte lateral proyectado)
+    const fase = omega * time;
+    const rVisual = cableLengthPx * Math.sin(anguloRad);
+    
+    const chairX = centerX + rVisual * Math.cos(fase);
+    const chairY = topY + cableLengthPx * Math.cos(anguloRad) + Math.sin(fase) * 10; // Perspectiva Y
+
+    // Para los vectores, calculamos sus componentes proyectadas
+    const tDirX = Math.sin(anguloRad) * Math.cos(fase);
+    const tDirY = Math.cos(anguloRad);
 
     return (
         <div className="min-h-screen bg-slate-900 text-slate-100 p-4 md:p-8">
@@ -126,8 +148,8 @@ const App = () => {
                             {/* Línea vertical de referencia */}
                             <line x1={centerX} y1={topY} x2={centerX} y2={chairY + 50} stroke="#475569" strokeWidth="2" strokeDasharray="4 4" />
 
-                            {/* Arco del Ángulo */}
-                            {anguloDeg > 0.5 && (
+                            {/* Arco del Ángulo (Solo cuando está a la derecha para no ensuciar el giro 3D) */}
+                            {anguloDeg > 0.5 && Math.cos(fase) > 0.8 && (
                                 <>
                                     <path 
                                         d={`M ${centerX} ${topY + 50} A 50 50 0 0 1 ${centerX + 50*Math.sin(anguloRad)} ${topY + 50*Math.cos(anguloRad)}`}
@@ -137,23 +159,25 @@ const App = () => {
                                 </>
                             )}
                             
-                            {/* VECTORES DE FUERZA (En la silla) */}
+                            {/* VECTORES DE FUERZA (En la silla, proyectados en 3D) */}
                             
                             {/* Tensión */}
-                            <line x1={chairX} y1={chairY} x2={chairX - 60*Math.sin(anguloRad)} y2={chairY - 60*Math.cos(anguloRad)} stroke="#a855f7" strokeWidth="4" markerEnd="url(#arrow-purple)" />
-                            <text x={chairX - 60*Math.sin(anguloRad) - 15} y={chairY - 60*Math.cos(anguloRad) - 5} fill="#a855f7" fontSize="12" fontWeight="bold">T</text>
+                            <line x1={chairX} y1={chairY} x2={chairX - 60*tDirX} y2={chairY - 60*tDirY} stroke="#a855f7" strokeWidth="4" markerEnd="url(#arrow-purple)" />
+                            <text x={chairX - 60*tDirX - 15} y={chairY - 60*tDirY - 5} fill="#a855f7" fontSize="12" fontWeight="bold">T</text>
 
                             {/* Peso */}
                             <line x1={chairX} y1={chairY} x2={chairX} y2={chairY + 60} stroke="#f97316" strokeWidth="3" markerEnd="url(#arrow-orange)" />
                             <text x={chairX + 10} y={chairY + 50} fill="#f97316" fontSize="12" fontWeight="bold">P</text>
 
                             {/* Fuerza Centrípeta (Componente X de la Tensión) */}
-                            <line x1={chairX} y1={chairY} x2={chairX - 60*Math.sin(anguloRad)} y2={chairY} stroke="#10b981" strokeWidth="3" markerEnd="url(#arrow-emerald)" strokeDasharray="3 3"/>
-                            <text x={chairX - 60*Math.sin(anguloRad) - 5} y={chairY + 15} fill="#10b981" fontSize="10" fontWeight="bold">T_x (Fc)</text>
+                            <line x1={chairX} y1={chairY} x2={chairX - 60*tDirX} y2={chairY} stroke="#10b981" strokeWidth="3" markerEnd="url(#arrow-emerald)" strokeDasharray="3 3"/>
+                            {Math.abs(tDirX) > 0.3 && (
+                                <text x={chairX - 60*tDirX - 5} y={chairY + 15} fill="#10b981" fontSize="10" fontWeight="bold">T_x (Fc)</text>
+                            )}
 
                             {/* Componente Y de la Tensión (Soporta el peso) */}
-                            <line x1={chairX} y1={chairY} x2={chairX} y2={chairY - 60*Math.cos(anguloRad)} stroke="#3b82f6" strokeWidth="3" markerEnd="url(#arrow-blue)" strokeDasharray="3 3"/>
-                            <text x={chairX + 10} y={chairY - 60*Math.cos(anguloRad) + 10} fill="#3b82f6" fontSize="10" fontWeight="bold">T_y</text>
+                            <line x1={chairX} y1={chairY} x2={chairX} y2={chairY - 60*tDirY} stroke="#3b82f6" strokeWidth="3" markerEnd="url(#arrow-blue)" strokeDasharray="3 3"/>
+                            <text x={chairX + 10} y={chairY - 60*tDirY + 10} fill="#3b82f6" fontSize="10" fontWeight="bold">T_y</text>
 
 
                             {/* Definición de Flechas */}
@@ -175,12 +199,14 @@ const App = () => {
 
                         {/* La Silla (Animada en Z fingiendo 3D) */}
                         <div 
-                            className="absolute bg-slate-300 rounded-lg border-2 border-slate-500 z-20 flex items-center justify-center shadow-2xl"
+                            className="absolute bg-slate-300 rounded-lg border-2 border-slate-500 flex items-center justify-center shadow-2xl transition-transform"
                             style={{ 
                                 left: `${chairX - 15}px`, 
                                 top: `${chairY - 10}px`,
                                 width: '30px', 
                                 height: '30px',
+                                zIndex: Math.sin(fase) > 0 ? 20 : 0,
+                                transform: `scale(${1 - Math.sin(fase) * 0.2})`
                             }}
                         >
                             <User size={20} className="text-slate-800" />
@@ -227,10 +253,16 @@ const App = () => {
 
                         <div className="flex gap-2">
                             <button 
-                                onClick={() => {setFreq(0.10); setRadio(5.0);}} 
-                                className="flex-1 bg-slate-700 hover:bg-slate-600 text-xs font-bold py-3 rounded-xl border border-slate-600 text-slate-300 transition-all"
+                                onClick={() => setIsMoving(!isMoving)} 
+                                className={`flex-1 font-black py-3 rounded-xl border transition-all ${isMoving ? 'bg-red-900/50 border-red-500 text-red-300' : 'bg-emerald-600 hover:bg-emerald-500 text-white'}`}
                             >
-                                RESTAURAR DATOS DEL PROBLEMA
+                                {isMoving ? 'DETENER CARRUSEL' : 'INICIAR CARRUSEL'}
+                            </button>
+                            <button 
+                                onClick={() => {setFreq(0.10); setRadio(5.0); setTime(0); setIsMoving(true);}} 
+                                className="bg-slate-700 hover:bg-slate-600 text-xs font-bold px-4 rounded-xl border border-slate-600 text-slate-300 transition-all"
+                            >
+                                RESTAURAR DATOS
                             </button>
                         </div>
                     </div>
