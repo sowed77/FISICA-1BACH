@@ -1,0 +1,369 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Laboratorio: Equivalencia Masa-Energía (E=mc²)</title>
+    <!-- Bibliotecas externas -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <script src="https://unpkg.com/lucide-react@latest"></script>
+
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&family=Fira+Code&display=swap');
+        body { font-family: 'Inter', sans-serif; background-color: #020617; } /* Slate 950 */
+        .font-mono { font-family: 'Fira Code', monospace; }
+        input[type=range]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            height: 24px;
+            width: 24px;
+            border-radius: 50%;
+            background: #fbbf24; /* Amber 400 */
+            cursor: pointer;
+            border: 3px solid #ffffff;
+            box-shadow: 0 0 10px rgba(251, 191, 36, 0.5);
+        }
+        
+        .space-grid {
+            background-image: 
+                radial-gradient(rgba(255,255,255,0.1) 1px, transparent 1px),
+                radial-gradient(rgba(255,255,255,0.05) 1px, transparent 1px);
+            background-size: 30px 30px, 15px 15px;
+            background-position: 0 0, 7.5px 7.5px;
+        }
+
+        /* Efectos de la explosión de energía */
+        .energy-wave {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            border-radius: 50%;
+            box-shadow: 0 0 50px rgba(251, 191, 36, 0.8), inset 0 0 50px rgba(245, 158, 11, 0.8);
+            opacity: 0;
+            transition: all 0.1s ease-out;
+        }
+    </style>
+</head>
+<body>
+    <div id="root"></div>
+
+    <script type="text/babel">
+        (() => {
+            const { useState, useEffect } = React;
+            const icons = window.LucideReact || {};
+            
+            // Asignación segura de iconos
+            const getIcon = (name) => icons[name] || (({className}) => <span className={className || ''}></span>);
+            const PlayIcon = getIcon('Play');
+            const RotateCcwIcon = getIcon('RotateCcw');
+            const CalculatorIcon = getIcon('Calculator');
+            const SettingsIcon = getIcon('Settings');
+            const AtomIcon = getIcon('Atom');
+            const ZapIcon = getIcon('Zap');
+            const FlameIcon = getIcon('Flame');
+            const TargetIcon = getIcon('Target');
+            const ImagePlusIcon = getIcon('ImagePlus');
+            const ScaleIcon = getIcon('Scale');
+            const InfoIcon = getIcon('Info');
+
+            const App = () => {
+                // Constantes Físicas
+                const c = 3e8; // m/s (Velocidad de la luz aproximada para bachillerato)
+                const c_cuadrado = 9e16; // m^2/s^2
+                
+                // El problema dice: 16,000 toneladas = 6.7e13 J
+                // Calculamos cuántos Julios hay por kilotón según el enunciado:
+                const juliosPorKilotón = 6.7e13 / 16; // 4.1875e12 J/kt
+
+                // Estados Interactivos
+                // Valor inicial: 16 kilotones (Hiroshima)
+                const [energiaKilotones, setEnergiaKilotones] = useState(16); 
+
+                // Cálculos Físicos
+                const energiaJulios = energiaKilotones * juliosPorKilotón;
+                // E = m*c^2 => m = E / c^2
+                const masaKg = energiaJulios / c_cuadrado;
+                const masaGramos = masaKg * 1000;
+
+                // Animación
+                const [time, setTime] = useState(0);
+                const [isDetonated, setIsDetonated] = useState(false);
+
+                // Variables de la onda expansiva
+                const waveRadius = isDetonated ? Math.min(800, time * 1500) : 0; // px
+                const waveOpacity = isDetonated ? Math.max(0, 1 - time * 1.5) : 0;
+
+                useEffect(() => {
+                    let interval;
+                    if (isDetonated && time < 1.0) {
+                        interval = setInterval(() => {
+                            setTime(prev => prev + 0.02); // 50 fps
+                        }, 20);
+                    } else if (time >= 1.0) {
+                        // Dejamos de expandir pero mantenemos el estado final
+                    }
+                    return () => clearInterval(interval);
+                }, [isDetonated, time]);
+
+                const handleDetonate = () => {
+                    setTime(0);
+                    setIsDetonated(true);
+                };
+
+                const reset = () => {
+                    setTime(0);
+                    setIsDetonated(false);
+                };
+
+                // Comparativa visual (para entender de qué masa estamos hablando)
+                const getComparativa = (g) => {
+                    if (g < 0.05) return "Un grano de arena";
+                    if (g < 0.5) return "Un copo de nieve";
+                    if (g < 1.5) return "Un clip de papel o una pasa";
+                    if (g < 5) return "Una moneda de 1 céntimo";
+                    if (g < 20) return "Una nuez o una pila AAA";
+                    if (g < 50) return "Un huevo pequeño";
+                    return "Una manzana";
+                };
+
+                // Generador de DCL IA
+                const [imgUrl, setImgUrl] = useState(null);
+                const [imgLoading, setImgLoading] = useState(false);
+
+                const generarDiagrama = async () => {
+                    setImgLoading(true);
+                    const apiKey = ""; 
+                    try {
+                        const response = await fetch(
+                            `https://generativelanguage.googleapis.com/v1beta/models/imagen-4.0-generate-001:predict?key=${apiKey}`,
+                            {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({
+                                    instances: [{ prompt: "Diagrama técnico de física nuclear. Ecuación E=mc^2 en grande. A la izquierda, un pequeño cubo que representa la masa (m). Una flecha que pasa por la constante c^2 que lleva a una gigantesca explosión de energía E a la derecha. Estilo minimalista, educativo, fondo blanco" }],
+                                    parameters: { sampleCount: 1 }
+                                })
+                            }
+                        );
+                        if (!response.ok) throw new Error("Error en red");
+                        const data = await response.json();
+                        setImgUrl(`data:image/png;base64,${data.predictions[0].bytesBase64Encoded}`);
+                    } catch (error) {
+                        console.error(error);
+                    } finally {
+                        setImgLoading(false);
+                    }
+                };
+
+                return (
+                    <div className="min-h-screen bg-slate-950 text-slate-100 p-4 md:p-8">
+                        <header className="max-w-5xl mx-auto mb-8 border-b border-slate-800 pb-6">
+                            <div className="flex items-center gap-3 mb-2">
+                                <span className="bg-amber-500 text-slate-900 px-3 py-1 rounded-full text-xs font-black uppercase tracking-widest">Física Relativista</span>
+                                <h1 className="text-3xl font-black text-amber-400 uppercase tracking-tight tracking-widest">Equivalencia Masa-Energía</h1>
+                            </div>
+                            <div className="bg-slate-900/80 p-4 rounded-xl border border-slate-800 mt-4">
+                                <p className="text-slate-300 text-sm leading-relaxed">
+                                    <strong>Enunciado:</strong> ¿Qué cantidad de materia se transformó en energía en la explosión de la bomba Little Boy sobre Hiroshima en 1945? Se desprendió la energía equivalente a la explosión de 16 000 toneladas de TNT (6,7 × 10¹³ J).
+                                </p>
+                            </div>
+                        </header>
+
+                        <main className="max-w-5xl mx-auto grid md:grid-cols-2 gap-8">
+                            {/* Panel Visual (El Espacio de Conversión) */}
+                            <div className="bg-slate-900 rounded-3xl border border-slate-800 h-[500px] relative overflow-hidden shadow-2xl flex flex-col items-center justify-center space-grid">
+                                
+                                {/* HUD Superior */}
+                                <div className="absolute top-4 w-full px-6 flex justify-between z-30 pointer-events-none">
+                                    <div className={`bg-slate-950/90 p-3 rounded-lg border backdrop-blur-md ${isDetonated ? 'border-red-500/50 text-slate-500' : 'border-emerald-500/50'}`}>
+                                        <p className="text-[10px] text-slate-500 uppercase font-black mb-1 flex items-center gap-1">
+                                            <ScaleIcon size={12} /> Materia Destruida (m)
+                                        </p>
+                                        <p className={`text-2xl font-mono font-black ${isDetonated ? 'text-slate-500 line-through' : 'text-emerald-400'}`}>
+                                            {masaGramos.toFixed(3)} <span className="text-sm">g</span>
+                                        </p>
+                                    </div>
+                                    <div className="bg-slate-950/90 p-3 rounded-lg border border-slate-800 backdrop-blur-md text-right border-b-4 border-b-amber-500 shadow-[0_0_15px_rgba(245,158,11,0.2)]">
+                                        <p className="text-[10px] text-slate-500 uppercase font-black flex items-center justify-end gap-1">
+                                            <ZapIcon size={12} className="text-amber-400" /> Energía Liberada (E)
+                                        </p>
+                                        <p className={`text-2xl font-mono font-black ${isDetonated ? 'text-amber-400' : 'text-slate-500'}`}>
+                                            {energiaJulios.toExponential(2)} <span className="text-sm">J</span>
+                                        </p>
+                                    </div>
+                                </div>
+
+                                {/* Escena: La Masa y la Explosión */}
+                                <div className="relative w-full h-full flex items-center justify-center">
+                                    
+                                    {/* La partícula de masa (antes de la detonación) */}
+                                    {!isDetonated && (
+                                        <div className="relative flex flex-col items-center animate-pulse">
+                                            <div className="w-4 h-4 bg-emerald-400 rounded-full shadow-[0_0_15px_rgba(52,211,153,0.8)] border border-white"></div>
+                                            <div className="absolute top-8 bg-slate-950/80 px-2 py-1 rounded border border-slate-800 text-center whitespace-nowrap">
+                                                <span className="text-[10px] font-bold text-emerald-300">Equivale a:</span><br/>
+                                                <span className="text-xs font-black text-white">{getComparativa(masaGramos)}</span>
+                                            </div>
+                                        </div>
+                                    )}
+
+                                    {/* La onda de energía (durante y después de la detonación) */}
+                                    {isDetonated && (
+                                        <div 
+                                            className="energy-wave"
+                                            style={{ 
+                                                width: `${waveRadius}px`, 
+                                                height: `${waveRadius}px`,
+                                                opacity: waveOpacity,
+                                                border: `${Math.max(1, 20 - time*20)}px solid rgba(251, 191, 36, 0.5)`
+                                            }}
+                                        ></div>
+                                    )}
+
+                                    {/* Fórmula Remanente tras la detonación */}
+                                    {isDetonated && time > 0.5 && (
+                                        <div className="absolute z-40 text-center animate-fade-in opacity-80">
+                                            <p className="text-6xl font-mono font-black text-amber-500 tracking-tighter drop-shadow-[0_0_15px_rgba(245,158,11,0.8)]">
+                                                E = mc²
+                                            </p>
+                                            <p className="text-sm text-amber-200 mt-2 font-bold bg-slate-950/50 px-2 rounded inline-block backdrop-blur-sm">
+                                                La masa se ha convertido en energía pura.
+                                            </p>
+                                        </div>
+                                    )}
+                                </div>
+                            </div>
+
+                            {/* Controles y Resolución */}
+                            <div className="space-y-6">
+                                <div className="bg-slate-900 p-6 rounded-3xl border border-slate-800 shadow-xl">
+                                    <h3 className="text-xl font-bold mb-4 flex items-center gap-2 text-amber-500">
+                                        <TargetIcon size={20} /> Magnitud del Evento
+                                    </h3>
+                                    
+                                    <div className="space-y-5 mb-6">
+                                        <div>
+                                            <div className="flex justify-between text-xs mb-2">
+                                                <span className="text-slate-300 font-bold uppercase">Energía Equivalente en TNT</span>
+                                                <span className="font-mono bg-slate-950 px-2 py-0.5 rounded text-white">{energiaKilotones.toFixed(1)} kt</span>
+                                            </div>
+                                            <input 
+                                                type="range" min="1" max="100" step="1" value={energiaKilotones} 
+                                                onChange={e => {setEnergiaKilotones(Number(e.target.value)); reset();}} 
+                                                className="w-full h-2 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-amber-500" 
+                                            />
+                                            <div className="flex justify-between text-[10px] text-slate-500 mt-2 font-bold uppercase">
+                                                <span>1 kt (Pequeña)</span>
+                                                <span className="text-amber-500">16 kt (Hiroshima)</span>
+                                                <span>100 kt</span>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div className="flex gap-2">
+                                        <button 
+                                            onClick={handleDetonate} 
+                                            disabled={isDetonated}
+                                            className="flex-1 bg-amber-600 hover:bg-amber-500 text-slate-950 font-black py-4 rounded-xl shadow-[0_0_20px_rgba(245,158,11,0.3)] flex justify-center items-center gap-2 disabled:opacity-50 transition-all active:scale-95"
+                                        >
+                                            {FlameIcon && <FlameIcon size={18} />} CONVERTIR MASA EN ENERGÍA
+                                        </button>
+                                        <button onClick={reset} className="bg-slate-800 hover:bg-slate-700 text-white font-bold px-5 rounded-xl transition-all border border-slate-700">
+                                            {RotateCcwIcon && <RotateCcwIcon size={18} />}
+                                        </button>
+                                    </div>
+                                </div>
+
+                                <div className="bg-amber-950/10 p-6 rounded-3xl border border-amber-500/20">
+                                    <div className="flex justify-between items-center mb-4 border-b border-amber-500/20 pb-2">
+                                        <h4 className="font-bold text-amber-400 flex items-center gap-2">
+                                            <CalculatorIcon size={18} /> Resolución Matemática
+                                        </h4>
+                                        <button onClick={generarDiagrama} className="text-[10px] uppercase font-bold bg-slate-900 hover:bg-slate-800 text-slate-300 px-3 py-1.5 rounded flex items-center gap-1 border border-slate-700">
+                                            {imgLoading ? <span className="animate-pulse">Cargando...</span> : <>{ImagePlusIcon && <ImagePlusIcon size={14}/>} Ver Gráfico</>}
+                                        </button>
+                                    </div>
+
+                                    {imgUrl && (
+                                        <div className="mb-4 bg-slate-900 p-2 rounded-xl border border-slate-800 text-center">
+                                            <img src={imgUrl} alt="Diagrama de Equivalencia" className="mx-auto max-h-40 rounded-lg" />
+                                        </div>
+                                    )}
+
+                                    <div className="text-xs text-slate-300 space-y-4 leading-relaxed">
+                                        <p><strong>1. Identificar Datos Constantes (S.I.):</strong><br/>
+                                        La velocidad de la luz en el vacío ($c$) es aproximadamente $3 \times 10^8$ m/s.</p>
+                                        <div className="bg-slate-900/80 p-2 rounded-lg border-l-4 border-slate-600 font-mono text-slate-300">
+                                            c = 3 × 10⁸ m/s<br/>
+                                            c² = (3 × 10⁸)² = <strong>9 × 10¹⁶ m²/s²</strong>
+                                        </div>
+
+                                        <p><strong>2. Aplicar la ecuación de Einstein:</strong><br/>
+                                        Sabemos que $E = m \cdot c^2$. Como nos piden la masa ($m$), despejamos dividiendo la Energía entre la velocidad de la luz al cuadrado.</p>
+                                        
+                                        <div className="bg-slate-900/80 p-3 rounded-lg border-l-4 border-amber-500 font-mono text-amber-200 shadow-inner overflow-x-auto">
+                                            E = {energiaJulios.toExponential(2)} J<br/><br/>
+                                            m = E / c²<br/>
+                                            m = {energiaJulios.toExponential(2)} / (9 × 10¹⁶)<br/>
+                                            m = <strong>{masaKg.toExponential(4)} kg</strong>
+                                        </div>
+
+                                        <p><strong>3. Convertir a gramos para visualizarlo mejor:</strong><br/>
+                                        Multiplicamos los kilogramos por 1000.</p>
+                                        
+                                        <div className="bg-slate-900/80 p-2 rounded-lg border-l-4 border-emerald-500 font-mono text-emerald-300 font-bold text-center">
+                                            m = {masaKg.toExponential(4)} × 1000 = {masaGramos.toFixed(3)} gramos
+                                        </div>
+                                        
+                                        <div className="mt-3 bg-red-900/20 border border-red-500/30 p-3 rounded-lg flex items-start gap-3">
+                                            {InfoIcon && <InfoIcon size={20} className="text-red-400 shrink-0 mt-0.5" />}
+                                            <p className="text-red-200">
+                                                <strong>¡Fascinante!</strong> Toda la destrucción de la bomba de Hiroshima fue causada por la transformación directa de tan solo <strong>{masaGramos.toFixed(2)} gramos</strong> de materia en energía pura (el peso de un clip o una pasita). Esto nos demuestra el inmenso poder escondido en la materia gracias al factor $c^2$.
+                                            </p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </main>
+
+                        <footer className="max-w-5xl mx-auto mt-12 pt-6 border-t border-slate-800 text-center text-slate-500 text-[10px] font-bold uppercase tracking-widest">
+                            Profe Física | Física Moderna: Ecuación de Einstein (Defecto de Masa)
+                        </footer>
+                    </div>
+                );
+            };
+
+            const container = document.getElementById('root');
+            const root = ReactDOM.createRoot(container);
+            root.render(<App />);
+        })();
+    </script>
+	<div style="position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); display: flex; gap: 10px; background: rgba(15, 23, 42, 0.9); padding: 10px; border-radius: 15px; border: 1px solid rgba(255,255,255,0.1); z-index: 10000; backdrop-filter: blur(10px);">
+    <button id="navPrev" style="padding: 8px 15px; background: #334155; color: white; border-radius: 8px; font-weight: bold; border: none; cursor: pointer;">← Ant.</button>
+    <a href="index.html" style="padding: 8px 20px; background: #059669; color: white; border-radius: 8px; font-weight: bold; text-decoration: none; text-transform: uppercase; font-size: 12px; display: flex; align-items: center;">Índice</a>
+    <button id="navNext" style="padding: 8px 15px; background: #334155; color: white; border-radius: 8px; font-weight: bold; border: none; cursor: pointer;">Sig. →</button>
+</div>
+
+<script>
+    (function() {
+        const match = window.location.pathname.match(/ejercicio-(\d+)\.html/);
+        if (match) {
+            const n = parseInt(match[1]);
+            const total = 70; // Cambiar a 44 para tema 8
+            const prev = document.getElementById('navPrev');
+            const next = document.getElementById('navNext');
+
+            if (n > 1) prev.onclick = () => window.location.href = `ejercicio-${n-1}.html`;
+            else prev.style.opacity = "0.3";
+
+            if (n < total) next.onclick = () => window.location.href = `ejercicio-${n+1}.html`;
+            else next.style.opacity = "0.3";
+        }
+    })();
+</script>
+</body>
+</html>

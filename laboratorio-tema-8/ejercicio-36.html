@@ -1,10 +1,10 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Laboratorio: Plano Inclinado y Energía</title>
-
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Laboratorio: Ascenso en Plano Inclinado</title>
+    <!-- Bibliotecas externas -->
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
     <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
@@ -13,49 +13,22 @@
     <script src="https://unpkg.com/lucide-react@latest"></script>
 
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&family=Fira+Code:wght@400;700&display=swap');
-
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&family=Fira+Code&display=swap');
         body { font-family: 'Inter', sans-serif; background-color: #0f172a; }
         .font-mono { font-family: 'Fira Code', monospace; }
-
         input[type=range]::-webkit-slider-thumb {
             -webkit-appearance: none;
             height: 20px;
             width: 20px;
             border-radius: 50%;
-            background: #f59e0b; /* Amber 500 */
+            background: #8b5cf6; /* Violet 500 */
             cursor: pointer;
             border: 2px solid #ffffff;
-            box-shadow: 0 0 10px rgba(245, 158, 11, 0.5);
+            box-shadow: 0 0 10px rgba(139, 92, 246, 0.5);
         }
-
-        .floor-pattern {
-            background-color: #1e293b;
-            background-image: repeating-linear-gradient(
-                90deg,
-                #334155 0,
-                #334155 20px,
-                transparent 20px,
-                transparent 40px
-            );
-            border-top: 3px solid #475569;
-        }
-
         .ramp-texture {
-            fill: #334155;
-            stroke: #64748b;
-            stroke-width: 3;
-            stroke-linejoin: round;
-        }
-
-        .friction-dust {
-            animation: dust 0.8s linear infinite;
-            opacity: 0;
-        }
-
-        @keyframes dust {
-            0% { transform: translate(0, 0) scale(0.5); opacity: 0.6; }
-            100% { transform: translate(-20px, 10px) scale(2); opacity: 0; }
+            background-color: #334155;
+            background-image: repeating-linear-gradient(45deg, #1e293b 0, #1e293b 2px, transparent 2px, transparent 10px);
         }
     </style>
 </head>
@@ -66,157 +39,116 @@
         (() => {
             const { useState, useEffect } = React;
             const icons = window.LucideReact || {};
-
-            const getIcon = (name) => icons[name] || (({ className }) => <span className={className || ''}></span>);
+            
+            // Asignación segura de iconos
+            const getIcon = (name) => icons[name] || (({className}) => <span className={className || ''}></span>);
             const PlayIcon = getIcon('Play');
             const RotateCcwIcon = getIcon('RotateCcw');
             const CalculatorIcon = getIcon('Calculator');
             const SettingsIcon = getIcon('Settings');
-            const MountainIcon = getIcon('Mountain');
-            const FlameIcon = getIcon('Flame');
-            const BoxIcon = getIcon('Package');
             const ArrowRightIcon = getIcon('ArrowRight');
-            const ArrowUpIcon = getIcon('ArrowUp');
-            const BatteryIcon = getIcon('Battery');
+            const ArrowLeftIcon = getIcon('ArrowLeft');
+            const TargetIcon = getIcon('Target');
             const ImagePlusIcon = getIcon('ImagePlus');
+            const SparklesIcon = getIcon('Sparkles');
 
             const App = () => {
-                const cteGravedad = 9.8;
+                // Parámetros fijos
+                const g = 9.8; // m/s²
+                const dObj = 10.0; // m (Distancia objetivo)
 
-                // Estados inicializados con los datos del problema
-                const [anguloDeg, setAnguloDeg] = useState(60);
-                const [distanciaM, setDistanciaM] = useState(10.0);
-                const [coefRozamiento, setCoefRozamiento] = useState(0.100);
-                const [masaCuerpo, setMasaCuerpo] = useState(2.0); // La masa no afecta v0, pero sirve para visualizar energías
+                // Estados interactivos
+                const [v0, setV0] = useState(10.0); // m/s (Inicializamos un poco corto para que el usuario juegue)
+                const [angulo, setAngulo] = useState(60); // grados
+                const [mu, setMu] = useState(0.100); // coef rozamiento
+                const masa = 5.0; // kg (Ficticia para pintar vectores, matemáticamente se anula)
 
-                // Cálculos Físicos
-                const anguloRad = anguloDeg * (Math.PI / 180);
-                const alturaMaxM = distanciaM * Math.sin(anguloRad);
+                // Animación
+                const [time, setTime] = useState(0);
+                const [isMoving, setIsMoving] = useState(false);
+
+                // --- CÁLCULOS FÍSICOS ---
+                const anguloRad = angulo * (Math.PI / 180);
+                const senA = Math.sin(anguloRad);
+                const cosA = Math.cos(anguloRad);
+
+                // Fuerzas (magnitudes referenciales para DCL)
+                const px = masa * g * senA;
+                const py = masa * g * cosA;
+                const normal = py;
+                const fr = mu * normal;
+
+                // Aceleración de frenado (ambas fuerzas se oponen a la subida)
+                // a = (-Px - Fr) / m = -g*sen(A) - mu*g*cos(A)
+                const aMag = g * (senA + mu * cosA); // Magnitud de deceleración (m/s²)
                 
-                const energiaPotFinal = masaCuerpo * cteGravedad * alturaMaxM;
-                const trabajoRozamiento = coefRozamiento * masaCuerpo * cteGravedad * Math.cos(anguloRad) * distanciaM;
+                // Cinemática (MRUA)
+                const tStop = v0 / aMag;
+                const dMax = (v0 * v0) / (2 * aMag);
+
+                // Cinemática instantánea visual
+                const currentV = Math.max(0, v0 - (aMag * time));
+                const currentPos = (v0 * time) - (0.5 * aMag * time * time);
+
+                // Escala visual
+                // Queremos que los 10m queden a un 75% del ancho de la rampa para dar margen
+                const maxVisualDist = 15; // m
+                const rampLengthPx = 450;
+                const pxPerMeter = rampLengthPx / maxVisualDist;
                 
-                // Conservación: Ec0 = Epf + Wroz
-                const energiaCinInicial = energiaPotFinal + trabajoRozamiento;
-                const velInicial = Math.sqrt((2 * energiaCinInicial) / masaCuerpo);
-                
-                // Aceleración (negativa porque frena)
-                const aceleracion = -cteGravedad * (Math.sin(anguloRad) + coefRozamiento * Math.cos(anguloRad));
-                const tiempoTotal = -velInicial / aceleracion;
+                const visualPos = currentPos * pxPerMeter;
 
-                // Estados de animación
-                const [fase, setFase] = useState('reposo'); // reposo, subiendo, cima
-                const [tiempo, setTiempo] = useState(0);
-                const [estaSimulando, setEstaSimulando] = useState(false);
-
-                // Valores instantáneos
-                let vActual = 0;
-                let dActual = 0;
-                let hActual = 0;
-                let ecActual = 0;
-                let epActual = 0;
-                let calorActual = 0;
-
-                if (fase === 'reposo') {
-                    vActual = 0;
-                    dActual = 0;
-                    hActual = 0;
-                    ecActual = energiaCinInicial;
-                    epActual = 0;
-                    calorActual = 0;
-                } else if (fase === 'cima') {
-                    vActual = 0;
-                    dActual = distanciaM;
-                    hActual = alturaMaxM;
-                    ecActual = 0;
-                    epActual = energiaPotFinal;
-                    calorActual = trabajoRozamiento;
-                } else {
-                    // fase === 'subiendo'
-                    vActual = velInicial + aceleracion * tiempo;
-                    if (vActual < 0) vActual = 0; // Por si acaso hay overflow
-
-                    dActual = velInicial * tiempo + 0.5 * aceleracion * tiempo * tiempo;
-                    hActual = dActual * Math.sin(anguloRad);
-
-                    ecActual = 0.5 * masaCuerpo * vActual * vActual;
-                    epActual = masaCuerpo * cteGravedad * hActual;
-                    calorActual = coefRozamiento * masaCuerpo * cteGravedad * Math.cos(anguloRad) * dActual;
-                }
-
-                // Bucle de animación
                 useEffect(() => {
                     let interval;
-                    if (estaSimulando) {
+                    if (isMoving && time < tStop) {
                         interval = setInterval(() => {
-                            setTiempo(prev => {
-                                const next = prev + 0.04; // paso de tiempo visual
-                                if (next >= tiempoTotal) {
-                                    setEstaSimulando(false);
-                                    setFase('cima');
-                                    return tiempoTotal;
+                            setTime(prev => {
+                                const nextTime = prev + 0.05; // dt
+                                if (nextTime >= tStop) {
+                                    setIsMoving(false);
+                                    return tStop;
                                 }
-                                return next;
+                                return nextTime;
                             });
-                        }, 30);
+                        }, 25); // Corremos un poco más rápido visualmente
                     }
                     return () => clearInterval(interval);
-                }, [estaSimulando, tiempoTotal]);
+                }, [isMoving, time, tStop]);
 
-                // Reset automático al cambiar variables
+                const handlePlay = () => {
+                    if (time < tStop) setIsMoving(true);
+                };
+
+                const reset = () => {
+                    setTime(0);
+                    setIsMoving(false);
+                };
+
+                // Forzar reset si se cambian variables
                 useEffect(() => {
-                    setFase('reposo');
-                    setTiempo(0);
-                    setEstaSimulando(false);
-                }, [anguloDeg, distanciaM, coefRozamiento, masaCuerpo]);
+                    reset();
+                }, [v0, angulo, mu]);
 
-                const iniciar = () => {
-                    setFase('subiendo');
-                    setTiempo(0);
-                    setEstaSimulando(true);
-                };
-
-                const reiniciar = () => {
-                    setFase('reposo');
-                    setTiempo(0);
-                    setEstaSimulando(false);
-                };
-
-                // Geometría Visual Fija (Escalado para que quepa en el cuadro)
-                const rampBaseX = 40;
-                const rampBaseY = 240; 
-                const rampHypotenusePx = 290; // Longitud visual fija para la rampa
-                
-                const rampWidthPx = rampHypotenusePx * Math.cos(anguloRad);
-                const rampHeightPx = rampHypotenusePx * Math.sin(anguloRad);
-
-                // Posición visual actual del bloque
-                const currentPx = (dActual / distanciaM) * rampHypotenusePx;
-                const blockX = rampBaseX + currentPx * Math.cos(anguloRad);
-                const blockY = rampBaseY - currentPx * Math.sin(anguloRad);
-
-                // DCL con IA
+                // Generador de DCL IA
                 const [imgUrl, setImgUrl] = useState(null);
                 const [imgLoading, setImgLoading] = useState(false);
 
                 const generarDiagrama = async () => {
                     setImgLoading(true);
+                    const apiKey = ""; 
                     try {
-                        const apiKey = ""; 
                         const response = await fetch(
                             `https://generativelanguage.googleapis.com/v1beta/models/imagen-4.0-generate-001:predict?key=${apiKey}`,
                             {
                                 method: 'POST',
                                 headers: { 'Content-Type': 'application/json' },
                                 body: JSON.stringify({
-                                    instances: [{
-                                        prompt: "Diagrama de cuerpo libre de un bloque subiendo por un plano inclinado. Vector velocidad hacia arriba del plano. Vector de fuerza de rozamiento hacia abajo del plano. Vector del peso hacia abajo. Estilo educativo física, fondo blanco limpio."
-                                    }],
+                                    instances: [{ prompt: "Diagrama técnico de física. Un bloque deslizando HACIA ARRIBA por un plano inclinado muy empinado (60 grados). Un vector velocidad v apuntando hacia arriba de la rampa. Vectores Px (componente x del peso) y Fuerza de Rozamiento Fr apuntando ambos hacia ABAJO de la rampa. Fondo blanco, minimalista, educativo" }],
                                     parameters: { sampleCount: 1 }
                                 })
                             }
                         );
-                        if (!response.ok) throw new Error("API Error");
+                        if (!response.ok) throw new Error("Error en red");
                         const data = await response.json();
                         setImgUrl(`data:image/png;base64,${data.predictions[0].bytesBase64Encoded}`);
                     } catch (error) {
@@ -228,138 +160,249 @@
 
                 return (
                     <div className="min-h-screen bg-slate-900 text-slate-100 p-4 md:p-8">
-                        <header className="max-w-6xl mx-auto mb-8 border-b border-slate-700 pb-6">
+                        <header className="max-w-5xl mx-auto mb-8 border-b border-slate-700 pb-6">
                             <div className="flex items-center gap-3 mb-2">
-                                <span className="bg-amber-600 text-white px-3 py-1 rounded-full text-xs font-black uppercase tracking-widest">
-                                    Dinámica y Energía
-                                </span>
-                                <h1 className="text-3xl font-black text-amber-400 uppercase tracking-tight">
-                                    Ascenso en Plano Inclinado
-                                </h1>
+                                <span className="bg-violet-600 text-white px-3 py-1 rounded-full text-xs font-black uppercase tracking-widest">Dinámica y Cinemática</span>
+                                <h1 className="text-3xl font-black text-violet-400 uppercase tracking-tight tracking-widest">Tiro Ascendente en Rampa</h1>
                             </div>
-
                             <div className="bg-slate-800/50 p-4 rounded-xl border border-slate-700 mt-4">
                                 <p className="text-slate-300 text-sm leading-relaxed">
-                                    <strong>Enunciado:</strong> Se tiene un plano inclinado {anguloDeg}° respecto de la horizontal, cuya longitud es de {distanciaM.toFixed(1)} m.
-                                    ¿Qué velocidad paralela al plano debe comunicarse a un cuerpo para que este llegue a la parte superior del plano inclinado con velocidad nula?
-                                    Dato: el coeficiente de rozamiento vale {coefRozamiento.toFixed(3)}.
+                                    <strong>Enunciado:</strong> Se tiene un plano inclinado 60° respecto de la horizontal. ¿Qué velocidad paralela al plano debe comunicarse a un cuerpo para que este llegue exactamente a la marca de los 10,0 m de longitud con velocidad nula? Dato: μ = 0,100.
                                 </p>
                             </div>
                         </header>
 
-                        <main className="max-w-6xl mx-auto grid lg:grid-cols-2 gap-8">
-                            {/* PANEL VISUAL */}
-                            <div className="bg-slate-800 rounded-3xl border border-slate-700 h-[600px] relative overflow-hidden shadow-2xl flex flex-col justify-between pb-4">
+                        <main className="max-w-5xl mx-auto grid md:grid-cols-2 gap-8">
+                            {/* Panel Visual */}
+                            <div className="bg-slate-800 rounded-3xl border border-slate-700 h-[500px] relative overflow-hidden shadow-2xl flex flex-col justify-end pb-8">
                                 
-                                {/* HUD Superior y Tarjetas */}
-                                <div className="w-full px-6 pt-6 z-30 pointer-events-none flex flex-col gap-4">
-                                    <div className="flex justify-between">
-                                        <div className="bg-slate-900/90 p-3 rounded-lg border border-slate-700 backdrop-blur-md">
-                                            <p className="text-[10px] text-slate-500 uppercase font-black mb-1">Velocidad Requerida</p>
-                                            <p className="text-2xl font-mono font-black text-amber-400">
-                                                {velInicial.toFixed(2)} <span className="text-sm">m/s</span>
-                                            </p>
-                                            <p className="text-[10px] text-slate-400 mt-1">v actual: {vActual.toFixed(2)} m/s</p>
-                                        </div>
-
-                                        <div className="bg-slate-900/90 p-3 rounded-lg border border-slate-700 backdrop-blur-md text-right border-b-4 border-b-emerald-500 shadow-[0_0_15px_rgba(16,185,129,0.25)]">
-                                            <p className="text-[10px] text-slate-500 uppercase font-black flex items-center justify-end gap-1">
-                                                <MountainIcon size={12} className="text-emerald-400" />
-                                                Distancia Recorrida
-                                            </p>
-                                            <p className="text-2xl font-mono font-black text-emerald-400">
-                                                {dActual.toFixed(2)} <span className="text-sm">m</span>
-                                            </p>
-                                            <p className="text-[10px] text-slate-400 mt-1">
-                                                Altura (h): {hActual.toFixed(2)} m
-                                            </p>
-                                        </div>
+                                {/* HUD Superior */}
+                                <div className="absolute top-4 w-full px-6 flex justify-between z-30 pointer-events-none">
+                                    <div className="bg-slate-900/90 p-3 rounded-lg border border-slate-700 backdrop-blur-md">
+                                        <p className="text-[10px] text-slate-500 uppercase font-black">Velocidad Actual (v)</p>
+                                        <p className="text-xl font-mono font-black text-emerald-400">{currentV.toFixed(2)} m/s</p>
                                     </div>
-
-                                    {/* Mini tarjetas de energía */}
-                                    <div className="grid grid-cols-3 gap-3">
-                                        <div className="bg-slate-900/80 border border-slate-700 rounded-xl p-3">
-                                            <p className="text-[10px] uppercase font-black text-amber-400 mb-1">Ec Inicial</p>
-                                            <p className="font-mono text-white text-sm">{energiaCinInicial.toFixed(1)} J</p>
-                                        </div>
-                                        <div className="bg-slate-900/80 border border-slate-700 rounded-xl p-3">
-                                            <p className="text-[10px] uppercase font-black text-blue-400 mb-1">Ep Actual</p>
-                                            <p className="font-mono text-white text-sm">{epActual.toFixed(1)} J</p>
-                                        </div>
-                                        <div className="bg-slate-900/80 border border-slate-700 rounded-xl p-3">
-                                            <p className="text-[10px] uppercase font-black text-red-400 mb-1">Calor (Wroz)</p>
-                                            <p className="font-mono text-white text-sm">{calorActual.toFixed(1)} J</p>
-                                        </div>
+                                    <div className={`bg-slate-900/90 p-3 rounded-lg border backdrop-blur-md text-right border-b-4 ${currentPos >= dObj ? 'border-b-emerald-500 shadow-[0_0_15px_rgba(16,185,129,0.3)]' : 'border-b-violet-500'}`}>
+                                        <p className="text-[10px] text-slate-500 uppercase font-black flex items-center justify-end gap-1">
+                                            {TargetIcon && <TargetIcon size={12} className={currentPos >= dObj ? "text-emerald-400" : "text-violet-400"} />} Distancia Recorrida (d)
+                                        </p>
+                                        <p className={`text-3xl font-mono font-black ${currentPos >= dObj ? 'text-emerald-400' : 'text-violet-400'}`}>
+                                            {currentPos.toFixed(2)} <span className="text-sm">m</span>
+                                        </p>
                                     </div>
                                 </div>
 
-                                {/* Barras de Energía */}
-                                <div className="absolute right-6 top-[220px] z-20 w-48">
-                                    <div className="flex items-end gap-3 h-24">
-                                        <div className="flex-1 flex flex-col justify-end items-center">
-                                            <div className="w-10 bg-amber-400 rounded-t-md transition-all duration-100" style={{ height: `${(ecActual / energiaCinInicial) * 100}%` }}></div>
-                                            <p className="text-[9px] font-black uppercase text-amber-400 mt-2 text-center leading-tight">Ec</p>
+                                {/* Escenario - Plano Inclinado */}
+                                <div className="relative w-full h-80">
+                                    <div className="absolute bottom-10 left-10 w-[450px] h-full pointer-events-none">
+                                        
+                                        {/* Rampa Rotada (Origen bottom-left, inclinación hacia la derecha arriba) */}
+                                        <div 
+                                            className="absolute bottom-0 left-0 w-full h-full origin-bottom-left transition-transform duration-300 z-20"
+                                            style={{ transform: `rotate(${-angulo}deg)` }}
+                                        >
+                                            {/* Suelo de la rampa */}
+                                            <div className="absolute bottom-0 left-0 w-[450px] h-6 ramp-texture shadow-xl rounded-r-full border-t-2 border-slate-500"></div>
+
+                                            {/* Meta de 10m */}
+                                            <div className="absolute bottom-6 border-l-2 border-dashed border-emerald-500 h-24 z-10" style={{ left: `${dObj * pxPerMeter + 40}px` }}>
+                                                <div className="bg-slate-900/80 text-emerald-300 px-2 py-1 absolute -top-4 -left-6 rounded text-[10px] font-black uppercase whitespace-nowrap shadow-lg border border-emerald-500/30">
+                                                    Meta {dObj.toFixed(1)}m
+                                                </div>
+                                            </div>
+
+                                            {/* El Bloque */}
+                                            <div 
+                                                className="absolute bottom-6 w-16 h-12 bg-indigo-600 border-4 border-indigo-400 rounded-lg flex flex-col items-center justify-center shadow-lg transition-transform z-30"
+                                                style={{ transform: `translateX(${40 + visualPos}px)` }}
+                                            >
+                                                {/* Masa oculta: un símbolo de que no importa */}
+                                                <div className="flex items-center text-indigo-200/50 gap-1">
+                                                    <SparklesIcon size={12} />
+                                                    <span className="font-black text-[10px]">m kg</span>
+                                                </div>
+
+                                                {/* Vector Velocidad (Arriba/Derecha de la rampa) */}
+                                                {currentV > 0 && (
+                                                    <div className="absolute bottom-full mb-1 left-1/2 flex items-center" style={{ width: Math.max(20, currentV * 10) }}>
+                                                        <div className="h-1 bg-emerald-400 w-full relative">
+                                                            <div className="absolute right-0 -top-1.5">{ArrowRightIcon && <ArrowRightIcon size={16} className="text-emerald-400" />}</div>
+                                                        </div>
+                                                        <span className="ml-1 text-[10px] font-black text-emerald-300 bg-slate-900/80 px-1 rounded">v</span>
+                                                    </div>
+                                                )}
+
+                                                {/* Vectores que frenan (Izquierda de la rampa) */}
+                                                {currentV > 0 && (
+                                                    <>
+                                                        {/* Vector Px */}
+                                                        <div className="absolute top-1/4 right-full flex items-center pr-1 pointer-events-none" style={{ width: Math.max(30, px * 1.5) }}>
+                                                            <span className="mr-1 text-[8px] font-black text-red-300 bg-slate-900/80 px-1 rounded shadow">P_x</span>
+                                                            <div className="h-1 bg-red-400 w-full relative">
+                                                                <div className="absolute left-0 -top-1.5">{ArrowLeftIcon && <ArrowLeftIcon size={14} className="text-red-400" />}</div>
+                                                            </div>
+                                                        </div>
+
+                                                        {/* Vector Rozamiento */}
+                                                        <div className="absolute bottom-1/4 right-full flex items-center pr-1 pointer-events-none" style={{ width: Math.max(20, fr * 1.5) }}>
+                                                            <span className="mr-1 text-[8px] font-black text-orange-300 bg-slate-900/80 px-1 rounded shadow">F_r</span>
+                                                            <div className="h-1 bg-orange-400 w-full relative">
+                                                                <div className="absolute left-0 -top-1.5">{ArrowLeftIcon && <ArrowLeftIcon size={14} className="text-orange-400" />}</div>
+                                                            </div>
+                                                        </div>
+                                                    </>
+                                                )}
+                                            </div>
                                         </div>
-                                        <div className="flex-1 flex flex-col justify-end items-center">
-                                            <div className="w-10 bg-blue-500 rounded-t-md transition-all duration-100" style={{ height: `${(epActual / energiaCinInicial) * 100}%` }}></div>
-                                            <p className="text-[9px] font-black uppercase text-blue-400 mt-2 text-center leading-tight">Ep</p>
+
+                                        {/* Suelo Base y Arco del ángulo */}
+                                        <div className="absolute bottom-0 left-0 w-full border-b-2 border-slate-600 border-dashed"></div>
+                                        {angulo > 0 && (
+                                            <div className="absolute bottom-0 left-0 w-24 h-24 border-r-2 border-t-2 border-violet-500/50 rounded-tr-full flex items-end justify-end pb-2 pr-2">
+                                                <span className="text-violet-300 font-mono text-sm font-bold">{angulo}º</span>
+                                            </div>
+                                        )}
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* Controles y Resolución */}
+                            <div className="space-y-6">
+                                <div className="bg-slate-800 p-6 rounded-3xl border border-slate-700 shadow-xl">
+                                    <h3 className="text-xl font-bold mb-4 flex items-center gap-2 text-violet-400">
+                                        {SettingsIcon && <SettingsIcon size={20} />} Panel de Lanzamiento
+                                    </h3>
+                                    
+                                    <p className="text-xs text-slate-400 mb-6">Ajusta la Velocidad Inicial ($v_0$) para intentar que el bloque se detenga exactamente en la marca de los {dObj} m.</p>
+
+                                    <div className="space-y-5 mb-6">
+                                        <div>
+                                            <div className="flex justify-between text-xs mb-2">
+                                                <span className="text-emerald-400 font-bold uppercase">Velocidad Inicial (v₀)</span>
+                                                <span className="font-mono bg-slate-900 px-2 py-0.5 rounded text-emerald-300">{v0.toFixed(2)} m/s</span>
+                                            </div>
+                                            <input 
+                                                type="range" min="5" max="25" step="0.1" value={v0} 
+                                                onChange={e => {setV0(Number(e.target.value)); reset();}} 
+                                                className="w-full h-3 bg-slate-700 rounded-lg appearance-none cursor-pointer accent-emerald-500" 
+                                            />
                                         </div>
-                                        <div className="flex-1 flex flex-col justify-end items-center">
-                                            <div className="w-10 bg-red-500 rounded-t-md transition-all duration-100" style={{ height: `${(calorActual / energiaCinInicial) * 100}%` }}></div>
-                                            <p className="text-[9px] font-black uppercase text-red-400 mt-2 text-center leading-tight">Calor</p>
+
+                                        <div className="grid grid-cols-2 gap-4 pt-3 border-t border-slate-700">
+                                            <div>
+                                                <div className="flex justify-between text-[10px] mb-1">
+                                                    <span className="text-slate-300 font-bold uppercase">Ángulo (α)</span>
+                                                    <span className="font-mono text-white">{angulo}º</span>
+                                                </div>
+                                                <input type="range" min="10" max="80" step="1" value={angulo} onChange={e => {setAngulo(Number(e.target.value)); reset();}} className="w-full h-1.5 bg-slate-700 rounded-lg appearance-none cursor-pointer accent-slate-400" />
+                                            </div>
+                                            <div>
+                                                <div className="flex justify-between text-[10px] mb-1">
+                                                    <span className="text-orange-400 font-bold uppercase">Rozamiento (μ)</span>
+                                                    <span className="font-mono text-orange-200">{mu.toFixed(3)}</span>
+                                                </div>
+                                                <input type="range" min="0" max="0.5" step="0.05" value={mu} onChange={e => {setMu(Number(e.target.value)); reset();}} className="w-full h-1.5 bg-slate-700 rounded-lg appearance-none cursor-pointer accent-orange-500" />
+                                            </div>
                                         </div>
+                                    </div>
+
+                                    <div className="flex gap-2">
+                                        <button 
+                                            onClick={handlePlay} 
+                                            disabled={isMoving || time >= tStop}
+                                            className={`flex-1 font-black py-4 rounded-xl shadow-lg flex justify-center items-center gap-2 disabled:opacity-50 transition-all active:scale-95 ${time >= tStop ? 'bg-slate-600 text-slate-400' : 'bg-violet-600 hover:bg-violet-500 text-white'}`}
+                                        >
+                                            {PlayIcon && <PlayIcon size={18} />} {time >= tStop ? 'BLOQUE DETENIDO' : 'LANZAR BLOQUE'}
+                                        </button>
+                                        <button onClick={reset} className="bg-slate-700 hover:bg-slate-600 text-white font-bold px-5 rounded-xl transition-all shadow-md">
+                                            {RotateCcwIcon && <RotateCcwIcon size={18} />}
+                                        </button>
                                     </div>
                                 </div>
 
-                                {/* Etiquetas flotantes descriptivas */}
-                                <div className="absolute left-6 top-[220px] z-20 flex flex-col gap-3">
-                                    <div className="bg-slate-900/80 text-amber-400 px-3 py-1.5 rounded-full text-[10px] font-black uppercase border border-slate-700 w-max shadow-md">
-                                        Tiempo: {tiempo.toFixed(2)} s
+                                <div className="bg-violet-950/20 p-6 rounded-3xl border border-violet-500/20">
+                                    <div className="flex justify-between items-center mb-4 border-b border-violet-500/30 pb-2">
+                                        <h4 className="font-bold text-violet-300 flex items-center gap-2">
+                                            {CalculatorIcon && <CalculatorIcon size={18} />} Resolución Paso a Paso
+                                        </h4>
+                                        <button onClick={generarDiagrama} className="text-[10px] uppercase font-bold bg-slate-800 hover:bg-slate-700 text-slate-300 px-3 py-1.5 rounded flex items-center gap-1 border border-slate-600">
+                                            {imgLoading ? <span className="animate-pulse">Cargando...</span> : <>{ImagePlusIcon && <ImagePlusIcon size={14}/>} Generar DCL</>}
+                                        </button>
                                     </div>
-                                    <div className="bg-slate-900/80 text-slate-300 px-3 py-2.5 rounded-xl text-[11px] border border-slate-700 max-w-[220px] shadow-md leading-relaxed">
-                                        Toda la energía cinética inicial se gasta en subir la rampa (Ep) y vencer la fricción (Calor).
+
+                                    {imgUrl && (
+                                        <div className="mb-4 bg-slate-900 p-2 rounded-xl border border-slate-700 text-center">
+                                            <img src={imgUrl} alt="Diagrama de Cuerpo Libre" className="mx-auto max-h-40 rounded-lg" />
+                                        </div>
+                                    )}
+
+                                    <div className="text-xs text-slate-300 space-y-4 leading-relaxed">
+                                        <p><strong>1. Dinámica (Eje X): ¿Quién frena al bloque?</strong><br/>
+                                        Como el bloque sube, la fricción y el peso apuntan hacia abajo del plano.</p>
+                                        
+                                        <div className="bg-slate-900/80 p-2 rounded-lg border-l-4 border-red-500 font-mono text-red-200 overflow-x-auto shadow-inner">
+                                            Σ F_x = m · a<br/>
+                                            - P_x - F_r = m · a<br/>
+                                            - m·g·sin(α) - μ·m·g·cos(α) = m · a
+                                        </div>
+
+                                        <p><strong>2. El truco de la masa:</strong><br/>
+                                        Como la masa ($m$) aparece en todos los términos, podemos dividir toda la ecuación por $m$ y se cancela. ¡No la necesitamos!</p>
+                                        
+                                        <div className="bg-slate-900/80 p-3 rounded-lg border-l-4 border-orange-500 font-mono text-orange-200 shadow-[inset_0_0_15px_rgba(249,115,22,0.1)]">
+                                            a = - g·sin(α) - μ·g·cos(α)<br/>
+                                            a = - 9.8·sin({angulo}º) - {mu.toFixed(3)}·9.8·cos({angulo}º)<br/>
+                                            a = - 9.8·{senA.toFixed(3)} - {mu.toFixed(3)}·9.8·{cosA.toFixed(3)}<br/>
+                                            a = - {(9.8*senA).toFixed(3)} - {(mu*9.8*cosA).toFixed(3)} = <strong>-{aMag.toFixed(3)} m/s²</strong>
+                                        </div>
+
+                                        <p><strong>3. Cinemática (Llegar arriba con v=0):</strong></p>
+                                        
+                                        <div className="bg-slate-900/80 p-3 rounded-lg border-l-4 border-emerald-500 font-mono text-emerald-200">
+                                            v_f² = v₀² + 2·a·d<br/>
+                                            0 = v₀² + 2 · (-{aMag.toFixed(3)}) · {dObj.toFixed(1)}<br/>
+                                            v₀² = 2 · {aMag.toFixed(3)} · {dObj.toFixed(1)}<br/>
+                                            v₀ = √({(2 * aMag * dObj).toFixed(2)}) = <strong>{Math.sqrt(2 * aMag * dObj).toFixed(2)} m/s</strong>
+                                        </div>
                                     </div>
                                 </div>
+                            </div>
+                        </main>
 
-                                {/* Escena visual SVG y HTML */}
-                                <div className="relative w-full h-[300px]">
-                                    {/* Suelo */}
-                                    <div className="absolute bottom-0 w-full h-12 floor-pattern"></div>
+                        <footer className="max-w-5xl mx-auto mt-12 pt-6 border-t border-slate-800 text-center text-slate-500 text-[10px] font-bold uppercase tracking-widest">
+                            Profe Física | Dinámica y Cinemática en Planos Inclinados
+                        </footer>
+                    </div>
+                );
+            };
 
-                                    {/* Triángulo de la Rampa dibujado con SVG */}
-                                    <svg className="absolute top-0 left-0 w-full h-full pointer-events-none">
-                                        <polygon 
-                                            points={`${rampBaseX},${rampBaseY} ${rampBaseX + rampWidthPx},${rampBaseY} ${rampBaseX + rampWidthPx},${rampBaseY - rampHeightPx}`}
-                                            className="ramp-texture"
-                                        />
-                                        {/* Línea de Cota de Altura */}
-                                        <line 
-                                            x1={rampBaseX + rampWidthPx + 15} y1={rampBaseY} 
-                                            x2={rampBaseX + rampWidthPx + 15} y2={rampBaseY - rampHeightPx} 
-                                            stroke="#94a3b8" strokeWidth="2" strokeDasharray="4 4"
-                                        />
-                                        <text x={rampBaseX + rampWidthPx + 25} y={rampBaseY - rampHeightPx/2} fill="#94a3b8" fontSize="12" fontWeight="bold" fontFamily="monospace">
-                                            h = {alturaMaxM.toFixed(1)}m
-                                        </text>
-                                        {/* Arco del ángulo */}
-                                        <path 
-                                            d={`M ${rampBaseX + 40} ${rampBaseY} A 40 40 0 0 0 ${rampBaseX + 40*Math.cos(anguloRad)} ${rampBaseY - 40*Math.sin(anguloRad)}`} 
-                                            fill="none" stroke="#f59e0b" strokeWidth="2"
-                                        />
-                                        <text x={rampBaseX + 45} y={rampBaseY - 15} fill="#fcd34d" fontSize="12" fontWeight="bold">
-                                            {anguloDeg}°
-                                        </text>
-                                    </svg>
+            const container = document.getElementById('root');
+            const root = ReactDOM.createRoot(container);
+            root.render(<App />);
+        })();
+    </script>
+	<div style="position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); display: flex; gap: 10px; background: rgba(15, 23, 42, 0.9); padding: 10px; border-radius: 15px; border: 1px solid rgba(255,255,255,0.1); z-index: 10000; backdrop-filter: blur(10px);">
+    <button id="navPrev" style="padding: 8px 15px; background: #334155; color: white; border-radius: 8px; font-weight: bold; border: none; cursor: pointer;">← Ant.</button>
+    <a href="index.html" style="padding: 8px 20px; background: #059669; color: white; border-radius: 8px; font-weight: bold; text-decoration: none; text-transform: uppercase; font-size: 12px; display: flex; align-items: center;">Índice</a>
+    <button id="navNext" style="padding: 8px 15px; background: #334155; color: white; border-radius: 8px; font-weight: bold; border: none; cursor: pointer;">Sig. →</button>
+</div>
 
-                                    {/* Bloque en Movimiento */}
-                                    <div 
-                                        className="absolute z-20 transition-transform duration-75"
-                                        style={{ 
-                                            left: `${blockX}px`, 
-                                            top: `${blockY}px`,
-                                            // Traslación adicional para centrar la base del bloque en la rampa
-                                            transform: `translate(-50%, -100%) rotate(${-anguloDeg}deg)`,
-                                            transformOrigin: 'bottom center'
-                                        }}
-                                    >
-                                        <div className="w-[60px] h-[50px] bg-sky-600 border-4 border-sky-400 rounded-lg flex flex-col items-center 
+<script>
+    (function() {
+        const match = window.location.pathname.match(/ejercicio-(\d+)\.html/);
+        if (match) {
+            const n = parseInt(match[1]);
+            const total = 70; // Cambiar a 44 para tema 8
+            const prev = document.getElementById('navPrev');
+            const next = document.getElementById('navNext');
+
+            if (n > 1) prev.onclick = () => window.location.href = `ejercicio-${n-1}.html`;
+            else prev.style.opacity = "0.3";
+
+            if (n < total) next.onclick = () => window.location.href = `ejercicio-${n+1}.html`;
+            else next.style.opacity = "0.3";
+        }
+    })();
+</script>
+</body>
+</html>

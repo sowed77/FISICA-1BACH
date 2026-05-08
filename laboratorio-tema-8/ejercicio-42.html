@@ -1,0 +1,406 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Laboratorio: Potencia de una Grúa</title>
+    <!-- Bibliotecas externas -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <script src="https://unpkg.com/lucide-react@latest"></script>
+
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&family=Fira+Code&display=swap');
+        body { font-family: 'Inter', sans-serif; background-color: #0f172a; }
+        .font-mono { font-family: 'Fira Code', monospace; }
+        input[type=range]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            height: 24px;
+            width: 24px;
+            border-radius: 50%;
+            background: #eab308; /* Yellow 500 */
+            cursor: pointer;
+            border: 3px solid #ffffff;
+            box-shadow: 0 0 10px rgba(234, 179, 8, 0.5);
+        }
+        .sky-bg {
+            background-image: linear-gradient(to bottom, #38bdf8, #bae6fd, #e0f2fe);
+        }
+        .crane-texture {
+            background-color: #f59e0b;
+            background-image: repeating-linear-gradient(45deg, transparent, transparent 10px, rgba(0,0,0,0.1) 10px, rgba(0,0,0,0.1) 20px);
+        }
+        .container-texture {
+            background-color: #dc2626;
+            background-image: repeating-linear-gradient(90deg, transparent, transparent 10px, rgba(0,0,0,0.2) 10px, rgba(0,0,0,0.2) 12px);
+        }
+        /* Rueda del motor de la grúa */
+        @keyframes spin {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+        .motor-spin {
+            animation: spin linear infinite;
+        }
+    </style>
+</head>
+<body>
+    <div id="root"></div>
+
+    <script type="text/babel">
+        (() => {
+            var { useState, useEffect } = React;
+            var icons = window.LucideReact || {};
+            
+            // Asignación segura de iconos
+            var PlayIcon = icons.Play || (({className}) => <span className={className}></span>);
+            var RotateCcwIcon = icons.RotateCcw || (({className}) => <span className={className}></span>);
+            var CalculatorIcon = icons.Calculator || (({className}) => <span className={className}></span>);
+            var SettingsIcon = icons.Settings || (({className}) => <span className={className}></span>);
+            var ZapIcon = icons.Zap || (({className}) => <span className={className}></span>);
+            var TimerIcon = icons.Timer || (({className}) => <span className={className}></span>);
+            var ArrowUpIcon = icons.ArrowUp || (({className}) => <span className={className}></span>);
+            var ArrowDownIcon = icons.ArrowDown || (({className}) => <span className={className}></span>);
+            var ImagePlusIcon = icons.ImagePlus || (({className}) => <span className={className}></span>);
+            var BoxIcon = icons.Box || (({className}) => <span className={className}></span>);
+
+            var App = () => {
+                const g = 9.8; // m/s²
+
+                // Estados interactivos (Inicializados con los datos del enunciado)
+                const [masaTon, setMasaTon] = useState(5.0); // Toneladas
+                const [altura, setAltura] = useState(20); // metros
+                const [tiempoMin, setTiempoMin] = useState(1.0); // minutos
+
+                // Cálculos Físicos
+                const masaKg = masaTon * 1000;
+                const tiempoSeg = tiempoMin * 60;
+                
+                const peso = masaKg * g; // Fuerza a vencer (N)
+                const trabajo = peso * altura; // W = F * d (Julios)
+                const potenciaW = trabajo / tiempoSeg; // P = W / t (Vatios)
+                const potenciaKw = potenciaW / 1000; // Kilovatios
+                const potenciaCV = potenciaW / 735.5; // Caballos de Vapor
+
+                const velocidadMedia = altura / tiempoSeg; // m/s
+
+                // Animación
+                const [time, setTime] = useState(0); 
+                const [isMoving, setIsMoving] = useState(false);
+
+                useEffect(() => {
+                    let interval;
+                    if (isMoving && time < tiempoSeg) {
+                        interval = setInterval(() => {
+                            setTime(prev => {
+                                // Aceleramos el tiempo visual para que cualquier elevación tarde unos 4 segundos reales
+                                const timeScale = tiempoSeg / 4; 
+                                const nextTime = prev + (0.05 * timeScale);
+                                if (nextTime >= tiempoSeg) {
+                                    setIsMoving(false);
+                                    return tiempoSeg;
+                                }
+                                return nextTime;
+                            });
+                        }, 50); // 20 FPS
+                    }
+                    return () => clearInterval(interval);
+                }, [isMoving, time, tiempoSeg]);
+
+                const handlePlay = () => {
+                    if (time < tiempoSeg) setIsMoving(true);
+                };
+
+                const reset = () => {
+                    setTime(0);
+                    setIsMoving(false);
+                };
+
+                // Si cambiamos los datos, reiniciamos la animación
+                useEffect(() => {
+                    reset();
+                }, [masaTon, altura, tiempoMin]);
+
+                // Generador de DCL con IA
+                const [imgUrl, setImgUrl] = useState(null);
+                const [imgLoading, setImgLoading] = useState(false);
+
+                const generarDiagrama = async () => {
+                    setImgLoading(true);
+                    const apiKey = ""; 
+                    try {
+                        const response = await fetch(
+                            `https://generativelanguage.googleapis.com/v1beta/models/imagen-4.0-generate-001:predict?key=${apiKey}`,
+                            {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({
+                                    instances: [{ prompt: "Diagrama técnico de física del Trabajo Mecánico. Un bloque (contenedor) elevado por una grúa. Vector de desplazamiento delta h hacia arriba. Vector Fuerza F_motor apuntando verticalmente hacia arriba. Vector Peso P apuntando hacia abajo. Los vectores son iguales en tamaño. Fondo blanco, minimalista, educativo" }],
+                                    parameters: { sampleCount: 1 }
+                                })
+                            }
+                        );
+                        if (!response.ok) throw new Error("Error en red");
+                        const data = await response.json();
+                        setImgUrl(`data:image/png;base64,${data.predictions[0].bytesBase64Encoded}`);
+                    } catch (error) {
+                        console.error(error);
+                    } finally {
+                        setImgLoading(false);
+                    }
+                };
+
+                // Escala visual
+                const maxHVisual = 300; // Píxeles de altura máxima de recorrido
+                const currentHVisual = (time / tiempoSeg) * maxHVisual;
+
+                return (
+                    <div className="min-h-screen bg-slate-900 text-slate-100 p-4 md:p-8">
+                        <header className="max-w-5xl mx-auto mb-8 border-b border-slate-700 pb-6">
+                            <div className="flex items-center gap-3 mb-2">
+                                <span className="bg-yellow-600 text-slate-900 px-3 py-1 rounded-full text-xs font-black uppercase tracking-widest">Trabajo y Energía</span>
+                                <h1 className="text-3xl font-black text-yellow-400 uppercase tracking-tight tracking-widest">Potencia de la Grúa</h1>
+                            </div>
+                            <div className="bg-slate-800/50 p-4 rounded-xl border border-slate-700 mt-4">
+                                <p className="text-slate-300 text-sm leading-relaxed">
+                                    <strong>Enunciado:</strong> Calcula la potencia que debe tener una grúa capaz de alzar un contenedor de 5.000 kg hasta una altura de 20 m en 1 minuto.
+                                </p>
+                            </div>
+                        </header>
+
+                        <main className="max-w-5xl mx-auto grid md:grid-cols-2 gap-8">
+                            {/* Panel Visual */}
+                            <div className="bg-slate-800 rounded-3xl border border-slate-700 h-[500px] relative overflow-hidden shadow-2xl flex flex-col justify-end pb-8">
+                                
+                                {/* HUD Flotante */}
+                                <div className="absolute top-4 w-full px-6 flex justify-between z-30 pointer-events-none">
+                                    <div className="bg-slate-900/90 p-3 rounded-lg border border-slate-700 backdrop-blur-md">
+                                        <p className="text-[10px] text-slate-500 uppercase font-black">Trabajo (Energía)</p>
+                                        <p className="text-xl font-mono font-black text-white">{(trabajo / 1000).toLocaleString()} <span className="text-sm">kJ</span></p>
+                                        <p className="text-[10px] text-slate-400 mt-1">W = F · d</p>
+                                    </div>
+                                    <div className={`bg-slate-900/90 p-3 rounded-lg border backdrop-blur-md text-right border-b-4 ${isMoving ? 'border-b-yellow-500 shadow-[0_0_15px_rgba(234,179,8,0.3)]' : 'border-b-slate-700'}`}>
+                                        <p className="text-[10px] text-slate-500 uppercase font-black flex items-center justify-end gap-1">
+                                            {ZapIcon && <ZapIcon size={12} className={isMoving ? "text-yellow-400" : "text-slate-500"} />} Potencia (P)
+                                        </p>
+                                        <p className={`text-2xl font-mono font-black ${isMoving ? 'text-yellow-400' : 'text-slate-400'}`}>
+                                            {isMoving ? potenciaKw.toFixed(2) : "0.00"} <span className="text-sm">kW</span>
+                                        </p>
+                                    </div>
+                                </div>
+
+                                {/* Cronómetro central */}
+                                <div className="absolute top-4 left-1/2 -translate-x-1/2 z-30">
+                                    <div className="bg-slate-900/90 p-2 px-4 rounded-full border border-slate-700 backdrop-blur-md flex items-center gap-2">
+                                        <TimerIcon size={16} className={isMoving ? "text-yellow-400" : "text-slate-400"} />
+                                        <span className="font-mono font-black text-lg text-white">{time.toFixed(1)} s</span>
+                                    </div>
+                                </div>
+
+                                {/* Escena de la Grúa */}
+                                <div className="relative w-full h-[400px] sky-bg flex justify-center items-end border-b-8 border-slate-700">
+                                    
+                                    {/* Regla de alturas */}
+                                    <div className="absolute left-6 h-full flex flex-col justify-between items-start py-4 border-l-2 border-slate-800/20 z-0">
+                                        <div className="relative w-4 border-b-2 border-slate-800/30">
+                                            <span className="absolute left-6 -top-2 text-[10px] font-mono text-slate-700 font-bold">{altura} m</span>
+                                        </div>
+                                        <div className="relative w-4 border-b-2 border-slate-800/30">
+                                            <span className="absolute left-6 -top-2 text-[10px] font-mono text-slate-700 font-bold">0 m</span>
+                                        </div>
+                                    </div>
+
+                                    {/* Estructura de la grúa */}
+                                    <div className="absolute top-0 right-10 w-24 h-full bg-slate-800 border-x-4 border-slate-700 z-10 flex flex-col items-center">
+                                        <div className="w-full h-4 border-b border-slate-600 mt-10"></div>
+                                        <div className="w-full h-4 border-b border-slate-600 mt-10"></div>
+                                        <div className="w-full h-4 border-b border-slate-600 mt-10"></div>
+                                        <div className="w-full h-4 border-b border-slate-600 mt-10"></div>
+                                        <div className="w-full h-4 border-b border-slate-600 mt-10"></div>
+                                        <div className="w-full h-4 border-b border-slate-600 mt-10"></div>
+                                    </div>
+                                    <div className="absolute top-10 left-1/2 w-64 h-8 crane-texture border-y-4 border-yellow-700 z-20 shadow-xl"></div>
+                                    
+                                    {/* Motor (Gira) */}
+                                    <div className="absolute top-6 left-[65%] w-16 h-12 bg-slate-900 border-2 border-slate-700 rounded-t-lg z-30 flex items-center justify-center">
+                                        <div className="relative w-8 h-8 rounded-full border-2 border-slate-500 overflow-hidden">
+                                            <div className={`w-full h-1 bg-slate-300 absolute top-1/2 -translate-y-1/2 ${isMoving ? 'motor-spin' : ''}`} style={{ animationDuration: `${2/velocidadMedia}s` }}></div>
+                                            <div className={`h-full w-1 bg-slate-300 absolute left-1/2 -translate-x-1/2 ${isMoving ? 'motor-spin' : ''}`} style={{ animationDuration: `${2/velocidadMedia}s` }}></div>
+                                        </div>
+                                    </div>
+
+                                    {/* Cable */}
+                                    <div 
+                                        className="absolute left-[65%] bg-slate-800 w-1.5 z-10 border-r border-slate-600 transition-all"
+                                        style={{ top: '40px', bottom: `${currentHVisual + 60}px` }} 
+                                    ></div>
+
+                                    {/* El Contenedor */}
+                                    <div 
+                                        className="absolute left-[65%] w-24 h-16 container-texture border-2 border-red-900 rounded shadow-xl flex items-center justify-center z-20 transition-transform"
+                                        style={{ transform: `translate(-50%, -${currentHVisual}px)` }}
+                                    >
+                                        <span className="font-black text-white/80 text-sm tracking-widest">{masaTon} t</span>
+
+                                        {/* Vector Fuerza del Motor (Arriba) */}
+                                        {isMoving && (
+                                            <div className="absolute bottom-full left-1/2 -translate-x-1/2 flex flex-col items-center pb-1 pointer-events-none" style={{ height: 60 }}>
+                                                <span className="mb-1 text-[10px] font-black text-yellow-300 bg-slate-900/80 px-1 rounded shadow whitespace-nowrap">F_m</span>
+                                                <div className="w-1.5 bg-yellow-400 h-full relative shadow-[0_0_8px_rgba(250,204,21,0.8)]">
+                                                    <div className="absolute top-0 -translate-x-[6px]">{ArrowUpIcon && <ArrowUpIcon size={16} className="text-yellow-400" />}</div>
+                                                </div>
+                                            </div>
+                                        )}
+
+                                        {/* Vector Peso (Abajo) */}
+                                        {isMoving && (
+                                            <div className="absolute top-full left-1/2 -translate-x-1/2 flex flex-col items-center pt-1 pointer-events-none" style={{ height: 60 }}>
+                                                <div className="w-1.5 bg-orange-500 h-full relative shadow-[0_0_8px_rgba(249,115,22,0.8)]">
+                                                    <div className="absolute bottom-0 -translate-x-[6px]">{ArrowDownIcon && <ArrowDownIcon size={16} className="text-orange-500" />}</div>
+                                                </div>
+                                                <span className="mt-1 text-[10px] font-black text-orange-400 bg-slate-900/80 px-1 rounded shadow whitespace-nowrap">P</span>
+                                            </div>
+                                        )}
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* Controles y Resolución */}
+                            <div className="space-y-6">
+                                <div className="bg-slate-800 p-6 rounded-3xl border border-slate-700 shadow-xl">
+                                    <h3 className="text-xl font-bold mb-4 flex items-center gap-2 text-yellow-400">
+                                        {SettingsIcon && <SettingsIcon size={20} />} Parámetros de Carga
+                                    </h3>
+                                    
+                                    <div className="space-y-6 mb-6">
+                                        <div>
+                                            <div className="flex justify-between text-xs mb-2">
+                                                <span className="text-slate-300 font-bold uppercase">Masa del contenedor (m)</span>
+                                                <span className="font-mono bg-slate-900 px-2 py-0.5 rounded text-white">{masaTon.toFixed(1)} t ({(masaTon * 1000).toLocaleString()} kg)</span>
+                                            </div>
+                                            <input 
+                                                type="range" min="1.0" max="20.0" step="0.5" value={masaTon} 
+                                                onChange={e => {setMasaTon(Number(e.target.value)); reset();}} 
+                                                className="w-full h-2 bg-slate-700 rounded-lg appearance-none cursor-pointer accent-slate-400" 
+                                            />
+                                        </div>
+
+                                        <div className="grid grid-cols-2 gap-4 pt-2 border-t border-slate-700">
+                                            <div>
+                                                <div className="flex justify-between text-[10px] mb-1">
+                                                    <span className="text-emerald-400 font-bold uppercase">Altura (h)</span>
+                                                    <span className="font-mono text-white">{altura} m</span>
+                                                </div>
+                                                <input type="range" min="5" max="100" step="5" value={altura} onChange={e => {setAltura(Number(e.target.value)); reset();}} className="w-full h-1.5 bg-slate-700 rounded-lg appearance-none cursor-pointer accent-emerald-500 mb-1" />
+                                            </div>
+                                            <div>
+                                                <div className="flex justify-between text-[10px] mb-1">
+                                                    <span className="text-blue-400 font-bold uppercase">Tiempo (t)</span>
+                                                    <span className="font-mono text-white">{tiempoMin} min</span>
+                                                </div>
+                                                <input type="range" min="0.5" max="10.0" step="0.5" value={tiempoMin} onChange={e => {setTiempoMin(Number(e.target.value)); reset();}} className="w-full h-1.5 bg-slate-700 rounded-lg appearance-none cursor-pointer accent-blue-500 mb-1" />
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div className="flex gap-2">
+                                        <button 
+                                            onClick={handlePlay} 
+                                            disabled={isMoving || time >= tiempoSeg}
+                                            className="flex-1 bg-yellow-600 hover:bg-yellow-500 text-slate-900 font-black py-4 rounded-xl shadow-[0_0_15px_rgba(234,179,8,0.4)] flex justify-center items-center gap-2 disabled:opacity-50 transition-all active:scale-95"
+                                        >
+                                            {PlayIcon && <PlayIcon size={18} />} ELEVAR CARGA
+                                        </button>
+                                        <button onClick={reset} className="bg-slate-700 hover:bg-slate-600 text-white font-bold px-5 rounded-xl transition-all shadow-md">
+                                            {RotateCcwIcon && <RotateCcwIcon size={18} />}
+                                        </button>
+                                    </div>
+                                </div>
+
+                                <div className="bg-yellow-950/20 p-6 rounded-3xl border border-yellow-500/20">
+                                    <div className="flex justify-between items-center mb-4 border-b border-yellow-500/30 pb-2">
+                                        <h4 className="font-bold text-yellow-300 flex items-center gap-2">
+                                            {CalculatorIcon && <CalculatorIcon size={18} />} Resolución Paso a Paso
+                                        </h4>
+                                        <button onClick={generarDiagrama} className="text-[10px] uppercase font-bold bg-slate-800 hover:bg-slate-700 text-slate-300 px-3 py-1.5 rounded flex items-center gap-1 border border-slate-700">
+                                            {imgLoading ? <span className="animate-pulse">Cargando...</span> : <>{ImagePlusIcon && <ImagePlusIcon size={14}/>} Generar DCL</>}
+                                        </button>
+                                    </div>
+
+                                    {imgUrl && (
+                                        <div className="mb-4 bg-slate-900 p-2 rounded-xl border border-slate-700 text-center">
+                                            <img src={imgUrl} alt="Diagrama de Fuerzas" className="mx-auto max-h-40 rounded-lg" />
+                                        </div>
+                                    )}
+
+                                    <div className="text-xs text-slate-300 space-y-4 leading-relaxed">
+                                        <p><strong>1. Conversión de Unidades (S.I.):</strong><br/>
+                                        La masa debe estar en kilogramos (kg) y el tiempo en segundos (s).</p>
+                                        <div className="bg-slate-900/80 p-2 rounded-lg border-l-4 border-slate-500 font-mono text-slate-300">
+                                            m = {masaTon} t = <strong>{masaKg.toLocaleString()} kg</strong><br/>
+                                            t = {tiempoMin} min = <strong>{tiempoSeg} s</strong>
+                                        </div>
+
+                                        <p className="mt-3"><strong>2. Trabajo Realizado (Energía):</strong><br/>
+                                        La fuerza que ejerce el motor debe contrarrestar exactamente el peso de la carga ($F = m \cdot g$). El trabajo es el producto de esta fuerza por la altura que sube.</p>
+                                        <div className="bg-slate-900/80 p-2 rounded-lg border-l-4 border-blue-500 font-mono text-blue-200 overflow-x-auto">
+                                            W = F_motor · h = (m · g) · h<br/>
+                                            W = ({masaKg} · 9.8) · {altura}<br/>
+                                            W = {peso.toLocaleString()} · {altura} = <strong>{trabajo.toLocaleString()} Julios (J)</strong>
+                                        </div>
+
+                                        <p className="mt-3"><strong>3. Potencia (Ritmo de trabajo):</strong><br/>
+                                        La potencia nos dice cuántos Julios de energía gasta el motor cada segundo ($P = W / t$).</p>
+                                        <div className="bg-slate-900/80 p-3 rounded-lg border-l-4 border-yellow-500 font-mono text-yellow-200 shadow-inner">
+                                            P = W / t<br/>
+                                            P = {trabajo.toLocaleString()} / {tiempoSeg}<br/>
+                                            <strong>P = {potenciaW.toLocaleString(undefined, {maximumFractionDigits: 2})} W</strong>
+                                        </div>
+                                        <p className="text-[10px] text-slate-400 mt-2 italic text-center">
+                                            En Kilovatios: <strong>{potenciaKw.toFixed(2)} kW</strong>.<br/>En Caballos de Vapor (1 CV = 735.5 W): <strong>{potenciaCV.toFixed(1)} CV</strong>.
+                                        </p>
+                                    </div>
+                                </div>
+                            </div>
+                        </main>
+
+                        <footer className="max-w-5xl mx-auto mt-12 pt-6 border-t border-slate-800 text-center text-slate-500 text-[10px] font-bold uppercase tracking-widest">
+                            Profe Física | Potencia Mecánica y Elevación contra la Gravedad
+                        </footer>
+                    </div>
+                );
+            };
+
+            const container = document.getElementById('root');
+            const root = ReactDOM.createRoot(container);
+            root.render(<App />);
+        })();
+    </script>
+	<div style="position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); display: flex; gap: 10px; background: rgba(15, 23, 42, 0.9); padding: 10px; border-radius: 15px; border: 1px solid rgba(255,255,255,0.1); z-index: 10000; backdrop-filter: blur(10px);">
+    <button id="navPrev" style="padding: 8px 15px; background: #334155; color: white; border-radius: 8px; font-weight: bold; border: none; cursor: pointer;">← Ant.</button>
+    <a href="index.html" style="padding: 8px 20px; background: #059669; color: white; border-radius: 8px; font-weight: bold; text-decoration: none; text-transform: uppercase; font-size: 12px; display: flex; align-items: center;">Índice</a>
+    <button id="navNext" style="padding: 8px 15px; background: #334155; color: white; border-radius: 8px; font-weight: bold; border: none; cursor: pointer;">Sig. →</button>
+</div>
+
+<script>
+    (function() {
+        const match = window.location.pathname.match(/ejercicio-(\d+)\.html/);
+        if (match) {
+            const n = parseInt(match[1]);
+            const total = 70; // Cambiar a 44 para tema 8
+            const prev = document.getElementById('navPrev');
+            const next = document.getElementById('navNext');
+
+            if (n > 1) prev.onclick = () => window.location.href = `ejercicio-${n-1}.html`;
+            else prev.style.opacity = "0.3";
+
+            if (n < total) next.onclick = () => window.location.href = `ejercicio-${n+1}.html`;
+            else next.style.opacity = "0.3";
+        }
+    })();
+</script>
+</body>
+</html>

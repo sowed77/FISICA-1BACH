@@ -1,0 +1,437 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Laboratorio: Empuje en Ángulo y Energía</title>
+    <!-- Bibliotecas externas -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <script src="https://unpkg.com/lucide-react@latest"></script>
+
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&family=Fira+Code&display=swap');
+        body { font-family: 'Inter', sans-serif; background-color: #0f172a; }
+        .font-mono { font-family: 'Fira Code', monospace; }
+        input[type=range]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            height: 20px;
+            width: 20px;
+            border-radius: 50%;
+            background: #3b82f6; /* Blue 500 */
+            cursor: pointer;
+            border: 2px solid #ffffff;
+            box-shadow: 0 0 10px rgba(59, 130, 246, 0.5);
+        }
+        .floor-pattern {
+            background-color: #1e293b;
+            background-image: repeating-linear-gradient(45deg, #334155 0, #334155 2px, transparent 2px, transparent 10px);
+            border-top: 4px solid #475569;
+        }
+    </style>
+</head>
+<body>
+    <div id="root"></div>
+
+    <script type="text/babel">
+        (() => {
+            const { useState, useEffect } = React;
+            const icons = window.LucideReact || {};
+            
+            const getIcon = (name) => icons[name] || (({className}) => <span className={className || ''}></span>);
+            const PlayIcon = getIcon('Play');
+            const RotateCcwIcon = getIcon('RotateCcw');
+            const CalculatorIcon = getIcon('Calculator');
+            const InfoIcon = getIcon('Info');
+            const ArrowRightIcon = getIcon('ArrowRight');
+            const ArrowLeftIcon = getIcon('ArrowLeft');
+            const ArrowDownIcon = getIcon('ArrowDown');
+            const ArrowUpIcon = getIcon('ArrowUp');
+            const SettingsIcon = getIcon('Settings');
+            const ZapIcon = getIcon('Zap');
+            const BatteryIcon = getIcon('BatteryCharging');
+            const ImagePlusIcon = getIcon('ImagePlus');
+            const MoveRightIcon = getIcon('MoveRight');
+
+            const App = () => {
+                const g = 9.8; // m/s^2
+
+                // Estados interactivos inicializados con el enunciado
+                const [masa, setMasa] = useState(50.0); // kg
+                const [angulo, setAngulo] = useState(30); // grados
+                const [aceleracion, setAceleracion] = useState(0.50); // m/s^2
+                const [mu, setMu] = useState(0.20); // Coeficiente rozamiento
+                const [distancia, setDistancia] = useState(20.0); // m
+                
+                // Tipo de fuerza (Fijado a 'empujar' por el enunciado, pero dejamos la lógica abierta)
+                const [esEmpuje, setEsEmpuje] = useState(true);
+
+                // --- CÁLCULOS FÍSICOS ---
+                const anguloRad = angulo * (Math.PI / 180);
+                const senA = Math.sin(anguloRad);
+                const cosA = Math.cos(anguloRad);
+                const peso = masa * g;
+
+                // Despeje de la Fuerza Aplicada (F):
+                // Eje X: F*cos(a) - Fr = m*a
+                // Eje Y: N - P +/- F*sin(a) = 0 => N = P +/- F*sin(a)
+                // Fr = mu * N = mu * (P +/- F*sin(a))
+                // F*cos(a) - mu*(P +/- F*sin(a)) = m*a
+                // F*cos(a) - mu*P -/+ mu*F*sin(a) = m*a
+                // F * (cos(a) -/+ mu*sin(a)) = m*a + mu*P
+                
+                const numerador = (masa * aceleracion) + (mu * peso);
+                const denominador = esEmpuje ? (cosA - mu * senA) : (cosA + mu * senA);
+                
+                const autoBloqueo = denominador <= 0;
+                const fuerza = autoBloqueo ? 0 : numerador / denominador;
+
+                const fx = fuerza * cosA;
+                const fy = fuerza * senA;
+                
+                // Normal
+                const normal = peso + (esEmpuje ? fy : -fy);
+                const isFlying = normal < 0; // Si tiramos muy fuerte hacia arriba
+                
+                // Fricción
+                const fr = autoBloqueo ? 0 : mu * normal;
+
+                // Energías y Trabajo
+                const trabajoFuerza = fuerza * distancia * cosA; // a) y b)
+                const trabajoRozamiento = -fr * distancia;
+                const trabajoNeto = trabajoFuerza + trabajoRozamiento; // W_neto = m*a*d
+                
+                const ecFinal = masa * aceleracion * distancia; // c) E_c = W_neto = m*a*d
+                const vFinal = Math.sqrt((2 * ecFinal) / masa);
+
+                // Animación
+                const [time, setTime] = useState(0);
+                const [isMoving, setIsMoving] = useState(false);
+
+                const tMax = Math.sqrt((2 * distancia) / aceleracion); // d = 0.5 * a * t^2
+
+                useEffect(() => {
+                    let interval;
+                    if (isMoving && time < tMax) {
+                        interval = setInterval(() => {
+                            setTime(prev => {
+                                // Escala de tiempo para no esperar 8.9 segundos reales
+                                const nextTime = prev + 0.05 * 2.5; 
+                                if (nextTime >= tMax) {
+                                    setIsMoving(false);
+                                    return tMax;
+                                }
+                                return nextTime;
+                            });
+                        }, 20); // 50 fps
+                    }
+                    return () => clearInterval(interval);
+                }, [isMoving, time, tMax]);
+
+                const handlePlay = () => {
+                    if (!autoBloqueo && !isFlying && time < tMax) {
+                        setIsMoving(true);
+                    }
+                };
+
+                const reset = () => {
+                    setTime(0);
+                    setIsMoving(false);
+                };
+
+                useEffect(() => {
+                    reset();
+                }, [masa, angulo, aceleracion, mu, distancia, esEmpuje]);
+
+                const currentPos = 0.5 * aceleracion * Math.pow(time, 2);
+                const currentV = aceleracion * time;
+                const currentEc = 0.5 * masa * currentV * currentV;
+
+                // Escala visual
+                const pxPerMeter = 250 / Math.max(5, distancia);
+
+                // IA DCL
+                const [imgUrl, setImgUrl] = useState(null);
+                const [imgLoading, setImgLoading] = useState(false);
+
+                const generarDiagrama = async () => {
+                    setImgLoading(true);
+                    const apiKey = ""; 
+                    try {
+                        const response = await fetch(
+                            `https://generativelanguage.googleapis.com/v1beta/models/imagen-4.0-generate-001:predict?key=${apiKey}`,
+                            {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({
+                                    instances: [{ prompt: "Diagrama técnico de física de cuerpo libre. Un bloque deslizándose por el suelo hacia la derecha. Un vector de Fuerza F empujando diagonalmente hacia abajo y la derecha. Vector Peso P hacia abajo, Vector Normal N grande hacia arriba. Vector Fricción Fr hacia la izquierda. Estilo educativo, minimalista, fondo blanco" }],
+                                    parameters: { sampleCount: 1 }
+                                })
+                            }
+                        );
+                        if (!response.ok) throw new Error("Error en red");
+                        const data = await response.json();
+                        setImgUrl(`data:image/png;base64,${data.predictions[0].bytesBase64Encoded}`);
+                    } catch (error) {
+                        console.error(error);
+                    } finally {
+                        setImgLoading(false);
+                    }
+                };
+
+                return (
+                    <div className="min-h-screen bg-slate-900 text-slate-100 p-4 md:p-8">
+                        <header className="max-w-5xl mx-auto mb-8 border-b border-slate-700 pb-6">
+                            <div className="flex items-center gap-3 mb-2">
+                                <span className="bg-sky-600 text-white px-3 py-1 rounded-full text-xs font-black uppercase tracking-widest">Dinámica y Energía</span>
+                                <h1 className="text-3xl font-black text-sky-400 uppercase tracking-tight tracking-widest">El Bloque Empujado</h1>
+                            </div>
+                            <div className="bg-slate-800/50 p-4 rounded-xl border border-slate-700 mt-4">
+                                <p className="text-slate-300 text-sm leading-relaxed">
+                                    <strong>Enunciado:</strong> Un bloque de 50 kg es empujado por una fuerza que forma un ángulo de 30° con la horizontal. El cuerpo se mueve con a = 0,50 m/s². El coeficiente de rozamiento cinético es 0,20. Calcula la fuerza aplicada, el trabajo hecho por esta al desplazarse 20 m y su energía cinética final.
+                                </p>
+                            </div>
+                        </header>
+
+                        <main className="max-w-5xl mx-auto grid md:grid-cols-2 gap-8">
+                            {/* Panel Visual */}
+                            <div className="bg-slate-800 rounded-3xl border border-slate-700 h-[500px] relative overflow-hidden shadow-2xl flex flex-col justify-end pb-8">
+                                
+                                {/* HUD Superior */}
+                                <div className="absolute top-4 w-full px-6 flex justify-between z-30 pointer-events-none">
+                                    <div className="bg-slate-900/90 p-3 rounded-lg border border-slate-700 backdrop-blur-md">
+                                        <p className="text-[10px] text-slate-500 uppercase font-black">Fuerza a Aplicar (F)</p>
+                                        <p className={`text-2xl font-mono font-black ${autoBloqueo ? 'text-red-500' : 'text-sky-400'}`}>
+                                            {autoBloqueo ? '¡ATASCADO!' : `${fuerza.toFixed(1)} N`}
+                                        </p>
+                                    </div>
+                                    <div className="bg-slate-900/90 p-3 rounded-lg border backdrop-blur-md text-right border-b-4 border-b-emerald-500 shadow-[0_0_15px_rgba(16,185,129,0.2)]">
+                                        <p className="text-[10px] text-slate-500 uppercase font-black flex items-center justify-end gap-1">
+                                            {BatteryIcon && <BatteryIcon size={12} className="text-emerald-400" />} E. Cinética Actual
+                                        </p>
+                                        <p className="text-2xl font-mono font-black text-emerald-400">
+                                            {currentEc.toFixed(0)} <span className="text-sm">J</span>
+                                        </p>
+                                    </div>
+                                </div>
+
+                                {/* Escena Visual */}
+                                <div className="relative w-full h-72 flex justify-start items-end">
+                                    {/* Suelo */}
+                                    <div className="absolute bottom-0 w-full h-12 floor-pattern"></div>
+                                    
+                                    {/* Marca de Distancia */}
+                                    <div 
+                                        className="absolute bottom-12 border-l-4 border-dashed border-emerald-500/50 h-24 z-10"
+                                        style={{ left: `${80 + distancia * pxPerMeter}px` }}
+                                    >
+                                        <span className="absolute -top-6 -left-6 text-[10px] font-bold text-emerald-300 bg-slate-900/80 px-2 py-1 rounded border border-emerald-500/30 whitespace-nowrap shadow-lg">Meta: {distancia}m</span>
+                                    </div>
+
+                                    {/* El Bloque */}
+                                    <div 
+                                        className="absolute bottom-12 w-24 h-20 bg-blue-600 border-4 border-blue-400 rounded-lg flex items-center justify-center shadow-xl z-20 transition-transform"
+                                        style={{ transform: `translateX(${currentPos * pxPerMeter}px)`, left: '80px' }}
+                                    >
+                                        <span className="font-black text-blue-200">{masa} kg</span>
+
+                                        {/* VECTORES */}
+                                        {!autoBloqueo && (
+                                            <>
+                                                {/* Vector Fuerza (Empujando: desde arriba a la izquierda hacia el bloque) */}
+                                                <div className="absolute top-0 left-0 w-0 h-0 pointer-events-none">
+                                                    <div 
+                                                        className="absolute origin-bottom-right flex items-center pl-1"
+                                                        style={{ 
+                                                            width: Math.min(120, fuerza * 0.5), 
+                                                            right: '0', 
+                                                            bottom: '0', 
+                                                            transform: `rotate(${angulo}deg)` 
+                                                        }}
+                                                    >
+                                                        <span className="absolute -top-4 -left-6 text-[10px] font-black text-sky-300 bg-slate-900/80 px-1 rounded shadow whitespace-nowrap" style={{transform: `rotate(${-angulo}deg)`}}>F = {fuerza.toFixed(0)}N</span>
+                                                        <div className="h-2 bg-sky-400 w-full relative shadow-[0_0_10px_rgba(56,189,248,0.8)]">
+                                                            <div className="absolute right-0 -top-1.5">{ArrowRightIcon && <ArrowRightIcon size={20} className="text-sky-400" />}</div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+
+                                                {/* Vector Rozamiento (Rojo, a la izquierda) */}
+                                                <div className="absolute bottom-2 right-full flex items-center pr-1 pointer-events-none" style={{ width: Math.min(100, fr * 0.3) }}>
+                                                    <span className="mr-1 text-[10px] font-black text-red-300 bg-slate-900/80 px-1 rounded shadow whitespace-nowrap">Fr = {fr.toFixed(0)}N</span>
+                                                    <div className="h-1.5 bg-red-500 w-full relative shadow-[0_0_8px_rgba(239,68,68,0.8)]">
+                                                        <div className="absolute left-0 -top-1.5">{ArrowLeftIcon && <ArrowLeftIcon size={16} className="text-red-500" />}</div>
+                                                    </div>
+                                                </div>
+
+                                                {/* Normal y Peso */}
+                                                <div className="absolute top-full left-1/2 -translate-x-1/2 flex flex-col items-center pt-1 pointer-events-none opacity-50" style={{ height: 60 }}>
+                                                    <div className="w-1 bg-orange-400 h-full relative">
+                                                        <div className="absolute bottom-0 -translate-x-[6px]">{ArrowDownIcon && <ArrowDownIcon size={16} className="text-orange-400" />}</div>
+                                                    </div>
+                                                    <span className="mt-1 text-[10px] font-black text-orange-300">P</span>
+                                                </div>
+                                                <div className="absolute bottom-full left-1/2 -translate-x-1/2 flex flex-col items-center pb-1 pointer-events-none opacity-50" style={{ height: Math.min(80, normal * 0.1) }}>
+                                                    <span className="mb-1 text-[10px] font-black text-indigo-300">N</span>
+                                                    <div className="w-1 bg-indigo-400 h-full relative">
+                                                        <div className="absolute top-0 -translate-x-[6px]">{ArrowUpIcon && <ArrowUpIcon size={16} className="text-indigo-400" />}</div>
+                                                    </div>
+                                                </div>
+
+                                                {/* Velocidad (Verde) */}
+                                                {currentV > 0 && (
+                                                    <div className="absolute bottom-1/2 left-full flex items-center pl-2 pointer-events-none" style={{ width: currentV * 15 }}>
+                                                        <div className="h-1 bg-emerald-400 w-full relative">
+                                                            <div className="absolute right-0 -top-1.5">{MoveRightIcon && <MoveRightIcon size={16} className="text-emerald-400" />}</div>
+                                                        </div>
+                                                        <span className="ml-1 text-[10px] font-black text-emerald-300">v</span>
+                                                    </div>
+                                                )}
+                                            </>
+                                        )}
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* Controles y Resolución */}
+                            <div className="space-y-6">
+                                <div className="bg-slate-800 p-6 rounded-3xl border border-slate-700 shadow-xl">
+                                    <h3 className="text-xl font-bold mb-4 flex items-center gap-2 text-sky-400">
+                                        {SettingsIcon && <SettingsIcon size={20} />} Variables Físicas
+                                    </h3>
+                                    
+                                    <div className="space-y-4 mb-6">
+                                        <div className="grid grid-cols-2 gap-4">
+                                            <div className="bg-slate-900/50 p-3 rounded-xl border border-slate-700">
+                                                <div className="flex justify-between text-[10px] mb-1"><span className="text-slate-300 font-bold uppercase">Masa (m)</span><span className="font-mono text-white">{masa} kg</span></div>
+                                                <input type="range" min="10" max="100" step="5" value={masa} onChange={e => {setMasa(Number(e.target.value)); reset();}} className="w-full h-1.5 bg-slate-700 rounded-lg appearance-none cursor-pointer accent-slate-400" />
+                                            </div>
+                                            <div className="bg-sky-900/20 p-3 rounded-xl border border-sky-500/20">
+                                                <div className="flex justify-between text-[10px] mb-1"><span className="text-sky-400 font-bold uppercase">Aceleración (a)</span><span className="font-mono text-white">{aceleracion.toFixed(2)} m/s²</span></div>
+                                                <input type="range" min="0" max="5" step="0.1" value={aceleracion} onChange={e => {setAceleracion(Number(e.target.value)); reset();}} className="w-full h-1.5 bg-slate-700 rounded-lg appearance-none cursor-pointer accent-sky-500" />
+                                            </div>
+                                        </div>
+
+                                        <div className="grid grid-cols-2 gap-4">
+                                            <div className="bg-slate-900/50 p-3 rounded-xl border border-slate-700">
+                                                <div className="flex justify-between text-[10px] mb-1"><span className="text-orange-400 font-bold uppercase">Ángulo Empuje (α)</span><span className="font-mono text-white">{angulo}º</span></div>
+                                                <input type="range" min="0" max="60" step="1" value={angulo} onChange={e => {setAngulo(Number(e.target.value)); reset();}} className="w-full h-1.5 bg-slate-700 rounded-lg appearance-none cursor-pointer accent-orange-500" />
+                                            </div>
+                                            <div className="bg-slate-900/50 p-3 rounded-xl border border-slate-700">
+                                                <div className="flex justify-between text-[10px] mb-1"><span className="text-red-400 font-bold uppercase">Fricción (μ)</span><span className="font-mono text-white">{mu.toFixed(2)}</span></div>
+                                                <input type="range" min="0" max="0.8" step="0.05" value={mu} onChange={e => {setMu(Number(e.target.value)); reset();}} className="w-full h-1.5 bg-slate-700 rounded-lg appearance-none cursor-pointer accent-red-500" />
+                                            </div>
+                                        </div>
+
+                                        <div className="pt-2 border-t border-slate-700">
+                                            <div className="flex justify-between text-[10px] mb-1"><span className="text-emerald-400 font-bold uppercase">Distancia Objetivo (d)</span><span className="font-mono text-white">{distancia} m</span></div>
+                                            <input type="range" min="5" max="50" step="1" value={distancia} onChange={e => {setDistancia(Number(e.target.value)); reset();}} className="w-full h-1.5 bg-slate-700 rounded-lg appearance-none cursor-pointer accent-emerald-500" />
+                                        </div>
+                                    </div>
+
+                                    <div className="flex gap-2">
+                                        <button 
+                                            onClick={handlePlay} 
+                                            disabled={isMoving || time >= tMax || autoBloqueo}
+                                            className={`flex-1 font-black py-4 rounded-xl shadow-lg flex justify-center items-center gap-2 disabled:opacity-50 transition-all active:scale-95 ${autoBloqueo ? 'bg-red-900/50 text-red-300 border border-red-500/50' : 'bg-sky-600 hover:bg-sky-500 text-white'}`}
+                                        >
+                                            {PlayIcon && <PlayIcon size={18} />} {autoBloqueo ? 'SISTEMA ATASCADO' : time >= tMax ? 'META ALCANZADA' : 'EMPUJAR BLOQUE'}
+                                        </button>
+                                        <button onClick={reset} className="bg-slate-700 hover:bg-slate-600 text-white font-bold px-5 rounded-xl transition-all shadow-md">
+                                            {RotateCcwIcon && <RotateCcwIcon size={18} />}
+                                        </button>
+                                    </div>
+                                </div>
+
+                                <div className="bg-sky-950/20 p-6 rounded-3xl border border-sky-500/20">
+                                    <div className="flex justify-between items-center mb-4 border-b border-sky-500/30 pb-2">
+                                        <h4 className="font-bold text-sky-300 flex items-center gap-2">
+                                            {CalculatorIcon && <CalculatorIcon size={18} />} Resolución Paso a Paso
+                                        </h4>
+                                        <button onClick={generarDiagrama} className="text-[10px] uppercase font-bold bg-slate-800 hover:bg-slate-700 text-slate-300 px-3 py-1.5 rounded flex items-center gap-1 border border-slate-600">
+                                            {imgLoading ? <span className="animate-pulse">Cargando...</span> : <>{ImagePlusIcon && <ImagePlusIcon size={14}/>} Generar DCL</>}
+                                        </button>
+                                    </div>
+
+                                    {imgUrl && (
+                                        <div className="mb-4 bg-slate-900 p-2 rounded-xl border border-slate-700 text-center">
+                                            <img src={imgUrl} alt="Diagrama de Cuerpo Libre" className="mx-auto max-h-40 rounded-lg" />
+                                        </div>
+                                    )}
+
+                                    <div className="text-xs text-slate-300 space-y-4 leading-relaxed">
+                                        <p><strong>a) Módulo de la Fuerza (Dinámica):</strong><br/>
+                                        Como el bloque es "empujado" en ángulo de 30º, su componente vertical aplasta al bloque contra el suelo, aumentando la Normal.</p>
+                                        
+                                        <div className="bg-slate-900/80 p-2 rounded-lg border-l-4 border-slate-500 font-mono text-slate-300">
+                                            N = P + F_y = m·g + F·sin(30º)<br/>
+                                            F_r = μ · N = 0.20 · (490 + F·0.5)
+                                        </div>
+
+                                        <p>En el eje X (movimiento):</p>
+                                        <div className="bg-slate-900/80 p-3 rounded-lg border-l-4 border-sky-500 font-mono text-sky-200 shadow-inner overflow-x-auto">
+                                            F_x - F_r = m · a<br/>
+                                            F·cos(30º) - 0.20·(490 + F·0.5) = {masa} · {aceleracion.toFixed(2)}<br/>
+                                            F·0.866 - 98 - F·0.10 = 25<br/>
+                                            F·0.766 = 123  ⇒  F = 123 / 0.766 = <strong>{fuerza.toFixed(2)} N</strong>
+                                        </div>
+
+                                        <p><strong>b) Trabajo realizado por F (W_F):</strong><br/>
+                                        Solo hace trabajo la componente de la fuerza paralela al movimiento ($F_x$).</p>
+                                        <div className="bg-slate-900/80 p-2 rounded-lg border-l-4 border-yellow-500 font-mono text-yellow-200">
+                                            W_F = F · d · cos(30º)<br/>
+                                            W_F = {fuerza.toFixed(2)} · {distancia} · 0.866 = <strong>{trabajoFuerza.toFixed(1)} J</strong>
+                                        </div>
+
+                                        <p><strong>c) Energía Cinética Final (E_c):</strong><br/>
+                                        Teorema de las Fuerzas Vivas: La E_c final es igual al Trabajo Neto total realizado sobre el cuerpo (El de F menos el que roba el rozamiento). O más fácil, calculándolo por la Fuerza Neta (m·a).</p>
+                                        <div className="bg-slate-900/80 p-3 rounded-lg border-l-4 border-emerald-500 font-mono text-emerald-200 shadow-inner">
+                                            E_cf = W_neto = F_neta · d = (m · a) · d<br/>
+                                            E_cf = ({masa} · {aceleracion.toFixed(2)}) · {distancia}<br/>
+                                            E_cf = {(masa * aceleracion).toFixed(1)} · {distancia} = <strong>{ecFinal.toFixed(1)} J</strong>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </main>
+
+                        <footer className="max-w-5xl mx-auto mt-12 pt-6 border-t border-slate-800 text-center text-slate-500 text-[10px] font-bold uppercase tracking-widest">
+                            Profe Física | Dinámica y Trabajo de Fuerzas Diagonales
+                        </footer>
+                    </div>
+                );
+            };
+
+            const container = document.getElementById('root');
+            const root = ReactDOM.createRoot(container);
+            root.render(<App />);
+        })();
+    </script>
+	<div style="position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); display: flex; gap: 10px; background: rgba(15, 23, 42, 0.9); padding: 10px; border-radius: 15px; border: 1px solid rgba(255,255,255,0.1); z-index: 10000; backdrop-filter: blur(10px);">
+    <button id="navPrev" style="padding: 8px 15px; background: #334155; color: white; border-radius: 8px; font-weight: bold; border: none; cursor: pointer;">← Ant.</button>
+    <a href="index.html" style="padding: 8px 20px; background: #059669; color: white; border-radius: 8px; font-weight: bold; text-decoration: none; text-transform: uppercase; font-size: 12px; display: flex; align-items: center;">Índice</a>
+    <button id="navNext" style="padding: 8px 15px; background: #334155; color: white; border-radius: 8px; font-weight: bold; border: none; cursor: pointer;">Sig. →</button>
+</div>
+
+<script>
+    (function() {
+        const match = window.location.pathname.match(/ejercicio-(\d+)\.html/);
+        if (match) {
+            const n = parseInt(match[1]);
+            const total = 70; // Cambiar a 44 para tema 8
+            const prev = document.getElementById('navPrev');
+            const next = document.getElementById('navNext');
+
+            if (n > 1) prev.onclick = () => window.location.href = `ejercicio-${n-1}.html`;
+            else prev.style.opacity = "0.3";
+
+            if (n < total) next.onclick = () => window.location.href = `ejercicio-${n+1}.html`;
+            else next.style.opacity = "0.3";
+        }
+    })();
+</script>
+</body>
+</html>

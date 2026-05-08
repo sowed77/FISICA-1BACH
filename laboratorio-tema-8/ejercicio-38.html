@@ -1,0 +1,440 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Laboratorio: Trabajo y Fuerzas Vivas</title>
+    <!-- Bibliotecas externas -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <script src="https://unpkg.com/lucide-react@latest"></script>
+
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&family=Fira+Code&display=swap');
+        body { font-family: 'Inter', sans-serif; background-color: #0f172a; }
+        .font-mono { font-family: 'Fira Code', monospace; }
+        input[type=range]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            height: 20px;
+            width: 20px;
+            border-radius: 50%;
+            background: #0ea5e9; /* Sky 500 */
+            cursor: pointer;
+            border: 2px solid #ffffff;
+            box-shadow: 0 0 10px rgba(14, 165, 233, 0.5);
+        }
+        .floor-pattern {
+            background-color: #1e293b;
+            background-image: repeating-linear-gradient(45deg, #334155 0, #334155 20px, transparent 20px, transparent 40px);
+            border-top: 4px solid #475569;
+        }
+        .ice-pattern {
+            background-color: #e0f2fe; /* Sky 100 */
+            background-image: 
+                linear-gradient(90deg, rgba(255,255,255,0.8) 1px, transparent 1px),
+                linear-gradient(rgba(255,255,255,0.4) 1px, transparent 1px);
+            background-size: 60px 20px, 20px 20px;
+            box-shadow: inset 0 5px 15px rgba(255,255,255,0.8);
+            border-top: 4px solid #bae6fd;
+        }
+    </style>
+</head>
+<body>
+    <div id="root"></div>
+
+    <script type="text/babel">
+        (() => {
+            var { useState, useEffect } = React;
+            var icons = window.LucideReact || {};
+            
+            var getIcon = (name) => icons[name] || (({className}) => <span className={className || ''}></span>);
+            var PlayIcon = getIcon('Play');
+            var RotateCcwIcon = getIcon('RotateCcw');
+            var CalculatorIcon = getIcon('Calculator');
+            var InfoIcon = getIcon('Info');
+            var ArrowRightIcon = getIcon('ArrowRight');
+            var ArrowLeftIcon = getIcon('ArrowLeft');
+            var ArrowUpIcon = getIcon('ArrowUp');
+            var ArrowDownIcon = getIcon('ArrowDown');
+            var BatteryChargingIcon = getIcon('BatteryCharging');
+            var ZapIcon = getIcon('Zap');
+            var SnowflakeIcon = getIcon('Snowflake');
+            var ImagePlusIcon = getIcon('ImagePlus');
+            var MoveIcon = getIcon('Move');
+            var SettingsIcon = getIcon('Settings');
+
+            var App = () => {
+                const g = 9.8; // m/s^2
+
+                // Estados interactivos
+                const [masa, setMasa] = useState(2.0); // kg
+                const [v0, setV0] = useState(10.0); // m/s
+                const [distancia, setDistancia] = useState(4.0); // m
+                const [mu, setMu] = useState(0.20); // Coeficiente rozamiento
+                const [conRozamiento, setConRozamiento] = useState(true);
+
+                // --- CÁLCULOS FÍSICOS ---
+                const peso = masa * g; // N
+                const normal = peso; // N
+                
+                // Fuerzas
+                const fr = conRozamiento ? mu * normal : 0; // N
+                const aceleracion = -fr / masa; // m/s^2 (será 0 o negativa)
+                
+                // Energías y Trabajos (a los 4 metros)
+                const ec0 = 0.5 * masa * Math.pow(v0, 2); // J
+                const wPeso = 0; // J (cos 90º = 0)
+                const wNormal = 0; // J (cos 90º = 0)
+                const wFr = -fr * distancia; // J (cos 180º = -1)
+                const wNeto = wPeso + wNormal + wFr; // J
+                
+                // Teorema de Fuerzas Vivas: W_neto = Ec_f - Ec_0
+                const ecf = Math.max(0, ec0 + wNeto); // J
+                const vf = Math.sqrt((2 * ecf) / masa); // m/s
+
+                // Animación
+                const [time, setTime] = useState(0); 
+                const [isMoving, setIsMoving] = useState(false);
+
+                // Determinar el tiempo máximo visual
+                const maxDistPosible = aceleracion < 0 ? (v0 * v0) / (2 * Math.abs(aceleracion)) : Number.POSITIVE_INFINITY;
+                const dReal = Math.min(distancia, maxDistPosible);
+                
+                let tEnd = 0;
+                if (aceleracion === 0) {
+                    tEnd = dReal / v0;
+                } else {
+                    tEnd = (-v0 + Math.sqrt(v0 * v0 + 2 * aceleracion * dReal)) / aceleracion;
+                }
+
+                // Cinemática instantánea
+                const currentV = Math.max(0, v0 + aceleracion * time);
+                const currentPos = (v0 * time) + (0.5 * aceleracion * Math.pow(time, 2));
+                const currentEc = 0.5 * masa * Math.pow(currentV, 2);
+                const currentWFr = -fr * currentPos;
+
+                useEffect(() => {
+                    let interval;
+                    if (isMoving && time < tEnd) {
+                        interval = setInterval(() => {
+                            setTime(prev => {
+                                // Aceleramos un poco la simulación visualmente para que no tarde mucho en d pequeñas
+                                const nextTime = prev + 0.05 * 1.5; 
+                                if (nextTime >= tEnd) {
+                                    setIsMoving(false);
+                                    return tEnd;
+                                }
+                                return nextTime;
+                            });
+                        }, 20); // ~50 fps
+                    }
+                    return () => clearInterval(interval);
+                }, [isMoving, time, tEnd]);
+
+                const handlePlay = () => {
+                    if (time < tEnd) setIsMoving(true);
+                };
+
+                const reset = () => {
+                    setTime(0);
+                    setIsMoving(false);
+                };
+
+                // Si se cambian las variables, reiniciar
+                useEffect(() => {
+                    reset();
+                }, [masa, v0, distancia, mu, conRozamiento]);
+
+                // Escala visual
+                const pxPerMeter = 250 / Math.max(5, distancia); 
+
+                // Generador de DCL IA
+                const [imgUrl, setImgUrl] = useState(null);
+                const [imgLoading, setImgLoading] = useState(false);
+
+                const generarDiagrama = async () => {
+                    setImgLoading(true);
+                    const apiKey = ""; 
+                    try {
+                        const response = await fetch(
+                            `https://generativelanguage.googleapis.com/v1beta/models/imagen-4.0-generate-001:predict?key=${apiKey}`,
+                            {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({
+                                    instances: [{ prompt: "Diagrama técnico de física. Teorema de las fuerzas vivas. Un bloque deslizando. Vector Velocidad Inicial v0. Vector Velocidad Final vf más pequeño. Vector Fuerza de Fricción Fr apuntando hacia atrás (180 grados). Vectores Peso y Normal anulándose (90 y 270 grados). Fondo blanco, minimalista, educativo." }],
+                                    parameters: { sampleCount: 1 }
+                                })
+                            }
+                        );
+                        if (!response.ok) throw new Error("Error en red");
+                        const data = await response.json();
+                        setImgUrl(`data:image/png;base64,${data.predictions[0].bytesBase64Encoded}`);
+                    } catch (error) {
+                        console.error(error);
+                    } finally {
+                        setImgLoading(false);
+                    }
+                };
+
+                return (
+                    <div className="min-h-screen bg-slate-900 text-slate-100 p-4 md:p-8">
+                        <header className="max-w-5xl mx-auto mb-8 border-b border-slate-700 pb-6">
+                            <div className="flex items-center gap-3 mb-2">
+                                <span className="bg-sky-600 text-white px-3 py-1 rounded-full text-xs font-black uppercase tracking-widest">Trabajo y Energía</span>
+                                <h1 className="text-3xl font-black text-sky-400 uppercase tracking-tight tracking-widest">El Trabajo de las Fuerzas</h1>
+                            </div>
+                            <div className="bg-slate-800/50 p-4 rounded-xl border border-slate-700 mt-4">
+                                <p className="text-slate-300 text-sm leading-relaxed">
+                                    <strong>Enunciado:</strong> Un cuerpo de 2 kg se lanza horizontalmente a 10 m/s. Calcula el trabajo de las fuerzas a los 4 m y la velocidad final si: a) el rozamiento es nulo, b) el coeficiente de rozamiento es 0,2.
+                                </p>
+                            </div>
+                        </header>
+
+                        <main className="max-w-5xl mx-auto grid md:grid-cols-2 gap-8">
+                            {/* Panel Visual */}
+                            <div className="bg-slate-800 rounded-3xl border border-slate-700 h-[500px] relative overflow-hidden shadow-2xl flex flex-col justify-end pb-12">
+                                
+                                {/* HUD de Información */}
+                                <div className="absolute top-4 w-full px-6 flex justify-between z-30 pointer-events-none">
+                                    <div className="bg-slate-900/90 p-3 rounded-lg border border-slate-700 backdrop-blur-md flex flex-col items-center">
+                                        <p className="text-[10px] text-slate-500 uppercase font-black mb-1 flex items-center gap-1">
+                                            {BatteryChargingIcon && <BatteryChargingIcon size={12} className="text-emerald-400" />} Energía Cinética
+                                        </p>
+                                        <div className="flex items-end gap-2 h-16 mt-2">
+                                            <div className="flex flex-col items-center">
+                                                <div className="w-4 h-full bg-slate-800 border border-slate-600 rounded-sm relative overflow-hidden flex flex-col justify-end">
+                                                    <div className="w-full bg-emerald-500" style={{ height: `100%` }}></div>
+                                                </div>
+                                                <span className="text-[8px] mt-1 text-slate-400">Ec₀</span>
+                                            </div>
+                                            <div className="flex flex-col items-center">
+                                                <div className="w-4 h-full bg-slate-800 border border-slate-600 rounded-sm relative overflow-hidden flex flex-col justify-end">
+                                                    <div className="w-full bg-emerald-400 transition-all duration-75" style={{ height: `${(currentEc / ec0) * 100}%` }}></div>
+                                                </div>
+                                                <span className="text-[8px] mt-1 text-slate-400">Ec_f</span>
+                                            </div>
+                                        </div>
+                                        <p className="text-lg font-mono font-black text-emerald-400 mt-2">{currentEc.toFixed(1)} J</p>
+                                    </div>
+                                    
+                                    <div className="bg-slate-900/90 p-3 rounded-lg border border-slate-700 backdrop-blur-md text-right border-b-4 border-b-sky-500 shadow-[0_0_15px_rgba(14,165,233,0.2)]">
+                                        <p className="text-[10px] text-slate-500 uppercase font-black flex items-center justify-end gap-1">
+                                            {MoveIcon && <MoveIcon size={12} className="text-sky-400" />} Distancia Actual
+                                        </p>
+                                        <p className="text-2xl font-mono font-black text-white">{currentPos.toFixed(2)} <span className="text-sm">m</span></p>
+                                        <p className="text-[10px] text-slate-500 uppercase font-black mt-2">Velocidad Actual</p>
+                                        <p className="text-xl font-mono font-black text-sky-400">{currentV.toFixed(2)} m/s</p>
+                                    </div>
+                                </div>
+
+                                {/* Escena del Lanzamiento */}
+                                <div className="relative w-full h-48 flex justify-center items-end">
+                                    {/* Suelo (Cambia según el rozamiento) */}
+                                    <div className={`absolute bottom-0 w-full h-12 border-t-4 transition-colors duration-500 ${conRozamiento ? 'floor-pattern border-slate-600' : 'ice-pattern border-sky-200'}`}></div>
+
+                                    {/* Marca de Meta */}
+                                    <div 
+                                        className="absolute bottom-12 border-l-4 border-dashed border-sky-500/50 h-24 z-10"
+                                        style={{ left: `${60 + dReal * pxPerMeter}px` }} 
+                                    >
+                                        <span className="absolute -top-6 -left-6 text-[10px] font-bold text-sky-300 bg-slate-900/80 px-2 py-1 rounded border border-sky-500/30 whitespace-nowrap shadow-lg">Meta: {dReal.toFixed(2)}m</span>
+                                    </div>
+
+                                    {/* El Bloque */}
+                                    <div 
+                                        className={`absolute bottom-12 w-16 h-16 border-4 rounded-lg flex flex-col items-center justify-center shadow-lg transition-transform z-20 ${conRozamiento ? 'bg-orange-600 border-orange-400' : 'bg-blue-500 border-sky-300'}`}
+                                        style={{ transform: `translateX(${currentPos * pxPerMeter}px)`, left: '44px' }}
+                                    >
+                                        <span className="font-black text-white text-xs">{masa}kg</span>
+
+                                        {/* Vector Velocidad (Verde) */}
+                                        {currentV > 0 && (
+                                            <div className="absolute top-0 right-[-20px] flex flex-col items-center pointer-events-none">
+                                                <span className="text-[9px] font-black text-emerald-300 bg-slate-900/80 px-1 rounded shadow whitespace-nowrap mb-1">v</span>
+                                                <div className="h-1 bg-emerald-400 relative shadow-[0_0_8px_rgba(52,211,153,0.8)]" style={{ width: Math.max(10, currentV * 4) }}>
+                                                    <div className="absolute right-0 -top-1.5">{ArrowRightIcon && <ArrowRightIcon size={16} className="text-emerald-400" />}</div>
+                                                </div>
+                                            </div>
+                                        )}
+
+                                        {/* Vector Fricción (Rojo) */}
+                                        {conRozamiento && currentV > 0 && (
+                                            <div className="absolute top-1/2 right-full flex items-center pr-1 -translate-y-1/2 pointer-events-none" style={{ width: Math.max(30, fr * 6) }}>
+                                                <span className="mr-1 text-[9px] font-black text-red-300 bg-slate-900/80 px-1 rounded shadow whitespace-nowrap">Fr = {fr.toFixed(1)}N</span>
+                                                <div className="h-1.5 bg-red-500 w-full relative shadow-[0_0_8px_rgba(239,68,68,0.8)]">
+                                                    <div className="absolute left-0 -top-1.5">{ArrowLeftIcon && <ArrowLeftIcon size={16} className="text-red-500" />}</div>
+                                                </div>
+                                            </div>
+                                        )}
+
+                                        {/* Vectores Normal y Peso (Se anulan visualmente) */}
+                                        <div className="absolute bottom-full left-1/2 -translate-x-1/2 flex flex-col items-center pb-1 pointer-events-none opacity-50" style={{ height: 40 }}>
+                                            <span className="mb-1 text-[8px] font-black text-indigo-300">N={normal.toFixed(0)}</span>
+                                            <div className="w-1 bg-indigo-400 h-full relative">
+                                                <div className="absolute top-0 -translate-x-1">{ArrowUpIcon && <ArrowUpIcon size={12} className="text-indigo-400" />}</div>
+                                            </div>
+                                        </div>
+                                        <div className="absolute top-full left-1/2 -translate-x-1/2 flex flex-col items-center pt-1 pointer-events-none opacity-50" style={{ height: 40 }}>
+                                            <div className="w-1 bg-yellow-400 h-full relative">
+                                                <div className="absolute bottom-0 -translate-x-1">{ArrowDownIcon && <ArrowDownIcon size={12} className="text-yellow-400" />}</div>
+                                            </div>
+                                            <span className="mt-1 text-[8px] font-black text-yellow-300">P={peso.toFixed(0)}</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* Controles y Resolución */}
+                            <div className="space-y-6">
+                                <div className="bg-slate-800 p-6 rounded-3xl border border-slate-700 shadow-xl">
+                                    <h3 className="text-xl font-bold mb-4 flex items-center gap-2 text-sky-400">
+                                        {SettingsIcon && <SettingsIcon size={20} />} Casos de Estudio
+                                    </h3>
+                                    
+                                    <div className="grid grid-cols-2 gap-2 mb-6">
+                                        <button 
+                                            onClick={() => {setConRozamiento(false); setMu(0); reset();}} 
+                                            className={`text-xs font-bold py-3 rounded-xl border transition-all flex flex-col items-center gap-1 ${!conRozamiento ? 'bg-sky-600 border-sky-400 text-white shadow-lg' : 'bg-slate-700 border-slate-600 text-slate-300 hover:bg-slate-600'}`}
+                                        >
+                                            {SnowflakeIcon && <SnowflakeIcon size={16} />}
+                                            CASO A: Sin Rozamiento
+                                        </button>
+                                        <button 
+                                            onClick={() => {setConRozamiento(true); setMu(0.20); reset();}} 
+                                            className={`text-xs font-bold py-3 rounded-xl border transition-all flex flex-col items-center gap-1 ${conRozamiento ? 'bg-orange-600 border-orange-400 text-white shadow-lg' : 'bg-slate-700 border-slate-600 text-slate-300 hover:bg-slate-600'}`}
+                                        >
+                                            {ZapIcon && <ZapIcon size={16} />}
+                                            CASO B: Con Rozamiento (μ=0.2)
+                                        </button>
+                                    </div>
+
+                                    <div className="space-y-4 mb-6">
+                                        <div className="grid grid-cols-2 gap-4">
+                                            <div className="bg-slate-900/50 p-3 rounded-xl border border-slate-700">
+                                                <div className="flex justify-between text-[10px] mb-1"><span className="text-slate-300 font-bold uppercase">Masa (m)</span><span className="font-mono text-white">{masa} kg</span></div>
+                                                <input type="range" min="1" max="10" step="0.5" value={masa} onChange={e => {setMasa(Number(e.target.value)); reset();}} className="w-full h-1.5 bg-slate-700 rounded-lg appearance-none cursor-pointer accent-slate-400" />
+                                            </div>
+                                            <div className="bg-slate-900/50 p-3 rounded-xl border border-slate-700">
+                                                <div className="flex justify-between text-[10px] mb-1"><span className="text-emerald-400 font-bold uppercase">Vel. Inicial (v₀)</span><span className="font-mono text-white">{v0} m/s</span></div>
+                                                <input type="range" min="1" max="20" step="1" value={v0} onChange={e => {setV0(Number(e.target.value)); reset();}} className="w-full h-1.5 bg-slate-700 rounded-lg appearance-none cursor-pointer accent-emerald-500" />
+                                            </div>
+                                        </div>
+
+                                        <div className="pt-2 border-t border-slate-700">
+                                            <div className="flex justify-between text-[10px] mb-1"><span className="text-sky-400 font-bold uppercase">Distancia Objetivo (d)</span><span className="font-mono text-white">{distancia} m</span></div>
+                                            <input type="range" min="1" max="20" step="1" value={distancia} onChange={e => {setDistancia(Number(e.target.value)); reset();}} className="w-full h-1.5 bg-slate-700 rounded-lg appearance-none cursor-pointer accent-sky-500" />
+                                        </div>
+                                    </div>
+
+                                    <div className="flex gap-2">
+                                        <button 
+                                            onClick={handlePlay} 
+                                            disabled={isMoving || time >= tEnd}
+                                            className={`flex-1 font-black py-3 rounded-xl shadow-lg flex justify-center items-center gap-2 disabled:opacity-50 transition-all active:scale-95 ${time >= tEnd ? 'bg-slate-600 text-slate-400' : 'bg-sky-600 hover:bg-sky-500 text-white'}`}
+                                        >
+                                            {PlayIcon && <PlayIcon size={18} />} {time >= tEnd ? 'META ALCANZADA' : 'INICIAR MOVIMIENTO'}
+                                        </button>
+                                        <button onClick={reset} className="bg-slate-700 hover:bg-slate-600 text-white font-bold px-4 rounded-xl transition-all shadow-md">
+                                            {RotateCcwIcon && <RotateCcwIcon size={18} />}
+                                        </button>
+                                    </div>
+                                </div>
+
+                                <div className="bg-sky-950/20 p-6 rounded-3xl border border-sky-500/20">
+                                    <div className="flex justify-between items-center mb-4 border-b border-sky-500/30 pb-2">
+                                        <h4 className="font-bold text-sky-300 flex items-center gap-2">
+                                            {CalculatorIcon && <CalculatorIcon size={18} />} Resolución: Teorema de Fuerzas Vivas
+                                        </h4>
+                                        <button onClick={generarDiagrama} className="text-[10px] uppercase font-bold bg-slate-800 hover:bg-slate-700 text-slate-300 px-3 py-1.5 rounded flex items-center gap-1 border border-slate-600">
+                                            {imgLoading ? <span className="animate-pulse">Cargando...</span> : <>{ImagePlusIcon && <ImagePlusIcon size={14}/>} Generar DCL</>}
+                                        </button>
+                                    </div>
+
+                                    {imgUrl && (
+                                        <div className="mb-4 bg-slate-900 p-2 rounded-xl border border-slate-700 text-center">
+                                            <img src={imgUrl} alt="Diagrama de Energía y Trabajo" className="mx-auto max-h-40 rounded-lg" />
+                                        </div>
+                                    )}
+
+                                    <div className="text-xs text-slate-300 space-y-4 leading-relaxed">
+                                        <div className="bg-slate-900/80 p-2 rounded-lg border border-slate-700 text-center font-bold text-white mb-2 font-mono">
+                                            W_neto = ΔEc = Ec_f - Ec_0
+                                        </div>
+
+                                        <p><strong>1. Trabajo de las fuerzas (W):</strong><br/>
+                                        El Peso (270º) y la Normal (90º) son perpendiculares al movimiento, su trabajo es cero ($W = F \cdot d \cdot \cos \theta$). Solo la Fricción (180º) realiza trabajo.</p>
+                                        
+                                        {!conRozamiento ? (
+                                            <div className="bg-slate-900/80 p-2 rounded-lg border-l-4 border-sky-500 font-mono text-sky-200">
+                                                W_P = 0 J, W_N = 0 J<br/>
+                                                F_r = 0 N  ⇒  W_fr = <strong>0 J</strong><br/>
+                                                <strong>W_neto = 0 J</strong>
+                                            </div>
+                                        ) : (
+                                            <div className="bg-slate-900/80 p-2 rounded-lg border-l-4 border-orange-500 font-mono text-orange-200">
+                                                W_P = 0 J, W_N = 0 J<br/>
+                                                F_r = μ·m·g = {mu}·{masa}·9.8 = {fr.toFixed(2)} N<br/>
+                                                W_fr = F_r · d · cos(180º) = {fr.toFixed(2)} · {dReal.toFixed(1)} · (-1)<br/>
+                                                <strong>W_neto = {wNeto.toFixed(2)} J</strong>
+                                            </div>
+                                        )}
+
+                                        <p className="mt-3"><strong>2. Energía Cinética Inicial (Ec₀):</strong></p>
+                                        <div className="bg-slate-900/80 p-2 rounded-lg border-l-4 border-emerald-500 font-mono text-emerald-200">
+                                            Ec₀ = ½ · m · v₀² = 0.5 · {masa} · {v0}² = <strong>{ec0.toFixed(1)} J</strong>
+                                        </div>
+
+                                        <p className="mt-3"><strong>3. Velocidad Final (vf):</strong><br/>
+                                        Aplicamos el teorema. El trabajo neto modifica la energía cinética disponible.</p>
+                                        <div className="bg-slate-900/80 p-3 rounded-lg border-l-4 border-blue-500 font-mono text-blue-200 shadow-inner">
+                                            Ec_f = Ec₀ + W_neto = {ec0.toFixed(1)} + ({wNeto.toFixed(2)}) = <strong>{ecf.toFixed(2)} J</strong><br/><br/>
+                                            Ec_f = ½ · m · v_f²<br/>
+                                            {ecf.toFixed(2)} = 0.5 · {masa} · v_f²<br/>
+                                            v_f = √({ecf.toFixed(2)} / {(0.5 * masa).toFixed(1)}) = <strong>{vf.toFixed(2)} m/s</strong>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </main>
+
+                        <footer className="max-w-5xl mx-auto mt-12 pt-6 border-t border-slate-800 text-center text-slate-500 text-[10px] font-bold uppercase tracking-widest">
+                            Profe Física | Teorema del Trabajo y la Energía Cinética
+                        </footer>
+                    </div>
+                );
+            };
+
+            const container = document.getElementById('root');
+            const root = ReactDOM.createRoot(container);
+            root.render(<App />);
+        })();
+    </script>
+	<div style="position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); display: flex; gap: 10px; background: rgba(15, 23, 42, 0.9); padding: 10px; border-radius: 15px; border: 1px solid rgba(255,255,255,0.1); z-index: 10000; backdrop-filter: blur(10px);">
+    <button id="navPrev" style="padding: 8px 15px; background: #334155; color: white; border-radius: 8px; font-weight: bold; border: none; cursor: pointer;">← Ant.</button>
+    <a href="index.html" style="padding: 8px 20px; background: #059669; color: white; border-radius: 8px; font-weight: bold; text-decoration: none; text-transform: uppercase; font-size: 12px; display: flex; align-items: center;">Índice</a>
+    <button id="navNext" style="padding: 8px 15px; background: #334155; color: white; border-radius: 8px; font-weight: bold; border: none; cursor: pointer;">Sig. →</button>
+</div>
+
+<script>
+    (function() {
+        const match = window.location.pathname.match(/ejercicio-(\d+)\.html/);
+        if (match) {
+            const n = parseInt(match[1]);
+            const total = 70; // Cambiar a 44 para tema 8
+            const prev = document.getElementById('navPrev');
+            const next = document.getElementById('navNext');
+
+            if (n > 1) prev.onclick = () => window.location.href = `ejercicio-${n-1}.html`;
+            else prev.style.opacity = "0.3";
+
+            if (n < total) next.onclick = () => window.location.href = `ejercicio-${n+1}.html`;
+            else next.style.opacity = "0.3";
+        }
+    })();
+</script>
+</body>
+</html>

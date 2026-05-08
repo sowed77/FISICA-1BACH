@@ -1,10 +1,10 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Laboratorio: Plano Inclinado y Energía</title>
-
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Laboratorio: Choque y Energía Elástica</title>
+    <!-- Bibliotecas externas -->
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
     <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
@@ -13,49 +13,23 @@
     <script src="https://unpkg.com/lucide-react@latest"></script>
 
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&family=Fira+Code:wght@400;700&display=swap');
-
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&family=Fira+Code&display=swap');
         body { font-family: 'Inter', sans-serif; background-color: #0f172a; }
         .font-mono { font-family: 'Fira Code', monospace; }
-
         input[type=range]::-webkit-slider-thumb {
             -webkit-appearance: none;
             height: 20px;
             width: 20px;
             border-radius: 50%;
-            background: #f59e0b; /* Amber 500 */
+            background: #f43f5e; /* Rose 500 */
             cursor: pointer;
             border: 2px solid #ffffff;
-            box-shadow: 0 0 10px rgba(245, 158, 11, 0.5);
+            box-shadow: 0 0 10px rgba(244, 63, 94, 0.5);
         }
-
         .floor-pattern {
             background-color: #1e293b;
-            background-image: repeating-linear-gradient(
-                90deg,
-                #334155 0,
-                #334155 20px,
-                transparent 20px,
-                transparent 40px
-            );
-            border-top: 3px solid #475569;
-        }
-
-        .ramp-texture {
-            fill: #334155;
-            stroke: #64748b;
-            stroke-width: 3;
-            stroke-linejoin: round;
-        }
-
-        .friction-dust {
-            animation: dust 0.8s linear infinite;
-            opacity: 0;
-        }
-
-        @keyframes dust {
-            0% { transform: translate(0, 0) scale(0.5); opacity: 0.6; }
-            100% { transform: translate(-20px, 10px) scale(2); opacity: 0; }
+            background-image: repeating-linear-gradient(45deg, #334155 0, #334155 20px, transparent 20px, transparent 40px);
+            border-top: 4px solid #475569;
         }
     </style>
 </head>
@@ -66,300 +40,351 @@
         (() => {
             const { useState, useEffect } = React;
             const icons = window.LucideReact || {};
-
-            const getIcon = (name) => icons[name] || (({ className }) => <span className={className || ''}></span>);
+            
+            // Asignación segura de iconos
+            const getIcon = (name) => icons[name] || (({className}) => <span className={className || ''}></span>);
             const PlayIcon = getIcon('Play');
             const RotateCcwIcon = getIcon('RotateCcw');
             const CalculatorIcon = getIcon('Calculator');
-            const SettingsIcon = getIcon('Settings');
-            const MountainIcon = getIcon('Mountain');
-            const FlameIcon = getIcon('Flame');
-            const BoxIcon = getIcon('Package');
-            const ArrowRightIcon = getIcon('ArrowRight');
-            const ArrowUpIcon = getIcon('ArrowUp');
-            const BatteryIcon = getIcon('Battery');
             const ImagePlusIcon = getIcon('ImagePlus');
+            const SettingsIcon = getIcon('Settings');
 
             const App = () => {
-                const cteGravedad = 9.8;
+                // Estados interactivos (Inicializados con el enunciado del problema)
+                const [mBloque, setMBloque] = useState(1.00); // kg
+                const [mProyectilG, setMProyectilG] = useState(200); // g
+                const [vProyectil, setVProyectil] = useState(100); // m/s
+                const [kMuelle, setKMuelle] = useState(200); // N/m
 
-                // Estados inicializados con los datos del problema
-                const [anguloDeg, setAnguloDeg] = useState(60);
-                const [distanciaM, setDistanciaM] = useState(10.0);
-                const [coefRozamiento, setCoefRozamiento] = useState(0.100);
-                const [masaCuerpo, setMasaCuerpo] = useState(2.0); // La masa no afecta v0, pero sirve para visualizar energías
-
-                // Cálculos Físicos
-                const anguloRad = anguloDeg * (Math.PI / 180);
-                const alturaMaxM = distanciaM * Math.sin(anguloRad);
+                // --- CÁLCULOS FÍSICOS TEÓRICOS ---
+                const mProyectilKg = mProyectilG / 1000;
+                const masaTotal = mBloque + mProyectilKg;
                 
-                const energiaPotFinal = masaCuerpo * cteGravedad * alturaMaxM;
-                const trabajoRozamiento = coefRozamiento * masaCuerpo * cteGravedad * Math.cos(anguloRad) * distanciaM;
-                
-                // Conservación: Ec0 = Epf + Wroz
-                const energiaCinInicial = energiaPotFinal + trabajoRozamiento;
-                const velInicial = Math.sqrt((2 * energiaCinInicial) / masaCuerpo);
-                
-                // Aceleración (negativa porque frena)
-                const aceleracion = -cteGravedad * (Math.sin(anguloRad) + coefRozamiento * Math.cos(anguloRad));
-                const tiempoTotal = -velInicial / aceleracion;
+                // a) Conservación del momento lineal: mp * vp = (mp + mb) * V_conjunta
+                const vConjunta = (mProyectilKg * vProyectil) / masaTotal;
 
-                // Estados de animación
-                const [fase, setFase] = useState('reposo'); // reposo, subiendo, cima
-                const [tiempo, setTiempo] = useState(0);
-                const [estaSimulando, setEstaSimulando] = useState(false);
+                // b) Conservación de la energía mecánica (tras el choque): Ec_inicial = Epe_max
+                // 0.5 * Mt * Vc^2 = 0.5 * k * x^2  => x = Vc * sqrt(Mt / k)
+                const xMaximo = vConjunta * Math.sqrt(masaTotal / kMuelle);
 
-                // Valores instantáneos
-                let vActual = 0;
-                let dActual = 0;
-                let hActual = 0;
-                let ecActual = 0;
-                let epActual = 0;
-                let calorActual = 0;
+                // --- ANIMACIÓN ---
+                const [time, setTime] = useState(-0.5); 
+                const [isSimulating, setIsSimulating] = useState(false);
 
-                if (fase === 'reposo') {
-                    vActual = 0;
-                    dActual = 0;
-                    hActual = 0;
-                    ecActual = energiaCinInicial;
-                    epActual = 0;
-                    calorActual = 0;
-                } else if (fase === 'cima') {
-                    vActual = 0;
-                    dActual = distanciaM;
-                    hActual = alturaMaxM;
-                    ecActual = 0;
-                    epActual = energiaPotFinal;
-                    calorActual = trabajoRozamiento;
+                // Fases visuales
+                const tImpact = 0; 
+                // Periodo de oscilación del sistema masa-muelle: T = 2*pi*sqrt(m/k)
+                // El tiempo hasta la compresión máxima es un cuarto del periodo (T/4)
+                const tCompression = (Math.PI / 2) * Math.sqrt(masaTotal / kMuelle);
+
+                let currentV = 0;
+                let currentX = 0; // Compresión del muelle en metros reales
+                let blockLeftVisual = 0; 
+                let projectileLeftVisual = 0; 
+                let energyEc = 0;
+                let energyEpe = 0;
+
+                // Coordenadas fijas unificadas
+                const pivotX = 350; // Pared derecha
+                const restSpringL = 120; // Longitud muelle en reposo
+                const blockWidth = 60; // Ancho del bloque
+                const impactX = pivotX - restSpringL - blockWidth; // 350 - 120 - 60 = 170
+                const initialProjectileDist = 150; 
+
+                // Lógica cinemática para el renderizado
+                if (time < tImpact) {
+                    // Fase: Proyectil acercándose
+                    const progress = (time + 0.5) / 0.5;
+                    currentV = vProyectil;
+                    blockLeftVisual = impactX;
+                    projectileLeftVisual = impactX - initialProjectileDist + (initialProjectileDist * progress);
+                    energyEc = 0.5 * mProyectilKg * vProyectil * vProyectil;
+                    energyEpe = 0;
+                } else if (time <= tImpact + tCompression) {
+                    // Fase: Compresión conjunta (Movimiento Armónico Simple)
+                    const dt = time - tImpact;
+                    const omega = Math.sqrt(kMuelle / masaTotal);
+                    currentX = xMaximo * Math.sin(omega * dt);
+                    currentV = vConjunta * Math.cos(omega * dt);
+                    
+                    // Escala visual de compresión: 1 metro = 50 píxeles
+                    blockLeftVisual = impactX + (currentX * 50); 
+                    projectileLeftVisual = blockLeftVisual; // Proyectil incrustado viaja con el bloque
+                    
+                    energyEc = 0.5 * masaTotal * currentV * currentV;
+                    energyEpe = 0.5 * kMuelle * currentX * currentX;
                 } else {
-                    // fase === 'subiendo'
-                    vActual = velInicial + aceleracion * tiempo;
-                    if (vActual < 0) vActual = 0; // Por si acaso hay overflow
-
-                    dActual = velInicial * tiempo + 0.5 * aceleracion * tiempo * tiempo;
-                    hActual = dActual * Math.sin(anguloRad);
-
-                    ecActual = 0.5 * masaCuerpo * vActual * vActual;
-                    epActual = masaCuerpo * cteGravedad * hActual;
-                    calorActual = coefRozamiento * masaCuerpo * cteGravedad * Math.cos(anguloRad) * dActual;
+                    // Fase: Detenido (Compresión máxima)
+                    currentX = xMaximo;
+                    currentV = 0;
+                    blockLeftVisual = impactX + (xMaximo * 50);
+                    projectileLeftVisual = blockLeftVisual;
+                    energyEc = 0;
+                    energyEpe = 0.5 * kMuelle * xMaximo * xMaximo;
                 }
 
-                // Bucle de animación
                 useEffect(() => {
                     let interval;
-                    if (estaSimulando) {
+                    if (isSimulating) {
                         interval = setInterval(() => {
-                            setTiempo(prev => {
-                                const next = prev + 0.04; // paso de tiempo visual
-                                if (next >= tiempoTotal) {
-                                    setEstaSimulando(false);
-                                    setFase('cima');
-                                    return tiempoTotal;
+                            setTime(prev => {
+                                const nextT = prev + 0.01;
+                                if (nextT > (tImpact + tCompression)) {
+                                    setIsSimulating(false);
+                                    return tImpact + tCompression;
                                 }
-                                return next;
+                                return nextT;
                             });
-                        }, 30);
+                        }, 16); // ~60fps
                     }
                     return () => clearInterval(interval);
-                }, [estaSimulando, tiempoTotal]);
+                }, [isSimulating, tCompression]);
 
-                // Reset automático al cambiar variables
+                const handlePlay = () => {
+                    setTime(-0.5);
+                    setIsSimulating(true);
+                };
+
+                const reset = () => {
+                    setTime(-0.5);
+                    setIsSimulating(false);
+                };
+
+                // Si cambian los datos de entrada, forzar reseteo para evitar bugs visuales
                 useEffect(() => {
-                    setFase('reposo');
-                    setTiempo(0);
-                    setEstaSimulando(false);
-                }, [anguloDeg, distanciaM, coefRozamiento, masaCuerpo]);
+                    reset();
+                }, [mBloque, mProyectilG, vProyectil, kMuelle]);
 
-                const iniciar = () => {
-                    setFase('subiendo');
-                    setTiempo(0);
-                    setEstaSimulando(true);
-                };
-
-                const reiniciar = () => {
-                    setFase('reposo');
-                    setTiempo(0);
-                    setEstaSimulando(false);
-                };
-
-                // Geometría Visual Fija (Escalado para que quepa en el cuadro)
-                const rampBaseX = 40;
-                const rampBaseY = 240; 
-                const rampHypotenusePx = 290; // Longitud visual fija para la rampa
-                
-                const rampWidthPx = rampHypotenusePx * Math.cos(anguloRad);
-                const rampHeightPx = rampHypotenusePx * Math.sin(anguloRad);
-
-                // Posición visual actual del bloque
-                const currentPx = (dActual / distanciaM) * rampHypotenusePx;
-                const blockX = rampBaseX + currentPx * Math.cos(anguloRad);
-                const blockY = rampBaseY - currentPx * Math.sin(anguloRad);
-
-                // DCL con IA
+                // Generador de DCL IA
                 const [imgUrl, setImgUrl] = useState(null);
                 const [imgLoading, setImgLoading] = useState(false);
 
                 const generarDiagrama = async () => {
                     setImgLoading(true);
+                    const apiKey = ""; 
                     try {
-                        const apiKey = ""; 
                         const response = await fetch(
                             `https://generativelanguage.googleapis.com/v1beta/models/imagen-4.0-generate-001:predict?key=${apiKey}`,
                             {
                                 method: 'POST',
                                 headers: { 'Content-Type': 'application/json' },
                                 body: JSON.stringify({
-                                    instances: [{
-                                        prompt: "Diagrama de cuerpo libre de un bloque subiendo por un plano inclinado. Vector velocidad hacia arriba del plano. Vector de fuerza de rozamiento hacia abajo del plano. Vector del peso hacia abajo. Estilo educativo física, fondo blanco limpio."
-                                    }],
+                                    instances: [{ prompt: "Diagrama técnico de física. Un bloque con una bala incrustada comprimiendo un resorte horizontal. Vectores: momento inicial p_antes, momento final p_despues y un diagrama de barras mostrando la energía cinética convirtiéndose en potencial elástica. Estilo educativo minimalista, fondo blanco." }],
                                     parameters: { sampleCount: 1 }
                                 })
                             }
                         );
-                        if (!response.ok) throw new Error("API Error");
+                        if (!response.ok) throw new Error("Error en red");
                         const data = await response.json();
                         setImgUrl(`data:image/png;base64,${data.predictions[0].bytesBase64Encoded}`);
-                    } catch (error) {
-                        console.error(error);
-                    } finally {
-                        setImgLoading(false);
+                    } catch (e) { 
+                        console.error(e); 
+                    } finally { 
+                        setImgLoading(false); 
                     }
                 };
 
+                // Renderizado del muelle SVG dinámico
+                const generateSpring = (w) => {
+                    const coils = 12;
+                    const h = 20;
+                    const safeW = Math.max(10, w);
+                    let path = `M 0 10 L 10 10 `;
+                    const cw = (safeW - 20) / coils;
+                    for(let i=0; i<coils; i++) {
+                        const y = i % 2 === 0 ? 0 : 20;
+                        const x = 10 + (cw * (i + 0.5));
+                        path += `L ${x} ${y} `;
+                    }
+                    path += `L ${safeW - 10} 10 L ${safeW} 10`;
+                    return path;
+                };
+
+                // Ancho actual del muelle (Pared - PosiciónCaraDerechaDelBloque)
+                const currentSpringW = pivotX - (blockLeftVisual + blockWidth);
+
                 return (
                     <div className="min-h-screen bg-slate-900 text-slate-100 p-4 md:p-8">
-                        <header className="max-w-6xl mx-auto mb-8 border-b border-slate-700 pb-6">
-                            <div className="flex items-center gap-3 mb-2">
-                                <span className="bg-amber-600 text-white px-3 py-1 rounded-full text-xs font-black uppercase tracking-widest">
-                                    Dinámica y Energía
-                                </span>
-                                <h1 className="text-3xl font-black text-amber-400 uppercase tracking-tight">
-                                    Ascenso en Plano Inclinado
-                                </h1>
-                            </div>
-
-                            <div className="bg-slate-800/50 p-4 rounded-xl border border-slate-700 mt-4">
-                                <p className="text-slate-300 text-sm leading-relaxed">
-                                    <strong>Enunciado:</strong> Se tiene un plano inclinado {anguloDeg}° respecto de la horizontal, cuya longitud es de {distanciaM.toFixed(1)} m.
-                                    ¿Qué velocidad paralela al plano debe comunicarse a un cuerpo para que este llegue a la parte superior del plano inclinado con velocidad nula?
-                                    Dato: el coeficiente de rozamiento vale {coefRozamiento.toFixed(3)}.
-                                </p>
+                        <header className="max-w-6xl mx-auto mb-8 border-b border-slate-700 pb-6 flex flex-col md:flex-row md:items-end justify-between gap-4">
+                            <div>
+                                <div className="flex items-center gap-3 mb-2">
+                                    <span className="bg-rose-600 text-white px-3 py-1 rounded-full text-xs font-black uppercase tracking-widest">Choques Inelásticos</span>
+                                    <h1 className="text-3xl font-black text-rose-400 uppercase tracking-tight tracking-widest">Péndulo Balístico</h1>
+                                </div>
+                                <div className="bg-slate-800/50 p-4 rounded-xl border border-slate-700 mt-4">
+                                    <p className="text-slate-300 text-sm leading-relaxed">
+                                        <strong>Problema:</strong> Bloque de {mBloque.toFixed(2)} kg unido a muelle (k={kMuelle} N/m). Se dispara un proyectil de {mProyectilG} g a {vProyectil} m/s, incrustándose. Calcula a) Velocidad tras el impacto, b) Compresión del muelle.
+                                    </p>
+                                </div>
                             </div>
                         </header>
 
                         <main className="max-w-6xl mx-auto grid lg:grid-cols-2 gap-8">
-                            {/* PANEL VISUAL */}
-                            <div className="bg-slate-800 rounded-3xl border border-slate-700 h-[600px] relative overflow-hidden shadow-2xl flex flex-col justify-between pb-4">
+                            {/* Panel Visual Integrado */}
+                            <div className="bg-slate-800 rounded-3xl border border-slate-700 h-[500px] relative overflow-hidden shadow-2xl flex flex-col justify-end">
                                 
-                                {/* HUD Superior y Tarjetas */}
-                                <div className="w-full px-6 pt-6 z-30 pointer-events-none flex flex-col gap-4">
-                                    <div className="flex justify-between">
-                                        <div className="bg-slate-900/90 p-3 rounded-lg border border-slate-700 backdrop-blur-md">
-                                            <p className="text-[10px] text-slate-500 uppercase font-black mb-1">Velocidad Requerida</p>
-                                            <p className="text-2xl font-mono font-black text-amber-400">
-                                                {velInicial.toFixed(2)} <span className="text-sm">m/s</span>
-                                            </p>
-                                            <p className="text-[10px] text-slate-400 mt-1">v actual: {vActual.toFixed(2)} m/s</p>
+                                {/* HUD Superior Energías */}
+                                <div className="absolute top-4 w-full px-6 flex justify-between z-30 pointer-events-none">
+                                    <div className="bg-slate-950/90 p-4 rounded-2xl border border-slate-700 backdrop-blur-md flex gap-8 shadow-inner">
+                                        <div className="flex flex-col items-center">
+                                            <span className="text-[10px] font-black text-blue-400 mb-1 uppercase">E. Cinética</span>
+                                            <div className="w-10 h-24 bg-slate-900 border border-slate-800 rounded overflow-hidden flex flex-col justify-end">
+                                                {/* Usamos el valor inicial de la energía del PROYECTIL como máximo absoluto para escalar */}
+                                                <div className="w-full bg-blue-500 transition-all duration-75" style={{ height: `${Math.min(100, (energyEc / (0.5 * mProyectilKg * vProyectil * vProyectil || 1)) * 100)}%` }}></div>
+                                            </div>
+                                            <span className="text-[10px] font-mono mt-1">{energyEc.toFixed(1)} J</span>
                                         </div>
-
-                                        <div className="bg-slate-900/90 p-3 rounded-lg border border-slate-700 backdrop-blur-md text-right border-b-4 border-b-emerald-500 shadow-[0_0_15px_rgba(16,185,129,0.25)]">
-                                            <p className="text-[10px] text-slate-500 uppercase font-black flex items-center justify-end gap-1">
-                                                <MountainIcon size={12} className="text-emerald-400" />
-                                                Distancia Recorrida
-                                            </p>
-                                            <p className="text-2xl font-mono font-black text-emerald-400">
-                                                {dActual.toFixed(2)} <span className="text-sm">m</span>
-                                            </p>
-                                            <p className="text-[10px] text-slate-400 mt-1">
-                                                Altura (h): {hActual.toFixed(2)} m
-                                            </p>
+                                        <div className="flex flex-col items-center">
+                                            <span className="text-[10px] font-black text-pink-400 mb-1 uppercase">E. Elástica</span>
+                                            <div className="w-10 h-24 bg-slate-900 border border-slate-800 rounded overflow-hidden flex flex-col justify-end">
+                                                <div className="w-full bg-pink-500 transition-all duration-75" style={{ height: `${Math.min(100, (energyEpe / (0.5 * mProyectilKg * vProyectil * vProyectil || 1)) * 100)}%` }}></div>
+                                            </div>
+                                            <span className="text-[10px] font-mono mt-1">{energyEpe.toFixed(1)} J</span>
                                         </div>
                                     </div>
-
-                                    {/* Mini tarjetas de energía */}
-                                    <div className="grid grid-cols-3 gap-3">
-                                        <div className="bg-slate-900/80 border border-slate-700 rounded-xl p-3">
-                                            <p className="text-[10px] uppercase font-black text-amber-400 mb-1">Ec Inicial</p>
-                                            <p className="font-mono text-white text-sm">{energiaCinInicial.toFixed(1)} J</p>
+                                    <div className="text-right flex flex-col gap-2">
+                                        <div className="bg-slate-950/90 p-3 rounded-xl border border-slate-700">
+                                            <p className="text-[10px] text-slate-500 uppercase font-black">Velocidad Conjunta</p>
+                                            <p className="text-xl font-mono font-black text-emerald-400">{vConjunta.toFixed(2)} m/s</p>
                                         </div>
-                                        <div className="bg-slate-900/80 border border-slate-700 rounded-xl p-3">
-                                            <p className="text-[10px] uppercase font-black text-blue-400 mb-1">Ep Actual</p>
-                                            <p className="font-mono text-white text-sm">{epActual.toFixed(1)} J</p>
-                                        </div>
-                                        <div className="bg-slate-900/80 border border-slate-700 rounded-xl p-3">
-                                            <p className="text-[10px] uppercase font-black text-red-400 mb-1">Calor (Wroz)</p>
-                                            <p className="font-mono text-white text-sm">{calorActual.toFixed(1)} J</p>
+                                        <div className={`bg-slate-950/90 p-3 rounded-xl border ${time >= tImpact+tCompression ? 'border-pink-500 shadow-[0_0_15px_rgba(236,72,153,0.3)]' : 'border-slate-700'}`}>
+                                            <p className="text-[10px] text-slate-500 uppercase font-black">Compresión (x)</p>
+                                            <p className="text-xl font-mono font-black text-pink-400">{currentX.toFixed(3)} m</p>
                                         </div>
                                     </div>
                                 </div>
 
-                                {/* Barras de Energía */}
-                                <div className="absolute right-6 top-[220px] z-20 w-48">
-                                    <div className="flex items-end gap-3 h-24">
-                                        <div className="flex-1 flex flex-col justify-end items-center">
-                                            <div className="w-10 bg-amber-400 rounded-t-md transition-all duration-100" style={{ height: `${(ecActual / energiaCinInicial) * 100}%` }}></div>
-                                            <p className="text-[9px] font-black uppercase text-amber-400 mt-2 text-center leading-tight">Ec</p>
-                                        </div>
-                                        <div className="flex-1 flex flex-col justify-end items-center">
-                                            <div className="w-10 bg-blue-500 rounded-t-md transition-all duration-100" style={{ height: `${(epActual / energiaCinInicial) * 100}%` }}></div>
-                                            <p className="text-[9px] font-black uppercase text-blue-400 mt-2 text-center leading-tight">Ep</p>
-                                        </div>
-                                        <div className="flex-1 flex flex-col justify-end items-center">
-                                            <div className="w-10 bg-red-500 rounded-t-md transition-all duration-100" style={{ height: `${(calorActual / energiaCinInicial) * 100}%` }}></div>
-                                            <p className="text-[9px] font-black uppercase text-red-400 mt-2 text-center leading-tight">Calor</p>
-                                        </div>
-                                    </div>
-                                </div>
-
-                                {/* Etiquetas flotantes descriptivas */}
-                                <div className="absolute left-6 top-[220px] z-20 flex flex-col gap-3">
-                                    <div className="bg-slate-900/80 text-amber-400 px-3 py-1.5 rounded-full text-[10px] font-black uppercase border border-slate-700 w-max shadow-md">
-                                        Tiempo: {tiempo.toFixed(2)} s
-                                    </div>
-                                    <div className="bg-slate-900/80 text-slate-300 px-3 py-2.5 rounded-xl text-[11px] border border-slate-700 max-w-[220px] shadow-md leading-relaxed">
-                                        Toda la energía cinética inicial se gasta en subir la rampa (Ep) y vencer la fricción (Calor).
-                                    </div>
-                                </div>
-
-                                {/* Escena visual SVG y HTML */}
-                                <div className="relative w-full h-[300px]">
-                                    {/* Suelo */}
+                                {/* Escenario */}
+                                <div className="relative w-full h-48 flex items-end">
                                     <div className="absolute bottom-0 w-full h-12 floor-pattern"></div>
+                                    
+                                    {/* Pared Derecha (donde ancla el muelle) */}
+                                    <div className="absolute bottom-12 w-8 h-32 bg-slate-600 border-l-4 border-slate-500" style={{ left: `${pivotX}px` }}></div>
+                                    
+                                    {/* Muelle */}
+                                    <div className="absolute bottom-16 z-20" style={{ left: `${blockLeftVisual + blockWidth}px` }}>
+                                        <svg width={currentSpringW} height="20" className="overflow-visible">
+                                            <path d={generateSpring(currentSpringW)} fill="none" stroke="#f472b6" strokeWidth="4" strokeLinecap="round" />
+                                        </svg>
+                                    </div>
 
-                                    {/* Triángulo de la Rampa dibujado con SVG */}
-                                    <svg className="absolute top-0 left-0 w-full h-full pointer-events-none">
-                                        <polygon 
-                                            points={`${rampBaseX},${rampBaseY} ${rampBaseX + rampWidthPx},${rampBaseY} ${rampBaseX + rampWidthPx},${rampBaseY - rampHeightPx}`}
-                                            className="ramp-texture"
-                                        />
-                                        {/* Línea de Cota de Altura */}
-                                        <line 
-                                            x1={rampBaseX + rampWidthPx + 15} y1={rampBaseY} 
-                                            x2={rampBaseX + rampWidthPx + 15} y2={rampBaseY - rampHeightPx} 
-                                            stroke="#94a3b8" strokeWidth="2" strokeDasharray="4 4"
-                                        />
-                                        <text x={rampBaseX + rampWidthPx + 25} y={rampBaseY - rampHeightPx/2} fill="#94a3b8" fontSize="12" fontWeight="bold" fontFamily="monospace">
-                                            h = {alturaMaxM.toFixed(1)}m
-                                        </text>
-                                        {/* Arco del ángulo */}
-                                        <path 
-                                            d={`M ${rampBaseX + 40} ${rampBaseY} A 40 40 0 0 0 ${rampBaseX + 40*Math.cos(anguloRad)} ${rampBaseY - 40*Math.sin(anguloRad)}`} 
-                                            fill="none" stroke="#f59e0b" strokeWidth="2"
-                                        />
-                                        <text x={rampBaseX + 45} y={rampBaseY - 15} fill="#fcd34d" fontSize="12" fontWeight="bold">
-                                            {anguloDeg}°
-                                        </text>
-                                    </svg>
-
-                                    {/* Bloque en Movimiento */}
+                                    {/* Bloque */}
                                     <div 
-                                        className="absolute z-20 transition-transform duration-75"
-                                        style={{ 
-                                            left: `${blockX}px`, 
-                                            top: `${blockY}px`,
-                                            // Traslación adicional para centrar la base del bloque en la rampa
-                                            transform: `translate(-50%, -100%) rotate(${-anguloDeg}deg)`,
-                                            transformOrigin: 'bottom center'
-                                        }}
+                                        className="absolute bottom-12 h-16 bg-blue-700 border-4 border-blue-500 rounded-lg flex items-center justify-center shadow-xl z-30 transition-all duration-75"
+                                        style={{ left: `${blockLeftVisual}px`, width: `${blockWidth}px` }}
                                     >
-                                        <div className="w-[60px] h-[50px] bg-sky-600 border-4 border-sky-400 rounded-lg flex flex-col items-center 
+                                        <span className="font-black text-white text-xs whitespace-nowrap px-1">
+                                            {time >= tImpact ? `${masaTotal.toFixed(2)}kg` : `${mBloque.toFixed(2)}kg`}
+                                        </span>
+                                    </div>
+
+                                    {/* Proyectil */}
+                                    <div 
+                                        className={`absolute bottom-16 h-4 bg-slate-200 rounded-r-full shadow-[0_0_8px_white] z-40 transition-transform duration-75 ${time >= tImpact ? 'opacity-0' : 'opacity-100'}`}
+                                        style={{ left: `${projectileLeftVisual}px`, width: '16px' }}
+                                    ></div>
+                                </div>
+                            </div>
+
+                            {/* Panel Lateral */}
+                            <div className="space-y-6">
+                                <div className="bg-slate-800 p-6 rounded-3xl border border-slate-700 shadow-xl">
+                                    <h3 className="text-xl font-bold mb-4 flex items-center gap-2 text-rose-400">
+                                        {SettingsIcon && <SettingsIcon size={20} />} Parámetros del Ensayo
+                                    </h3>
+                                    <div className="grid grid-cols-2 gap-4 text-sm font-medium mb-6">
+                                        <div className="bg-slate-900/50 p-3 rounded-xl border border-slate-700">
+                                            <p className="text-[10px] text-slate-500 uppercase mb-1">Masa Bloque (m_b)</p>
+                                            <input type="range" min="0.5" max="5.0" step="0.1" value={mBloque} onChange={e => setMBloque(Number(e.target.value))} className="w-full accent-rose-500" />
+                                            <p className="mt-1 font-mono text-white">{mBloque.toFixed(2)} kg</p>
+                                        </div>
+                                        <div className="bg-slate-900/50 p-3 rounded-xl border border-slate-700">
+                                            <p className="text-[10px] text-slate-500 uppercase mb-1">Masa Bala (m_p)</p>
+                                            <input type="range" min="10" max="500" step="10" value={mProyectilG} onChange={e => setMProyectilG(Number(e.target.value))} className="w-full accent-rose-500" />
+                                            <p className="mt-1 font-mono text-white">{mProyectilG} g</p>
+                                        </div>
+                                        <div className="bg-slate-900/50 p-3 rounded-xl border border-slate-700">
+                                            <p className="text-[10px] text-slate-500 uppercase mb-1">Velocidad Bala (v_p)</p>
+                                            <input type="range" min="20" max="300" step="5" value={vProyectil} onChange={e => setVProyectil(Number(e.target.value))} className="w-full accent-rose-500" />
+                                            <p className="mt-1 font-mono text-white">{vProyectil} m/s</p>
+                                        </div>
+                                        <div className="bg-slate-900/50 p-3 rounded-xl border border-slate-700">
+                                            <p className="text-[10px] text-slate-500 uppercase mb-1">Cte. Muelle (k)</p>
+                                            <input type="range" min="50" max="1000" step="50" value={kMuelle} onChange={e => setKMuelle(Number(e.target.value))} className="w-full accent-rose-500" />
+                                            <p className="mt-1 font-mono text-white">{kMuelle} N/m</p>
+                                        </div>
+                                    </div>
+                                    <div className="flex gap-2">
+                                        <button onClick={handlePlay} disabled={isSimulating} className="bg-emerald-600 hover:bg-emerald-500 text-white font-bold px-6 py-3 rounded-xl shadow-lg flex items-center gap-2 transition-all active:scale-95 disabled:opacity-50 flex-1 justify-center">
+                                            {PlayIcon && <PlayIcon size={20}/>} DISPARAR
+                                        </button>
+                                        <button onClick={reset} className="bg-slate-700 hover:bg-slate-600 text-white font-bold p-3 rounded-xl">
+                                            {RotateCcwIcon && <RotateCcwIcon size={20}/>}
+                                        </button>
+                                    </div>
+                                </div>
+
+                                <div className="bg-emerald-950/20 p-6 rounded-3xl border border-emerald-500/20">
+                                    <div className="flex justify-between items-center mb-4 border-b border-emerald-500/30 pb-2">
+                                        <h4 className="font-bold text-emerald-300 flex items-center gap-2"><CalculatorIcon size={18} /> Resolución Paso a Paso</h4>
+                                        <button onClick={generarDiagrama} className="text-[10px] font-bold text-slate-400 hover:text-white uppercase"><ImagePlusIcon className="inline mb-1" size={14}/> Ver DCL</button>
+                                    </div>
+                                    {imgUrl && <div className="mb-4 text-center"><img src={imgUrl} className="mx-auto max-h-40 rounded-lg border border-slate-700 shadow-lg"/></div>}
+                                    
+                                    <div className="text-xs space-y-4 font-mono text-emerald-200">
+                                        <section>
+                                            <p className="text-white font-bold mb-1 underline">a) Velocidad tras el impacto (Choque inelástico)</p>
+                                            <p>P_antes = P_después</p>
+                                            <p>m_p · v_p = (m_p + m_b) · V_c</p>
+                                            <p>{mProyectilKg.toFixed(3)} · {vProyectil} = {masaTotal.toFixed(3)} · V_c</p>
+                                            <p className="text-emerald-400 font-bold bg-slate-900/50 p-1 inline-block rounded">V_c = {vConjunta.toFixed(2)} m/s</p>
+                                        </section>
+
+                                        <section className="pt-2 border-t border-emerald-500/20">
+                                            <p className="text-white font-bold mb-1 underline">b) Compresión del muelle (Conservación Energía)</p>
+                                            <p className="text-slate-400 text-[10px] mb-2 leading-tight font-sans">
+                                                Toda la Energía Cinética de la masa combinada se transforma en Energía Potencial Elástica en el punto de compresión máxima.
+                                            </p>
+                                            <p>Ec_inicial = Epe_final</p>
+                                            <p>½ · M_tot · V_c² = ½ · k · x²</p>
+                                            <p>{0.5 * masaTotal} · {vConjunta.toFixed(2)}² = {0.5 * kMuelle} · x²</p>
+                                            <p>x = √({(masaTotal * vConjunta * vConjunta).toFixed(2)} / {kMuelle})</p>
+                                            <p className="text-pink-400 font-bold bg-slate-900/50 p-1 inline-block rounded">x = {xMaximo.toFixed(3)} m</p>
+                                        </section>
+                                    </div>
+                                </div>
+                            </div>
+                        </main>
+                    </div>
+                );
+            };
+
+            const root = ReactDOM.createRoot(document.getElementById('root'));
+            root.render(<App />);
+        })();
+    </script>
+	<div style="position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); display: flex; gap: 10px; background: rgba(15, 23, 42, 0.9); padding: 10px; border-radius: 15px; border: 1px solid rgba(255,255,255,0.1); z-index: 10000; backdrop-filter: blur(10px);">
+    <button id="navPrev" style="padding: 8px 15px; background: #334155; color: white; border-radius: 8px; font-weight: bold; border: none; cursor: pointer;">← Ant.</button>
+    <a href="index.html" style="padding: 8px 20px; background: #059669; color: white; border-radius: 8px; font-weight: bold; text-decoration: none; text-transform: uppercase; font-size: 12px; display: flex; align-items: center;">Índice</a>
+    <button id="navNext" style="padding: 8px 15px; background: #334155; color: white; border-radius: 8px; font-weight: bold; border: none; cursor: pointer;">Sig. →</button>
+</div>
+
+<script>
+    (function() {
+        const match = window.location.pathname.match(/ejercicio-(\d+)\.html/);
+        if (match) {
+            const n = parseInt(match[1]);
+            const total = 70; // Cambiar a 44 para tema 8
+            const prev = document.getElementById('navPrev');
+            const next = document.getElementById('navNext');
+
+            if (n > 1) prev.onclick = () => window.location.href = `ejercicio-${n-1}.html`;
+            else prev.style.opacity = "0.3";
+
+            if (n < total) next.onclick = () => window.location.href = `ejercicio-${n+1}.html`;
+            else next.style.opacity = "0.3";
+        }
+    })();
+</script>
+</body>
+</html>
