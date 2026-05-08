@@ -280,36 +280,39 @@
                                         <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest text-center border-b border-slate-700 pb-1 flex items-center justify-center gap-1">
                                             {BatteryIcon && <BatteryIcon size={12}/>} Balance Energético
                                         </p>
+                                        
+                                        {/* BARRAS ARREGLADAS AQUÍ */}
                                         <div className="flex gap-4 items-end h-24 mt-2">
                                             {/* Barra Ep */}
-                                            <div className="flex flex-col items-center">
+                                            <div className="flex flex-col items-center h-full">
                                                 <span className="text-[8px] font-bold text-blue-400 mb-1">Ep</span>
-                                                <div className="h-full w-3 bg-slate-800 rounded-sm overflow-hidden flex flex-col justify-end">
-                                                    <div className="w-full bg-blue-500" style={{ height: `${(currentEp / ePotInicial) * 100}%` }}></div>
+                                                <div className="flex-1 w-3 bg-slate-800 rounded-sm overflow-hidden flex flex-col justify-end">
+                                                    <div className="w-full bg-blue-500 transition-all duration-75 ease-linear" style={{ height: `${(currentEp / ePotInicial) * 100}%` }}></div>
                                                 </div>
                                             </div>
                                             {/* Barra Ec */}
-                                            <div className="flex flex-col items-center">
+                                            <div className="flex flex-col items-center h-full">
                                                 <span className="text-[8px] font-bold text-emerald-400 mb-1">Ec</span>
-                                                <div className="h-full w-3 bg-slate-800 rounded-sm overflow-hidden flex flex-col justify-end">
-                                                    <div className="w-full bg-emerald-500" style={{ height: `${(currentEc / ePotInicial) * 100}%` }}></div>
+                                                <div className="flex-1 w-3 bg-slate-800 rounded-sm overflow-hidden flex flex-col justify-end">
+                                                    <div className="w-full bg-emerald-500 transition-all duration-75 ease-linear" style={{ height: `${(currentEc / ePotInicial) * 100}%` }}></div>
                                                 </div>
                                             </div>
                                             {/* Barra Epe */}
-                                            <div className="flex flex-col items-center">
+                                            <div className="flex flex-col items-center h-full">
                                                 <span className="text-[8px] font-bold text-fuchsia-400 mb-1">Epe</span>
-                                                <div className="h-full w-3 bg-slate-800 rounded-sm overflow-hidden flex flex-col justify-end">
-                                                    <div className="w-full bg-fuchsia-500" style={{ height: `${(currentEpe / ePotInicial) * 100}%` }}></div>
+                                                <div className="flex-1 w-3 bg-slate-800 rounded-sm overflow-hidden flex flex-col justify-end">
+                                                    <div className="w-full bg-fuchsia-500 transition-all duration-75 ease-linear" style={{ height: `${(currentEpe / ePotInicial) * 100}%` }}></div>
                                                 </div>
                                             </div>
                                             {/* Barra Calor */}
-                                            <div className="flex flex-col items-center">
+                                            <div className="flex flex-col items-center h-full">
                                                 <span className="text-[8px] font-bold text-orange-400 mb-1">Q</span>
-                                                <div className="h-full w-3 bg-slate-800 rounded-sm overflow-hidden flex flex-col justify-end">
-                                                    <div className="w-full bg-orange-500" style={{ height: `${(currentHeat / ePotInicial) * 100}%` }}></div>
+                                                <div className="flex-1 w-3 bg-slate-800 rounded-sm overflow-hidden flex flex-col justify-end">
+                                                    <div className="w-full bg-orange-500 transition-all duration-75 ease-linear" style={{ height: `${(currentHeat / ePotInicial) * 100}%` }}></div>
                                                 </div>
                                             </div>
                                         </div>
+                                        
                                         <p className="text-[10px] text-center text-slate-500 mt-1 font-mono">E_tot = {ePotInicial.toFixed(0)} J</p>
                                     </div>
                                     
@@ -452,7 +455,7 @@
                                         <div className="bg-slate-900/80 p-2 rounded-lg border-l-4 border-orange-500 font-mono text-orange-200">
                                             E_vuelta = {energiaElastica.toFixed(2)} · (1 - {perdidaExp/100}) = {energiaVuelta.toFixed(2)} J
                                         </div>
-                                        <p>En el momento de abandonar el muelle ($x=0$), el bloque ya ha recuperado los {xM}m de altura. Esa parte se queda como potencial, el resto es cinética.</p>
+                                        <p>En el momento de abandonar el muelle (x=0), el bloque ya ha recuperado los {xM}m de altura. Esa parte se queda como potencial, el resto es cinética.</p>
                                         <div className="bg-slate-900/80 p-2 rounded-lg border-l-4 border-emerald-500 font-mono text-emerald-200 overflow-x-auto">
                                             Ec = {energiaVuelta.toFixed(2)} - (m·g·x) = {energiaVuelta.toFixed(2)} - ({masa}·9.8·{xM}) = <strong>{ecSalida.toFixed(2)} J</strong><br/>
                                             v = √(2 · {ecSalida.toFixed(2)} / {masa}) = <strong>{vSalida.toFixed(2)} m/s</strong>
@@ -481,7 +484,7 @@
             root.render(<App />);
         })();
     </script>
-	<div style="position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); display: flex; gap: 10px; background: rgba(15, 23, 42, 0.9); padding: 10px; border-radius: 15px; border: 1px solid rgba(255,255,255,0.1); z-index: 10000; backdrop-filter: blur(10px);">
+    <div style="position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); display: flex; gap: 10px; background: rgba(15, 23, 42, 0.9); padding: 10px; border-radius: 15px; border: 1px solid rgba(255,255,255,0.1); z-index: 10000; backdrop-filter: blur(10px);">
     <button id="navPrev" style="padding: 8px 15px; background: #334155; color: white; border-radius: 8px; font-weight: bold; border: none; cursor: pointer;">← Ant.</button>
     <a href="index.html" style="padding: 8px 20px; background: #059669; color: white; border-radius: 8px; font-weight: bold; text-decoration: none; text-transform: uppercase; font-size: 12px; display: flex; align-items: center;">Índice</a>
     <button id="navNext" style="padding: 8px 15px; background: #334155; color: white; border-radius: 8px; font-weight: bold; border: none; cursor: pointer;">Sig. →</button>
